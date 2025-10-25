@@ -1,0 +1,123 @@
+from fastapi import HTTPException, Security, Depends, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from typing import Optional
+from datetime import datetime
+import os
+from config import settings
+from sqlalchemy.orm import Session
+from models.models import get_db, APIKey, User
+from middleware.auth_utils import decode_access_token
+
+security = HTTPBearer()
+security_optional = HTTPBearer(auto_error=False)
+
+class APIKeyAuth:
+    def __init__(self):
+        self.api_keys = self._load_api_keys()
+    
+    def _load_api_keys(self) -> set:
+        """Load API keys from environment variables"""
+        api_keys = set()
+        
+        # Load from environment variable (comma-separated)
+        env_keys = os.getenv("API_KEYS", "")
+        if env_keys:
+            api_keys.update(key.strip() for key in env_keys.split(",") if key.strip())
+        
+        # Load from individual environment variables
+        for i in range(1, 11):  # Support up to 10 API keys
+            key = os.getenv(f"API_KEY_{i}")
+            if key:
+                api_keys.add(key.strip())
+        
+        return api_keys
+    
+    def verify_api_key(self, credentials: HTTPAuthorizationCredentials = Security(security)) -> str:
+        """Verify API key from Authorization header"""
+        api_key = credentials.credentials
+        
+        if not api_key:
+            raise HTTPException(
+                status_code=401,
+                detail="API key is required",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        if api_key not in self.api_keys:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid API key",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        return api_key
+
+# Create auth instance
+auth = APIKeyAuth()
+
+# Dependency for protected routes
+def get_current_api_key(credentials: HTTPAuthorizationCredentials = Security(security)) -> str:
+    return auth.verify_api_key(credentials)
+
+# New authentication dependencies
+def get_current_user_from_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
+    """Get current user from JWT token"""
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    
+    if payload is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return payload
+
+def get_current_user_from_api_key(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Get current user from API key"""
+    api_key = credentials.credentials
+    
+    # First check environment API keys
+    if api_key in auth.api_keys:
+        # Return a system user or None for env keys
+        return None
+    
+    # Check database API keys
+    api_key_obj = db.query(APIKey).filter(
+        APIKey.is_active == True
+    ).all()
+    
+    for key_obj in api_key_obj:
+        if APIKey.verify_key(api_key, key_obj.key_hash):
+            # Update last used
+            key_obj.last_used_at = datetime.utcnow()
+            db.commit()
+            
+            # Get the user
+            user = db.query(User).filter(User.id == key_obj.user_id).first()
+            return user
+    
+    raise HTTPException(
+        status_code=401,
+        detail="Invalid API key",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+def get_current_user_optional(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(security_optional),
+    db: Session = Depends(get_db)
+) -> Optional[User]:
+    """Get current user from API key (optional)"""
+    if credentials is None:
+        return None
+    
+    try:
+        return get_current_user_from_api_key(request, credentials, db)
+    except HTTPException:
+        return None

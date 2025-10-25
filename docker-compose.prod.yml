@@ -1,0 +1,40 @@
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  backend:
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/emails
+      - AWS_ACCESS_KEY_ID=AKIAWNG7TH4CUDRSJGNZ
+      - AWS_SECRET_ACCESS_KEY=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
+      - AWS_REGION=ap-south-1
+      - SES_SENDER_EMAIL=no-reply@zeron.one
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  frontend:
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+volumes:
+  postgres_data_prod:
+    driver: local
