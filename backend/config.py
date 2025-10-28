@@ -2,12 +2,12 @@ import os
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    database_url: str = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5433/emails")
+    database_url: str = os.getenv("DATABASE_URL", "")
     api_host: str = os.getenv("API_HOST", "0.0.0.0")
     api_port: int = int(os.getenv("API_PORT", "8000"))
     
     # API Authentication
-    api_keys: str = os.getenv("API_KEYS", "1234")
+    api_keys: str = os.getenv("API_KEYS", "")
     
     # Email Provider Configuration
     email_provider: str = os.getenv("EMAIL_PROVIDER", "ses")  # "ses" or "smtp"
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     aws_access_key_id: str = os.getenv("AWS_ACCESS_KEY_ID", "")
     aws_secret_access_key: str = os.getenv("AWS_SECRET_ACCESS_KEY", "")
     aws_region: str = os.getenv("AWS_REGION", "ap-south-1")
-    ses_sender_email: str = os.getenv("SES_SENDER_EMAIL", "no-reply@zeron.one")
+    ses_sender_email: str = os.getenv("SES_SENDER_EMAIL", "")
     ses_configuration_set: str = os.getenv("SES_CONFIGURATION_SET", "")
     
     # SMTP Configuration
