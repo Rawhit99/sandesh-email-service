@@ -1,7 +1,11 @@
 services:
   postgres:
+    env_file:
+      - .env
     environment:
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-emails}
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     deploy:
@@ -12,12 +16,14 @@ services:
           memory: 512M
 
   backend:
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432/emails
-      - AWS_ACCESS_KEY_ID=AKIAWNG7TH4CUDRSJGNZ
-      - AWS_SECRET_ACCESS_KEY=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
-      - AWS_REGION=ap-south-1
-      - SES_SENDER_EMAIL=no-reply@zeron.one
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-emails}}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      SES_SENDER_EMAIL: ${SES_SENDER_EMAIL}
     deploy:
       resources:
         limits:
@@ -26,8 +32,10 @@ services:
           memory: 1G
 
   frontend:
+    env_file:
+      - .env
     environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
     deploy:
       resources:
         limits:
