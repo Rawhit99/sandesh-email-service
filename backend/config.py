@@ -13,8 +13,8 @@ class Settings(BaseSettings):
     email_provider: str = os.getenv("EMAIL_PROVIDER", "ses")  # "ses" or "smtp"
     
     # AWS SES Configuration
-    aws_access_key_id: str = os.getenv("AWS_ACCESS_KEY_ID", "AKIAWNG7TH4CUDRSJGNZ")
-    aws_secret_access_key: str = os.getenv("AWS_SECRET_ACCESS_KEY", "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")
+    aws_access_key_id: str = os.getenv("AWS_ACCESS_KEY_ID", "")
+    aws_secret_access_key: str = os.getenv("AWS_SECRET_ACCESS_KEY", "")
     aws_region: str = os.getenv("AWS_REGION", "ap-south-1")
     ses_sender_email: str = os.getenv("SES_SENDER_EMAIL", "no-reply@zeron.one")
     ses_configuration_set: str = os.getenv("SES_CONFIGURATION_SET", "")
