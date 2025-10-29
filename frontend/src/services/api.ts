@@ -355,7 +355,7 @@ class ApiService {
   async retryNotification(notificationId: number): Promise<void> {
     try {
       const axiosInstance = this.createAxiosInstance();
-      await axiosInstance.post(`/notifications/${notificationId}/retry`);
+      await axiosInstance.post(`/api/v1/notifications/${notificationId}/retry`);
     } catch (error) {
       this.handleError(error);
     }
