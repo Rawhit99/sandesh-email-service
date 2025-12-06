@@ -367,7 +367,7 @@ const TemplateManagement: React.FC = () => {
               <ReactQuill
                 theme="snow"
                 value={selectedTemplate?.content || formData.content}
-                onChange={(content) => {
+                onChange={(content: string) => {
                   if (selectedTemplate) {
                     setSelectedTemplate(prev => prev ? { ...prev, content } : null);
                   } else {

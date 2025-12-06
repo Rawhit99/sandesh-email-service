@@ -130,4 +130,15 @@ async def retry_notification(notification_id: int, db: Session = Depends(get_db)
     except Exception:
         raise HTTPException(status_code=500, detail="Failed to retry notification")
 
+@router.post("/v1/notifications/{notification_id}/resend")
+async def resend_notification(notification_id: int, db: Session = Depends(get_db)):
+    try:
+        # Resend uses the same logic as retry
+        success = await email_service.retry_notification(db, notification_id)
+        if success:
+            return {"message": "Notification resend initiated successfully"}
+        else:
+            raise HTTPException(status_code=404, detail="Notification not found")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to resend notification")
 

@@ -142,6 +142,7 @@ class TemplateUpdate(BaseModel):
     name: Optional[str] = None
     subject: Optional[str] = None
     content: Optional[str] = None
+    variables: Optional[Dict[str, str]] = None
     is_active: Optional[bool] = None
 
     @field_validator('name')

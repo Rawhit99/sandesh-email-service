@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from config import settings
 from models.models import Base, engine
 from routers.health import router as health_router
 from routers.auth import router as auth_router

@@ -89,13 +89,26 @@ class TemplateService:
         if not db_template:
             raise HTTPException(status_code=404, detail="Template not found")
         
+        # Track if we need to re-extract variables
+        should_extract_variables = False
+        
         # Only update fields that are provided
         if template.name is not None:
             db_template.name = template.name
         if template.subject is not None:
             db_template.subject = template.subject
+            should_extract_variables = True
         if template.content is not None:
             db_template.content = template.content
+            should_extract_variables = True
+        
+        # Auto-extract variables if content or subject changed
+        # Ignore variables from frontend to ensure they match the actual template
+        if should_extract_variables:
+            from models.schemas import TemplateCreate
+            extracted_vars = TemplateCreate.extract_variables(db_template.content, db_template.subject)
+            db_template.variables = extracted_vars
+        
         if template.is_active is not None:
             is_active = template.is_active
             if isinstance(is_active, str):
@@ -111,7 +124,7 @@ class TemplateService:
             raise HTTPException(status_code=500, detail=f"Error updating template: {str(e)}")
     
     def delete_template(self, db: Session, template_id: str) -> bool:
-        """Soft delete a template by setting is_active to false"""
+        """Hard delete a template from the database"""
         try:
             db_template = db.query(EmailTemplate).filter(
                 EmailTemplate.template_id == template_id
@@ -120,8 +133,8 @@ class TemplateService:
             if not db_template:
                 return False
             
-            db_template.is_active = False
-            db_template.updated_at = datetime.utcnow()
+            # Perform hard delete
+            db.delete(db_template)
             db.commit()
             
             return True

@@ -364,7 +364,7 @@ class ApiService {
   async resendNotification(notificationId: number): Promise<void> {
     try {
       const axiosInstance = this.createAxiosInstance();
-      await axiosInstance.post(`/notifications/${notificationId}/resend`);
+      await axiosInstance.post(`/api/v1/notifications/${notificationId}/resend`);
     } catch (error) {
       this.handleError(error);
     }

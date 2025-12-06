@@ -72,11 +72,12 @@ async def update_template(template_id: str, template: TemplateUpdate, db: Sessio
         existing_template = template_service.get_template_by_id(db=db, template_id=template_id)
         if not existing_template:
             raise HTTPException(status_code=404, detail="Template not found")
+        
         return template_service.update_template(db=db, template_id=template_id, template=template)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/templates/{template_id}")
+@router.delete("/v1/templates/{template_id}")
 async def delete_template(template_id: str, db: Session = Depends(get_db)):
     try:
         success = template_service.delete_template(db=db, template_id=template_id)
