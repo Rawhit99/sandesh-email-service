@@ -198,6 +198,10 @@ npm start
 
 MIT License
 
+## Open source and PyPI publishing
+
+Maintainers: see **[OPEN_SOURCE.md](./OPEN_SOURCE.md)** for a step-by-step plan to open source the project and publish the Python client/SDK to PyPI.
+
 ## Support
 
 For issues and questions, please open an issue on GitHub.

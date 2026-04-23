@@ -9,8 +9,26 @@ from fastapi import HTTPException
 import time
 import uuid
 
-from models.models import EmailTemplate
+from models.models import EmailTemplate, Organization
 from models.schemas import TemplateCreate, TemplateResponse, TemplateUpdate
+
+
+def resolve_email_template_row(db: Session, template_id: str, user_id: Optional[int]) -> Optional[EmailTemplate]:
+    """Pick tenant-owned row first, then legacy shared row (user_id IS NULL)."""
+    if user_id is not None:
+        row = (
+            db.query(EmailTemplate)
+            .filter(EmailTemplate.template_id == template_id, EmailTemplate.user_id == user_id)
+            .first()
+        )
+        if row:
+            return row
+    return (
+        db.query(EmailTemplate)
+        .filter(EmailTemplate.template_id == template_id, EmailTemplate.user_id.is_(None))
+        .first()
+    )
+
 
 class TemplateService:
     def __init__(self):
@@ -22,70 +40,150 @@ class TemplateService:
         # Keep only system-critical reserved variables
         self.reserved_variables = {'email', 'date'}  # Removed 'name' from reserved variables
     
-    def get_templates(self, db: Session, limit: int = 100, offset: int = 0, active_only: bool = False) -> List[TemplateResponse]:
-        """Get email templates with optional filtering by active status"""
+    def get_templates(
+        self,
+        db: Session,
+        limit: int = 100,
+        offset: int = 0,
+        active_only: bool = False,
+        scope_user_id: Optional[int] = None,
+    ) -> List[TemplateResponse]:
+        """List templates for one tenant (scope_user_id required for API use)."""
         try:
             query = db.query(EmailTemplate)
-            
-            # Only filter by active status if requested
+            if scope_user_id is not None:
+                query = query.filter(EmailTemplate.user_id == scope_user_id)
+
             if active_only:
                 query = query.filter(EmailTemplate.is_active.is_(True))
-            
+
             templates = query.order_by(EmailTemplate.created_at.desc()).offset(offset).limit(limit).all()
             
             return [TemplateResponse.from_orm(template) for template in templates]
         except Exception as e:
             raise ValueError(f"Failed to fetch templates: {str(e)}")
     
-    def get_template_by_id(self, db: Session, template_id: str) -> Optional[TemplateResponse]:
-        """Get specific template by template_id"""
+    def get_template_by_id(
+        self, db: Session, template_id: str, scope_user_id: Optional[int] = None
+    ) -> Optional[TemplateResponse]:
+        """Get template by slug; when scope_user_id is set, only that tenant's row."""
         try:
-            template = db.query(EmailTemplate).filter(
-                EmailTemplate.template_id == template_id
-            ).first()
-            
+            q = db.query(EmailTemplate).filter(EmailTemplate.template_id == template_id)
+            if scope_user_id is not None:
+                q = q.filter(EmailTemplate.user_id == scope_user_id)
+            template = q.first()
+
             return TemplateResponse.from_orm(template) if template else None
         except Exception as e:
             raise ValueError(f"Failed to fetch template: {str(e)}")
     
-    def create_template(self, db: Session, template: TemplateCreate) -> TemplateResponse:
-        """Create a new email template"""
-        # Check if template_id already exists
-        existing_template = db.query(EmailTemplate).filter(
-            EmailTemplate.template_id == template.template_id
-        ).first()
-        
+    def create_template(self, db: Session, template: TemplateCreate, owner_user_id: int) -> TemplateResponse:
+        """Create a template owned by owner_user_id."""
+        existing_template = (
+            db.query(EmailTemplate)
+            .filter(
+                EmailTemplate.template_id == template.template_id,
+                EmailTemplate.user_id == owner_user_id,
+            )
+            .first()
+        )
+
         if existing_template:
-            raise HTTPException(status_code=400, detail=f"Template ID '{template.template_id}' already exists")
-        
-        sanitized_content = template.content
-        variables_dict = {var: "" for var in template.variables}
+            raise HTTPException(
+                status_code=400,
+                detail=f"Template ID '{template.template_id}' already exists for this account",
+            )
 
-        print("DEBUG is_active value and type:", template.is_active, type(template.is_active))
-
-        # Force is_active to boolean, no matter what
         is_active = template.is_active
         if isinstance(is_active, str):
             is_active = is_active.lower() == "true"
         elif not isinstance(is_active, bool):
             is_active = bool(is_active)
-        print("DEBUG: is_active value and type before insert:", is_active, type(is_active))
 
-        data = template.dict()
+        data = template.model_dump()
         data["is_active"] = is_active
+        data["user_id"] = owner_user_id
         db_template = EmailTemplate(**data)
 
         try:
             db.add(db_template)
+            # Persist source row before fan-out so unique checks are accurate.
+            db.flush()
+            self._replicate_template_to_all_orgs(
+                db=db,
+                template_data=data,
+                source_owner_user_id=owner_user_id,
+            )
             db.commit()
             db.refresh(db_template)
             return TemplateResponse.from_orm(db_template)
         except Exception as e:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"Error creating template: {str(e)}")
+
+    def _replicate_template_to_all_orgs(
+        self,
+        db: Session,
+        template_data: Dict[str, Any],
+        source_owner_user_id: int,
+    ) -> None:
+        """When created in one org, replicate template to every org tenant account.
+
+        Keep existing rows untouched so per-org enable/disable state remains intact.
+        """
+        source_org = (
+            db.query(Organization)
+            .filter(Organization.service_user_id == source_owner_user_id)
+            .first()
+        )
+        if not source_org:
+            return
+
+        all_org_service_users = (
+            db.query(Organization.service_user_id)
+            .filter(Organization.service_user_id.isnot(None))
+            .all()
+        )
+        if not all_org_service_users:
+            return
+
+        template_id = str(template_data.get("template_id", "")).strip()
+        if not template_id:
+            return
+
+        service_user_ids = [
+            row[0]
+            for row in all_org_service_users
+            if row[0] is not None and row[0] != source_owner_user_id
+        ]
+        if not service_user_ids:
+            return
+
+        existing_rows = (
+            db.query(EmailTemplate.user_id)
+            .filter(
+                EmailTemplate.template_id == template_id,
+                EmailTemplate.user_id.in_(service_user_ids),
+            )
+            .all()
+        )
+        existing_user_ids = {row[0] for row in existing_rows if row[0] is not None}
+
+        for target_user_id in service_user_ids:
+            if target_user_id in existing_user_ids:
+                continue
+            cloned = dict(template_data)
+            cloned["user_id"] = target_user_id
+            db.add(EmailTemplate(**cloned))
     
-    def update_template(self, db: Session, template_id: str, template: TemplateUpdate) -> TemplateResponse:
-        db_template = db.query(EmailTemplate).filter(EmailTemplate.template_id == template_id).first()
+    def update_template(
+        self, db: Session, template_id: str, template: TemplateUpdate, scope_user_id: int
+    ) -> TemplateResponse:
+        db_template = (
+            db.query(EmailTemplate)
+            .filter(EmailTemplate.template_id == template_id, EmailTemplate.user_id == scope_user_id)
+            .first()
+        )
         if not db_template:
             raise HTTPException(status_code=404, detail="Template not found")
         
@@ -114,7 +212,10 @@ class TemplateService:
             if isinstance(is_active, str):
                 is_active = is_active.lower() == "true"
             db_template.is_active = is_active
-        
+
+        if template.default_attachments is not None:
+            db_template.default_attachments = template.default_attachments
+
         try:
             db.commit()
             db.refresh(db_template)
@@ -123,12 +224,14 @@ class TemplateService:
             db.rollback()
             raise HTTPException(status_code=500, detail=f"Error updating template: {str(e)}")
     
-    def delete_template(self, db: Session, template_id: str) -> bool:
-        """Hard delete a template from the database"""
+    def delete_template(self, db: Session, template_id: str, scope_user_id: int) -> bool:
+        """Hard delete a tenant-owned template."""
         try:
-            db_template = db.query(EmailTemplate).filter(
-                EmailTemplate.template_id == template_id
-            ).first()
+            db_template = (
+                db.query(EmailTemplate)
+                .filter(EmailTemplate.template_id == template_id, EmailTemplate.user_id == scope_user_id)
+                .first()
+            )
             
             if not db_template:
                 return False

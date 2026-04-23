@@ -1,534 +1,255 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Box,
-  CircularProgress,
   Alert,
-  Skeleton,
-  IconButton,
-  Tooltip,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Divider,
+  Grid,
+  LinearProgress,
+  Stack,
+  Typography,
 } from '@mui/material';
 import {
-  Email as EmailIcon,
   CheckCircle as CheckCircleIcon,
+  Email as EmailIcon,
   Error as ErrorIcon,
-  Send as SendIcon,
-  Schedule as ScheduleIcon,
   Refresh as RefreshIcon,
+  Schedule as ScheduleIcon,
+  Send as SendIcon,
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import apiService, { Stats } from '../services/api';
 import SendNotificationDialog from '../components/SendNotificationDialog';
-import { useNavigate } from 'react-router-dom';
 
+const initialStats: Stats = {
+  total_notifications: 0,
+  total_templates: 0,
+  notifications_24h: 0,
+  success_rate: 0,
+  status_counts: {},
+  success_count: 0,
+  failed_count: 0,
+  pending_count: 0,
+  recent_notifications: [],
+};
+
+/* ── individual KPI tile ─────────────────────────────────────────── */
+interface KpiProps {
+  label: string;
+  value: number;
+  sub: string;
+  icon: React.ReactNode;
+  status: 'neutral' | 'success' | 'error' | 'warning';
+  onClick: () => void;
+}
+
+function KpiTile({ label, value, sub, icon, status, onClick }: KpiProps) {
+  const statusColor: Record<string, string> = {
+    neutral: '#0972d3',
+    success: '#1d8102',
+    error: '#d91515',
+    warning: '#b65607',
+  };
+  const statusBg: Record<string, string> = {
+    neutral: '#eff6ff',
+    success: '#f2f9f2',
+    error: '#fdf0f0',
+    warning: '#fef6ee',
+  };
+  return (
+    <Box
+      onClick={onClick}
+      sx={{
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1,
+        p: 2.5,
+        cursor: 'pointer',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+        '&:hover': {
+          borderColor: '#0972d3',
+          boxShadow: '0 2px 8px rgba(9,114,211,0.14)',
+        },
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          {label}
+        </Typography>
+        <Box sx={{ bgcolor: statusBg[status], borderRadius: 1, p: 0.75 }}>
+          {React.cloneElement(icon as React.ReactElement, { sx: { fontSize: 16, color: statusColor[status] } })}
+        </Box>
+      </Stack>
+      <Typography sx={{ fontSize: '2rem', fontWeight: 700, lineHeight: 1, color: 'text.primary', mb: 0.75 }}>
+        {value}
+      </Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+        {sub}
+      </Typography>
+    </Box>
+  );
+}
+
+/* ── page ────────────────────────────────────────────────────────── */
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<Stats>({
-    total_notifications: 0,
-    total_templates: 0,
-    notifications_24h: 0,
-    success_rate: 0,
-    status_counts: {},
-    success_count: 0,
-    failed_count: 0,
-    pending_count: 0,
-    recent_notifications: [],
-  });
+  const [stats, setStats] = useState<Stats>(initialStats);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [openSend, setOpenSend] = useState(false);
   const navigate = useNavigate();
 
-  const fetchData = async () => {
+  const load = async (background = false) => {
     try {
-      setLoading(true);
+      background ? setRefreshing(true) : setLoading(true);
       setError(null);
-      console.log('Fetching stats...');
-      const statsData = await apiService.getStats();
-      console.log('Stats data received:', statsData);
-      setStats(statsData);
-    } catch (err) {
-      console.error('Dashboard data fetch error:', err);
-      setError('Failed to fetch dashboard data. Please try again later.');
+      const data = await apiService.getStats();
+      setStats(data);
+    } catch {
+      setError('Failed to fetch dashboard data. Please try again.');
     } finally {
-      setLoading(false);
+      background ? setRefreshing(false) : setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
-  const handleSendSuccess = () => {
-    fetchData();
-  };
-
-  const handleStatCardClick = (filter: string) => {
-    navigate(`/notifications?status=${filter}`);
-  };
-
-  const StatCard: React.FC<{
-    title: string;
-    value: number | string;
-    icon: React.ReactNode;
-    color?: string;
-    filter?: string;
-    subtitle?: string;
-  }> = ({ title, value, icon, color = 'primary', filter, subtitle }) => {
-    // Get color values for the gradient
-    const getColorValues = (colorName: string) => {
-      switch (colorName) {
-        case 'primary':
-          return { 
-            light: '#3b82f6', 
-            main: '#2563eb',
-            bg: '#eff6ff',
-            iconBg: '#dbeafe'
-          };
-        case 'success':
-          return { 
-            light: '#34d399', 
-            main: '#10b981',
-            bg: '#ecfdf5',
-            iconBg: '#d1fae5'
-          };
-        case 'error':
-          return { 
-            light: '#f87171', 
-            main: '#ef4444',
-            bg: '#fef2f2',
-            iconBg: '#fecaca'
-          };
-        case 'warning':
-          return { 
-            light: '#fbbf24', 
-            main: '#f59e0b',
-            bg: '#fffbeb',
-            iconBg: '#fef3c7'
-          };
-        default:
-          return { 
-            light: '#3b82f6', 
-            main: '#2563eb',
-            bg: '#eff6ff',
-            iconBg: '#dbeafe'
-          };
-      }
-    };
-
-    const colors = getColorValues(color);
-
-    return (
-      <Card 
-        sx={{ 
-          cursor: filter ? 'pointer' : 'default',
-          '&:hover': filter ? { 
-            transform: 'translateY(-4px)',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            transition: 'all 0.3s ease-in-out'
-          } : {},
-          height: '100%',
-          background: 'white',
-          border: `1px solid ${colors.iconBg}`,
-          position: 'relative',
-          overflow: 'hidden',
-          transition: 'all 0.2s ease-in-out',
-        }}
-        onClick={() => filter && handleStatCardClick(filter)}
-      >
-        <CardContent sx={{ p: 3 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
-            <Box sx={{ 
-              bgcolor: colors.iconBg, 
-              width: 48, 
-              height: 48, 
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <Box sx={{ color: colors.main, fontSize: '1.5rem' }}>
-                {icon}
-              </Box>
-            </Box>
-            {filter && (
-              <Box sx={{ 
-                bgcolor: colors.bg,
-                color: colors.main,
-                px: 1.5,
-                py: 0.5,
-                borderRadius: 1,
-                fontSize: '0.75rem',
-                fontWeight: 600,
-              }}>
-                View All
-              </Box>
-            )}
-          </Box>
-          
-          <Box>
-            <Typography 
-              variant="h3" 
-              component="div" 
-              sx={{ 
-                fontWeight: 700, 
-                mb: 1,
-                color: 'text.primary',
-                fontSize: '2.25rem',
-                lineHeight: 1,
-              }}
-            >
-              {value}
-            </Typography>
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                color: 'text.primary',
-                fontWeight: 600,
-                fontSize: '1rem',
-                mb: 0.5,
-              }}
-            >
-              {title}
-            </Typography>
-            {subtitle && (
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  color: 'text.secondary',
-                  fontSize: '0.875rem',
-                }}
-              >
-                {subtitle}
-              </Typography>
-            )}
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  };
+  const kpis = useMemo(() => [
+    { key: 'all',     label: 'Total notifications',  value: stats.total_notifications, sub: 'All statuses',              icon: <EmailIcon />,        status: 'neutral'  as const },
+    { key: 'success', label: 'Successful',            value: stats.success_count,        sub: 'Successfully delivered',    icon: <CheckCircleIcon />,  status: 'success'  as const },
+    { key: 'failed',  label: 'Failed',                value: stats.failed_count,         sub: 'Requires attention',        icon: <ErrorIcon />,        status: 'error'    as const },
+    { key: 'pending', label: 'In progress',           value: stats.pending_count,        sub: 'Pending, queued, running',  icon: <ScheduleIcon />,     status: 'warning'  as const },
+  ], [stats]);
 
   if (loading) {
     return (
-      <Box p={3}>
-        <Grid container spacing={3}>
-          {[1, 2, 3, 4].map((item) => (
-            <Grid item xs={12} sm={6} md={3} key={item}>
-              <Skeleton variant="rectangular" height={120} />
-            </Grid>
-          ))}
-        </Grid>
+      <Box sx={{ bgcolor: 'background.default', minHeight: '100%', display: 'grid', placeItems: 'center', pt: 8 }}>
+        <CircularProgress size={32} />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 4 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={3}>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100%' }}>
+      {/* ── Page header band ─────────────────────────────────────── */}
+      <Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', px: { xs: 2, md: 3 }, pt: 2.5, pb: 2 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75 }}>
+          Console › Dashboard
+        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
-              Welcome back! 👋
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
-              Here's what's happening with your email notifications today
+            <Typography variant="h4">Dashboard</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              Overview of notifications and delivery health
             </Typography>
           </Box>
-          <Box display="flex" gap={2} alignItems="center">
-            <Tooltip title="Refresh Data">
-              <IconButton 
-                onClick={fetchData} 
-                color="primary"
-                sx={{ 
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  '&:hover': {
-                    bgcolor: 'primary.dark',
-                    transform: 'scale(1.05)',
-                  },
-                  transition: 'all 0.2s ease-in-out'
-                }}
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
+          <Stack direction="row" spacing={1} flexShrink={0}>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon sx={{ fontSize: 15 }} />}
+              onClick={() => void load(true)}
+              disabled={refreshing}
+              size="small"
+            >
+              Refresh
+            </Button>
             <Button
               variant="contained"
-              size="large"
-              startIcon={<SendIcon />}
-              onClick={() => setIsSendDialogOpen(true)}
-              sx={{ 
-                borderRadius: 2,
-                px: 3,
-                py: 1.5,
-                fontSize: '1rem',
-                fontWeight: 600,
-                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
-                  transform: 'translateY(-1px)',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                },
-                transition: 'all 0.2s ease-in-out',
-              }}
+              startIcon={<SendIcon sx={{ fontSize: 15 }} />}
+              onClick={() => setOpenSend(true)}
+              size="small"
             >
-              Send Email
+              Send notification
             </Button>
-          </Box>
-        </Box>
+          </Stack>
+        </Stack>
 
-        {/* Status Cards Row */}
-        <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1, 
-            px: 2, 
-            py: 1, 
-            bgcolor: 'success.main', 
-            color: 'white', 
-            borderRadius: 2,
-            fontSize: '0.875rem',
-            fontWeight: 600
-          }}>
-            <CheckCircleIcon sx={{ fontSize: 16 }} />
-            System Online
+        {/* Summary strip */}
+        <Stack direction="row" spacing={1} sx={{ mt: 1.75 }} flexWrap="wrap">
+          <Chip
+            size="small"
+            variant="outlined"
+            label="System operational"
+            color="success"
+            sx={{ fontWeight: 600 }}
+          />
+          <Chip size="small" variant="outlined" label={`${stats.total_templates} templates`} />
+          <Chip size="small" variant="outlined" label={`${Math.round(stats.success_rate)}% success rate`} />
+          <Chip size="small" variant="outlined" label={`${stats.notifications_24h} in last 24 h`} />
+        </Stack>
+      </Box>
+
+      {refreshing && <LinearProgress />}
+
+      {/* ── Content area ─────────────────────────────────────────── */}
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
+            {success}
+          </Alert>
+        )}
+
+        {/* KPI row */}
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          {kpis.map((kpi) => (
+            <Grid item xs={12} sm={6} md={3} key={kpi.key}>
+              <KpiTile
+                label={kpi.label}
+                value={kpi.value}
+                sub={kpi.sub}
+                icon={kpi.icon}
+                status={kpi.status}
+                onClick={() => navigate(`/notifications?status=${kpi.key}`)}
+              />
+            </Grid>
+          ))}
+        </Grid>
+
+        {/* Overview panel */}
+        <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+          {/* panel header */}
+          <Box sx={{ px: 2.5, py: 1.75, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>Delivery overview</Typography>
+            <Typography variant="caption" color="text.secondary">All time</Typography>
           </Box>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1, 
-            px: 2, 
-            py: 1, 
-            bgcolor: 'primary.main', 
-            color: 'white', 
-            borderRadius: 2,
-            fontSize: '0.875rem',
-            fontWeight: 600
-          }}>
-            <EmailIcon sx={{ fontSize: 16 }} />
-            {stats.total_templates} Templates
-          </Box>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1, 
-            px: 2, 
-            py: 1, 
-            bgcolor: 'warning.main', 
-            color: 'white', 
-            borderRadius: 2,
-            fontSize: '0.875rem',
-            fontWeight: 600
-          }}>
-            <ScheduleIcon sx={{ fontSize: 16 }} />
-            {stats.pending_count} Pending
+          {/* stat rows */}
+          <Box sx={{ px: 2.5 }}>
+            {[
+              { label: 'Total notifications sent',  value: stats.total_notifications },
+              { label: 'Successful deliveries',      value: stats.success_count },
+              { label: 'Failed deliveries',          value: stats.failed_count },
+              { label: 'Pending / in-progress',      value: stats.pending_count },
+              { label: 'Active templates',           value: stats.total_templates },
+              { label: 'Notifications in last 24 h', value: stats.notifications_24h },
+            ].map((row, idx, arr) => (
+              <React.Fragment key={row.label}>
+                <Box sx={{ py: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">{row.label}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>{row.value}</Typography>
+                </Box>
+                {idx < arr.length - 1 && <Divider />}
+              </React.Fragment>
+            ))}
           </Box>
         </Box>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
-          {success}
-        </Alert>
-      )}
-
-      {/* Email Count Stats */}
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Total Emails"
-            value={stats.total_notifications}
-            icon={<EmailIcon />}
-            color="primary"
-            filter="all"
-            subtitle="All time"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Successful"
-            value={stats.success_count}
-            icon={<CheckCircleIcon />}
-            color="success"
-            filter="success"
-            subtitle="Delivered"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Failed"
-            value={stats.failed_count}
-            icon={<ErrorIcon />}
-            color="error"
-            filter="failed"
-            subtitle="Needs retry"
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Pending"
-            value={stats.pending_count}
-            icon={<ScheduleIcon />}
-            color="warning"
-            filter="pending"
-            subtitle="In queue"
-          />
-        </Grid>
-      </Grid>
-
-      {/* Quick Actions Section */}
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} md={8}>
-          <Card sx={{ height: '100%', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', border: '1px solid #e2e8f0' }}>
-            <CardContent sx={{ p: 4 }}>
-              <Box display="flex" alignItems="center" mb={3}>
-                <Box sx={{ 
-                  bgcolor: 'primary.main', 
-                  width: 40, 
-                  height: 40, 
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mr: 2
-                }}>
-                  <SendIcon sx={{ color: 'white', fontSize: '1.25rem' }} />
-                </Box>
-                <Box>
-                  <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
-                    Send New Email
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Create and send email notifications instantly
-                  </Typography>
-                </Box>
-              </Box>
-              
-              <Typography variant="body1" color="text.secondary" sx={{ mb: 3, lineHeight: 1.6 }}>
-                Use your templates to send personalized emails to your users. Track delivery status and manage your campaigns efficiently.
-              </Typography>
-              
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<SendIcon />}
-                onClick={() => setIsSendDialogOpen(true)}
-                sx={{ 
-                  borderRadius: 2,
-                  py: 1.5,
-                  px: 4,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                  },
-                  transition: 'all 0.2s ease-in-out',
-                }}
-              >
-                Send New Email
-              </Button>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} md={4}>
-          <Card sx={{ height: '100%', background: 'white', border: '1px solid #e2e8f0' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, color: 'text.primary' }}>
-                Quick Stats
-              </Typography>
-              
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{ 
-                    bgcolor: '#eff6ff', 
-                    width: 32, 
-                    height: 32, 
-                    borderRadius: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <EmailIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                      {stats.total_templates}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Templates
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{ 
-                    bgcolor: '#ecfdf5', 
-                    width: 32, 
-                    height: 32, 
-                    borderRadius: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <CheckCircleIcon sx={{ fontSize: 16, color: 'success.main' }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                      {stats.success_count}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Sent Today
-                    </Typography>
-                  </Box>
-                </Box>
-                
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Box sx={{ 
-                    bgcolor: '#fffbeb', 
-                    width: 32, 
-                    height: 32, 
-                    borderRadius: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>
-                    <ScheduleIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                      {stats.pending_count}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Pending
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Send Email Dialog */}
       <SendNotificationDialog
-        open={isSendDialogOpen}
-        onClose={() => setIsSendDialogOpen(false)}
-        onSuccess={handleSendSuccess}
+        open={openSend}
+        onClose={() => setOpenSend(false)}
+        onSuccess={() => {
+          setSuccess('Notification queued successfully.');
+          void load(true);
+        }}
       />
     </Box>
   );

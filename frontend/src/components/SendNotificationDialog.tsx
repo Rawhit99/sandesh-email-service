@@ -14,8 +14,11 @@ import {
   Typography,
   Box,
   Alert,
+  Stack,
+  Chip,
+  Divider,
 } from '@mui/material';
-import apiService, { EmailTemplate } from '../services/api';
+import apiService, { EmailRequest, EmailTemplate } from '../services/api';
 
 interface SendNotificationDialogProps {
   open: boolean;
@@ -30,22 +33,30 @@ const SendNotificationDialog: React.FC<SendNotificationDialogProps> = ({
 }) => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
-  const [customContent, setCustomContent] = useState<string>('');
   const [useCustomContent, setUseCustomContent] = useState<boolean>(false);
   const [formData, setFormData] = useState({
     email: '',
     subject: '',
     content: '',
     cc_emails: '',
+    from_email: '',
+    sender_name: '',
     payload: {} as Record<string, any>,
   });
+  const [channels, setChannels] = useState<string[]>(['email']);
+  const [attachmentName, setAttachmentName] = useState('');
+  const [attachmentB64, setAttachmentB64] = useState('');
+  const [attachmentMime, setAttachmentMime] = useState('application/octet-stream');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [templateVariables, setTemplateVariables] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) {
-      fetchTemplates();
+      void fetchTemplates();
+      setAttachmentName('');
+      setAttachmentB64('');
+      setAttachmentMime('application/octet-stream');
     }
   }, [open]);
 
@@ -116,23 +127,47 @@ const SendNotificationDialog: React.FC<SendNotificationDialogProps> = ({
     setLoading(true);
     setError(null);
 
-    // Ensure payload is not empty
-    if (!formData.payload || Object.values(formData.payload).every(val => !val)) {
-      setError("Please fill at least one variable for the template.");
+    const hasAttachment = Boolean(attachmentB64);
+    const hasPayloadValues =
+      formData.payload &&
+      Object.values(formData.payload).some(val => val != null && String(val).trim() !== '');
+    if (templateVariables.length > 0 && !hasPayloadValues && !hasAttachment) {
+      setError('Fill at least one template variable, or attach a file.');
+      setLoading(false);
+      return;
+    }
+    if (useCustomContent && (!formData.subject.trim() || !formData.content.trim())) {
+      setError('Subject and HTML content are required for custom content.');
       setLoading(false);
       return;
     }
 
     try {
-      const request = {
+      const trimmedFrom = formData.from_email.trim();
+      const trimmedSender = formData.sender_name.trim();
+      const request: EmailRequest = {
         template_id: useCustomContent ? 'custom' : selectedTemplate,
         email: formData.email,
         cc_emails: formData.cc_emails ? formData.cc_emails.split(',').map(email => email.trim()) : undefined,
-        payload: formData.payload,
+        payload: formData.payload || {},
         ...(useCustomContent && {
           subject: formData.subject,
           content: formData.content,
         }),
+        ...(trimmedFrom ? { from_email: trimmedFrom } : {}),
+        ...(trimmedSender ? { sender_name: trimmedSender } : {}),
+        ...(channels.length ? { channels } : {}),
+        ...(hasAttachment
+          ? {
+              attachments: [
+                {
+                  filename: attachmentName || 'attachment',
+                  content_base64: attachmentB64,
+                  mime_type: attachmentMime || 'application/octet-stream',
+                },
+              ],
+            }
+          : {}),
       };
 
       await apiService.sendEmail(request);
@@ -158,9 +193,14 @@ const SendNotificationDialog: React.FC<SendNotificationDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle>Send New Notification</DialogTitle>
+      <DialogTitle>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6">Send Notification</Typography>
+          <Chip size="small" variant="outlined" label={useCustomContent ? 'Custom content' : 'Template'} />
+        </Stack>
+      </DialogTitle>
       <DialogContent>
-        <Grid container spacing={2} sx={{ mt: 1 }}>
+        <Grid container spacing={1.5} sx={{ mt: 0.5 }}>
           <Grid item xs={12}>
             <FormControl fullWidth>
               <InputLabel>Use Template</InputLabel>
@@ -193,6 +233,10 @@ const SendNotificationDialog: React.FC<SendNotificationDialogProps> = ({
           )}
 
           <Grid item xs={12}>
+            <Divider sx={{ my: 0.5 }} />
+          </Grid>
+
+          <Grid item xs={12}>
             <TextField
               label="Recipient Email"
               fullWidth
@@ -211,6 +255,75 @@ const SendNotificationDialog: React.FC<SendNotificationDialogProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, cc_emails: e.target.value }))}
               helperText="Multiple emails can be added, separated by commas"
             />
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <TextField
+              label="From email (override)"
+              fullWidth
+              type="email"
+              value={formData.from_email}
+              onChange={(e) => setFormData((prev) => ({ ...prev, from_email: e.target.value }))}
+              helperText="Optional; must be allowed by your provider"
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              label="Sender display name"
+              fullWidth
+              value={formData.sender_name}
+              onChange={(e) => setFormData((prev) => ({ ...prev, sender_name: e.target.value }))}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel>Channels</InputLabel>
+              <Select
+                multiple
+                label="Channels"
+                value={channels}
+                onChange={(e) => setChannels(typeof e.target.value === 'string' ? [e.target.value] : e.target.value)}
+                renderValue={(selected) => (selected as string[]).join(', ')}
+              >
+                {['email', 'slack', 'ms_teams', 'whatsapp', 'push_fcm', 'push_sns'].map((c) => (
+                  <MenuItem key={c} value={c}>
+                    {c}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+              Non-email channels run after a successful email. Configure webhooks in backend .env (Integrations page).
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12}>
+            <Button variant="outlined" component="label" size="small">
+              Attach file (optional)
+              <input
+                type="file"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  setAttachmentName(f.name);
+                  setAttachmentMime(f.type && f.type.length > 0 ? f.type : 'application/octet-stream');
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    const r = reader.result as string;
+                    const b64 = r.includes(',') ? r.split(',')[1] : r;
+                    setAttachmentB64(b64 || '');
+                  };
+                  reader.readAsDataURL(f);
+                }}
+              />
+            </Button>
+            {attachmentName && (
+              <Typography variant="caption" sx={{ ml: 2 }}>
+                {attachmentName}
+              </Typography>
+            )}
           </Grid>
 
           {useCustomContent && (
@@ -238,6 +351,10 @@ const SendNotificationDialog: React.FC<SendNotificationDialogProps> = ({
               </Grid>
             </>
           )}
+
+          <Grid item xs={12}>
+            <Divider sx={{ my: 0.5 }} />
+          </Grid>
 
           <Grid item xs={12}>
             <Typography variant="subtitle1" gutterBottom>
@@ -272,14 +389,14 @@ const SendNotificationDialog: React.FC<SendNotificationDialogProps> = ({
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="outlined" onClick={onClose}>Cancel</Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
           color="primary"
           disabled={loading || !formData.email || (!useCustomContent && !selectedTemplate)}
         >
-          {loading ? 'Sending...' : 'Send Notification'}
+          {loading ? 'Sending…' : 'Send Notification'}
         </Button>
       </DialogActions>
     </Dialog>

@@ -38,11 +38,15 @@ const SendEmail = () => {
     template_id: string;
     email: string;
     cc_emails: string;
+    from_email: string;
+    sender_name: string;
     payload: EmailPayload;
   }>({
     template_id: '',
     email: '',
     cc_emails: '',
+    from_email: '',
+    sender_name: '',
     payload: {
       user_name: '',
       account_id: '',
@@ -103,6 +107,8 @@ const SendEmail = () => {
 
     try {
       // Prepare request
+      const fromTrim = formData.from_email.trim();
+      const nameTrim = formData.sender_name.trim();
       const request: EmailRequest = {
         template_id: formData.template_id,
         email: formData.email,
@@ -110,19 +116,28 @@ const SendEmail = () => {
         ...(formData.cc_emails && {
           cc_emails: formData.cc_emails.split(',').map(email => email.trim()),
         }),
+        ...(fromTrim ? { from_email: fromTrim } : {}),
+        ...(nameTrim ? { sender_name: nameTrim } : {}),
       };
 
       console.log('Sending request:', request);
 
       // Send email
       const response = await apiService.sendEmail(request);
-      setSuccess(`Email sent successfully! Message ID: ${response.message_id}`);
+      const msgId = response.payload?.message_id as string | undefined;
+      setSuccess(
+        `Email queued/sent successfully. Notification #${response.id}${
+          msgId ? ` · message_id: ${msgId}` : ''
+        }`
+      );
       
       // Reset form
       setFormData({
         template_id: '',
         email: '',
         cc_emails: '',
+        from_email: '',
+        sender_name: '',
         payload: {
           user_name: '',
           account_id: '',
@@ -178,6 +193,23 @@ const SendEmail = () => {
             value={formData.cc_emails}
             onChange={handleInputChange('cc_emails')}
             helperText="Optional: Enter multiple email addresses separated by commas"
+            sx={{ mb: 3 }}
+          />
+
+          <TextField
+            fullWidth
+            label="From email (override)"
+            type="email"
+            value={formData.from_email}
+            onChange={handleInputChange('from_email')}
+            helperText="Optional — must be verified in SES or allowed by your SMTP provider"
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            label="Sender display name"
+            value={formData.sender_name}
+            onChange={handleInputChange('sender_name')}
             sx={{ mb: 3 }}
           />
 

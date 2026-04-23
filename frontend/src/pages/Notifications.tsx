@@ -1,659 +1,440 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Box,
-  Typography,
+  Button,
+  Chip,
+  CircularProgress,
+  Collapse,
+  FormControl,
+  Grid,
+  IconButton,
+  InputLabel,
+  LinearProgress,
+  MenuItem,
+  Pagination,
+  Paper,
+  Select,
+  Snackbar,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Chip,
-  IconButton,
-  Tooltip,
-  CircularProgress,
-  Alert,
-  Card,
-  CardContent,
-  Grid,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Pagination,
-  Avatar,
-  Collapse,
-  Divider,
-  Button,
   Tabs,
   Tab,
-  Snackbar,
+  TextField,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 import {
   CheckCircle as CheckCircleIcon,
+  Email as EmailIcon,
   Error as ErrorIcon,
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  FilterList as FilterListIcon,
+  MarkEmailRead as MarkEmailReadIcon,
+  MarkEmailUnread as MarkEmailUnreadIcon,
   Pending as PendingIcon,
   Refresh as RefreshIcon,
   Replay as ReplayIcon,
-  Visibility as VisibilityIcon,
   Search as SearchIcon,
-  ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon,
-  Email as EmailIcon,
-  FilterList as FilterListIcon,
 } from '@mui/icons-material';
 import { useSearchParams } from 'react-router-dom';
-import apiService, { Notification, NotificationFilters } from '../services/api';
+import apiService, { Notification } from '../services/api';
 
 const Notifications: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(1);
-  const [rowsPerPage] = useState(10);
-  const [retryingId, setRetryingId] = useState<number | null>(null);
+  const rowsPerPage = 10;
   const [activeTab, setActiveTab] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [searchEmail, setSearchEmail] = useState('');
   const [retryLoading, setRetryLoading] = useState<number | null>(null);
   const [resendLoading, setResendLoading] = useState<number | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-    open: false,
-    message: '',
-    severity: 'success'
+    open: false, message: '', severity: 'success',
   });
 
-  const limit = 20;
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async (background = false) => {
     try {
-      setLoading(true);
+      background ? setRefreshing(true) : setLoading(true);
       setError(null);
-      setSuccess(null);
-      
       const status = searchParams.get('status') || 'all';
-      
-      const data = await apiService.getNotifications({
-        status,
-        email: searchEmail || undefined,
-      });
-      
+      const data = await apiService.getNotifications({ status });
       setNotifications(data || []);
-      // Since the API doesn't return pagination info, we'll show all results
-      setTotalPages(1);
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
+    } catch {
       setError('Failed to fetch notifications');
     } finally {
-      setLoading(false);
+      background ? setRefreshing(false) : setLoading(false);
     }
-  };
+  }, [searchParams]);
 
+  useEffect(() => { void fetchNotifications(false); }, [fetchNotifications]);
   useEffect(() => {
-    fetchNotifications();
-  }, [searchParams, searchEmail]);
+    const id = window.setInterval(() => void fetchNotifications(true), 15000);
+    return () => window.clearInterval(id);
+  }, [fetchNotifications]);
+  useEffect(() => {
+    const status = searchParams.get('status') || 'all';
+    const map: Record<string, number> = { all: 0, success: 1, failed: 2, pending: 3 };
+    setActiveTab(map[status] ?? 0);
+  }, [searchParams]);
 
   const handleRetry = async (notificationId: number) => {
     try {
       setRetryLoading(notificationId);
       await apiService.retryNotification(notificationId);
-      setSnackbar({
-        open: true,
-        message: 'Email retry initiated successfully',
-        severity: 'success'
-      });
-      // Refresh the list after a short delay
-      setTimeout(() => {
-        fetchNotifications();
-      }, 1000);
-    } catch (err) {
-      console.error('Error retrying notification:', err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to retry email',
-        severity: 'error'
-      });
-    } finally {
-      setRetryLoading(null);
-    }
+      setSnackbar({ open: true, message: 'Retry initiated', severity: 'success' });
+      setTimeout(() => { void fetchNotifications(); }, 1000);
+    } catch {
+      setSnackbar({ open: true, message: 'Failed to retry', severity: 'error' });
+    } finally { setRetryLoading(null); }
   };
 
-  const handleRetryMultiple = async (notificationIds: number[]) => {
+  const handleRetryMultiple = async (ids: number[]) => {
     try {
-      setError(null);
-      setSuccess(null);
-      
-      const promises = notificationIds.map(id => apiService.retryNotification(id));
-      await Promise.all(promises);
-      
-      setSuccess(`Successfully retried ${notificationIds.length} notifications`);
-      setTimeout(fetchNotifications, 1000);
-    } catch (err) {
-      console.error('Error retrying notifications:', err);
-      setError('Failed to retry some notifications');
-    }
+      await Promise.all(ids.map(id => apiService.retryNotification(id)));
+      setSuccess(`Retried ${ids.length} notifications`);
+      setTimeout(() => { void fetchNotifications(); }, 1000);
+    } catch { setError('Failed to retry some notifications'); }
   };
 
   const handleResend = async (notificationId: number) => {
     try {
       setResendLoading(notificationId);
       await apiService.resendNotification(notificationId);
-      setSnackbar({
-        open: true,
-        message: 'Resend initiated successfully',
-        severity: 'success'
-      });
-      setTimeout(() => {
-        fetchNotifications();
-      }, 1000);
-    } catch (err) {
-      console.error('Error resending notification:', err);
-      setSnackbar({
-        open: true,
-        message: 'Failed to resend notification',
-        severity: 'error'
-      });
-    } finally {
-      setResendLoading(null);
-    }
+      setSnackbar({ open: true, message: 'Resend initiated', severity: 'success' });
+      setTimeout(() => { void fetchNotifications(); }, 1000);
+    } catch {
+      setSnackbar({ open: true, message: 'Failed to resend', severity: 'error' });
+    } finally { setResendLoading(null); }
+  };
+
+  const handleMarkSeen = async (id: number, markAsRead: boolean) => {
+    try {
+      if (markAsRead) await apiService.markNotificationSeen(id);
+      else await apiService.markNotificationUnseen(id);
+      await fetchNotifications();
+    } catch { /* ignore */ }
   };
 
   const getStatusChip = (status: string) => {
-    switch (status) {
-      case 'success':
-        return (
-          <Chip
-            icon={<CheckCircleIcon />}
-            label="Success"
-            color="success"
-            size="small"
-            variant="filled"
-          />
-        );
-      case 'failed':
-        return (
-          <Chip
-            icon={<ErrorIcon />}
-            label="Failed"
-            color="error"
-            size="small"
-            variant="filled"
-          />
-        );
-      case 'pending':
-        return (
-          <Chip
-            icon={<PendingIcon />}
-            label="Pending"
-            color="warning"
-            size="small"
-            variant="filled"
-          />
-        );
-      default:
-        return (
-          <Chip
-            label={status}
-            size="small"
-            variant="outlined"
-          />
-        );
-    }
+    if (status === 'success') return <Chip icon={<CheckCircleIcon />} label="Success" color="success" size="small" />;
+    if (status === 'failed')  return <Chip icon={<ErrorIcon />}        label="Failed"  color="error"   size="small" />;
+    if (['pending','queued','running'].includes(status)) return <Chip icon={<PendingIcon />} label={status} color="warning" size="small" />;
+    return <Chip label={status} size="small" variant="outlined" />;
   };
 
-  const toggleRowExpansion = (id: number) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id);
-    } else {
-      newExpanded.add(id);
-    }
-    setExpandedRows(newExpanded);
+  const toggleRow = (id: number) => {
+    const next = new Set(expandedRows);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setExpandedRows(next);
   };
 
-  const filteredNotifications = notifications.filter(notification =>
-    notification.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    notification.template_id.toLowerCase().includes(searchTerm.toLowerCase())
+  // Reset to page 1 whenever search term changes
+  useEffect(() => { setPage(1); }, [searchTerm]);
+
+  const filteredNotifications = notifications.filter(n =>
+    n.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    n.template_id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+  const computedTotalPages     = Math.max(1, Math.ceil(filteredNotifications.length / rowsPerPage));
+  const paginatedNotifications = filteredNotifications.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const failedNotifications   = filteredNotifications.filter(n => n.status === 'failed');
+  const successNotifications  = filteredNotifications.filter(n => n.status === 'success');
+  const pendingNotifications  = filteredNotifications.filter(n => ['pending','queued','running'].includes(n.status));
+  const readCount             = filteredNotifications.filter(n => Boolean(n.seen_at)).length;
 
-  const paginatedNotifications = filteredNotifications.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage
-  );
-
-  const failedNotifications = filteredNotifications.filter(n => n.status === 'failed');
-  const successNotifications = filteredNotifications.filter(n => n.status === 'success');
-  const pendingNotifications = filteredNotifications.filter(n => n.status === 'pending');
-
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-    const statusMap = ['all', 'success', 'failed', 'pending'];
-    setSearchParams({ status: statusMap[newValue] });
+  const handleTabChange = (_: React.SyntheticEvent, v: number) => {
+    setActiveTab(v);
+    setSearchParams({ status: ['all','success','failed','pending'][v] });
   };
 
   const handleStatusFilterChange = (newStatus: string) => {
     setPage(1);
     const params = new URLSearchParams(searchParams);
-    if (newStatus === 'all') {
-      params.delete('status');
-    } else {
-      params.set('status', newStatus);
-    }
+    newStatus === 'all' ? params.delete('status') : params.set('status', newStatus);
     setSearchParams(params);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircleIcon color="success" />;
-      case 'failed':
-        return <ErrorIcon color="error" />;
-      case 'pending':
-        return <PendingIcon color="warning" />;
-      default:
-        return <PendingIcon />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'success';
-      case 'failed':
-        return 'error';
-      case 'pending':
-        return 'warning';
-      default:
-        return 'default';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
-  };
-
-  // Get current status filter from URL params
   const currentStatusFilter = searchParams.get('status') || 'all';
+  const formatDate = (s: string) => new Date(s).toLocaleString();
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
+      <Box sx={{ bgcolor: 'background.default', minHeight: '100%', display: 'grid', placeItems: 'center', pt: 8 }}>
+        <CircularProgress size={32} />
       </Box>
     );
   }
 
   return (
-    <Box p={3}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Box>
-          <Typography variant="h3" component="h1" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Notifications
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Monitor and manage your email notifications
-          </Typography>
-        </Box>
-        <Box display="flex" gap={2}>
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchNotifications} color="primary">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          {failedNotifications.length > 0 && (
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100%' }}>
+      {/* ── Page header band ───────────────────────────────────── */}
+      <Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', px: { xs: 2, md: 3 }, pt: 2.5, pb: 2 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75 }}>
+          Console › Notifications
+        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box>
+            <Typography variant="h4">Notifications</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              Monitor and manage your email notifications
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={1} flexShrink={0}>
+            {failedNotifications.length > 0 && (
+              <Button
+                variant="outlined"
+                color="warning"
+                startIcon={<ReplayIcon sx={{ fontSize: 15 }} />}
+                onClick={() => void handleRetryMultiple(failedNotifications.map(n => n.id))}
+                size="small"
+              >
+                Retry failed ({failedNotifications.length})
+              </Button>
+            )}
             <Button
-              variant="contained"
-              color="error"
-              startIcon={<ReplayIcon />}
-              onClick={() => handleRetryMultiple(failedNotifications.map(n => n.id))}
+              variant="outlined"
+              startIcon={<RefreshIcon sx={{ fontSize: 15 }} />}
+              onClick={() => void fetchNotifications(true)}
+              disabled={refreshing}
+              size="small"
             >
-              Retry All Failed ({failedNotifications.length})
+              Refresh
             </Button>
+          </Stack>
+        </Stack>
+
+        {/* Summary strip */}
+        <Stack direction="row" spacing={1} sx={{ mt: 1.75 }} flexWrap="wrap">
+          <Chip size="small" variant="outlined" label={`${filteredNotifications.length} total`} />
+          <Chip size="small" variant="outlined" label={`${successNotifications.length} success`} color="success" />
+          {failedNotifications.length > 0 && (
+            <Chip size="small" variant="outlined" label={`${failedNotifications.length} failed`} color="error" />
+          )}
+          <Chip size="small" variant="outlined" label={`${readCount} read`} />
+        </Stack>
+      </Box>
+
+      {refreshing && <LinearProgress />}
+
+      {/* ── Content area ─────────────────────────────────────────── */}
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        {error   && <Alert severity="error"   sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
+
+        {/* All-in-one content panel */}
+        <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+          {/* Tab bar */}
+          <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><span>All</span><Chip label={filteredNotifications.length} size="small" variant="outlined" /></Stack>} />
+            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><CheckCircleIcon sx={{ fontSize: 14 }} /><span>Success</span><Chip label={successNotifications.length} size="small" variant="outlined" /></Stack>} />
+            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><ErrorIcon sx={{ fontSize: 14 }} /><span>Failed</span><Chip label={failedNotifications.length} size="small" variant="outlined" /></Stack>} />
+            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><PendingIcon sx={{ fontSize: 14 }} /><span>Pending</span><Chip label={pendingNotifications.length} size="small" variant="outlined" /></Stack>} />
+          </Tabs>
+
+          {/* Filter bar */}
+          <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+            <TextField
+              size="small"
+              placeholder="Search by email or template…"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              sx={{ flex: 1, minWidth: 220, maxWidth: 380 }}
+              InputProps={{ startAdornment: <SearchIcon sx={{ mr: 0.75, fontSize: 16, color: 'text.secondary' }} /> }}
+            />
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>Status</InputLabel>
+              <Select value={currentStatusFilter} onChange={e => handleStatusFilterChange(e.target.value as string)} label="Status">
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="success">Success</MenuItem>
+                <MenuItem value="failed">Failed</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="queued">Queued</MenuItem>
+                <MenuItem value="running">Running</MenuItem>
+              </Select>
+            </FormControl>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<FilterListIcon sx={{ fontSize: 14 }} />}
+              onClick={() => { setSearchTerm(''); handleStatusFilterChange('all'); }}
+            >
+              Clear filters
+            </Button>
+          </Box>
+
+          {/* Table */}
+          {filteredNotifications.length === 0 ? (
+            <Box sx={{ py: 6, textAlign: 'center' }}>
+              <EmailIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5, mb: 1.5 }} />
+              <Typography variant="h6" color="text.secondary">No notifications found</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {searchTerm ? 'Try adjusting your search criteria' : 'No notifications have been sent yet'}
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <TableContainer component={Paper} sx={{ border: 'none', borderRadius: 0, boxShadow: 'none' }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>ID</TableCell>
+                      <TableCell>Template</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Seen</TableCell>
+                      <TableCell>Executed at</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedNotifications.map((n) => (
+                      <React.Fragment key={n.id}>
+                        <TableRow
+                          hover
+                          onClick={() => toggleRow(n.id)}
+                          sx={{ cursor: 'pointer' }}
+                        >
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace', color: 'primary.main' }}>
+                              #{n.id}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>{n.template_id}</Typography>
+                          </TableCell>
+                          <TableCell sx={{ maxWidth: 240 }}>
+                            <Typography variant="body2" noWrap title={n.email}>{n.email}</Typography>
+                          </TableCell>
+                          <TableCell>{getStatusChip(n.status)}</TableCell>
+                          <TableCell>
+                            <Chip
+                              size="small"
+                              label={n.seen_at ? 'Read' : 'Unread'}
+                              variant="outlined"
+                              color={n.seen_at ? 'default' : 'primary'}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">{formatDate(n.executed_at)}</Typography>
+                          </TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Stack direction="row" spacing={1.5}>
+                              <Tooltip title={n.seen_at ? 'Mark unread' : 'Mark read'}>
+                                <IconButton size="small" onClick={() => void handleMarkSeen(n.id, !n.seen_at)}>
+                                  {n.seen_at ? <MarkEmailUnreadIcon sx={{ fontSize: 16 }} /> : <MarkEmailReadIcon sx={{ fontSize: 16 }} />}
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Details">
+                                <IconButton size="small" onClick={() => toggleRow(n.id)}>
+                                  {expandedRows.has(n.id) ? <ExpandLessIcon sx={{ fontSize: 16 }} /> : <ExpandMoreIcon sx={{ fontSize: 16 }} />}
+                                </IconButton>
+                              </Tooltip>
+                              {n.status === 'failed' && (
+                                <Tooltip title="Retry">
+                                  <IconButton size="small" onClick={() => void handleRetry(n.id)} disabled={retryLoading === n.id} color="error">
+                                    {retryLoading === n.id ? <CircularProgress size={14} /> : <ReplayIcon sx={{ fontSize: 16 }} />}
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              <Tooltip title="Resend">
+                                <IconButton size="small" onClick={() => void handleResend(n.id)} disabled={resendLoading === n.id} color="primary">
+                                  {resendLoading === n.id ? <CircularProgress size={14} /> : <EmailIcon sx={{ fontSize: 16 }} />}
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+
+                        {/* Expandable detail row */}
+                        <TableRow>
+                          <TableCell sx={{ p: 0, border: 0 }} colSpan={7}>
+                            <Collapse in={expandedRows.has(n.id)} timeout="auto" unmountOnExit>
+                              <Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', px: 3, py: 2, maxWidth: '100%', overflow: 'hidden' }}>
+                                <Typography variant="overline" sx={{ color: 'text.secondary', mb: 1.5, display: 'block' }}>
+                                  Notification details
+                                </Typography>
+                                <Grid container spacing={2}>
+                                  {[
+                                    { label: 'Template ID',  value: n.template_id },
+                                    { label: 'Email',        value: n.email },
+                                    { label: 'Executed at',  value: formatDate(n.executed_at) },
+                                    { label: 'Seen',         value: n.seen_at ? formatDate(n.seen_at) : 'Unread' },
+                                    { label: 'Execution run',value: n.execution_run_id || '—', mono: true },
+                                  ].map(row => (
+                                    <Grid item xs={12} sm={6} md={4} key={row.label}>
+                                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.25 }}>{row.label}</Typography>
+                                      <Typography variant="body2" sx={{ fontWeight: 500, fontFamily: row.mono ? 'monospace' : undefined, wordBreak: 'break-all' }}>{row.value}</Typography>
+                                    </Grid>
+                                  ))}
+                                  <Grid item xs={12} sm={6} md={4}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.25 }}>Status</Typography>
+                                    {getStatusChip(n.status)}
+                                  </Grid>
+                                </Grid>
+                                {n.error_message && (
+                                  <Alert severity="error" sx={{ mt: 1.5 }}>
+                                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{n.error_message}</Typography>
+                                  </Alert>
+                                )}
+                                {n.payload && Object.keys(n.payload).length > 0 && (
+                                  <Box sx={{ mt: 1.5 }}>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Payload</Typography>
+                                    <Box
+                                      component="pre"
+                                      sx={{
+                                        m: 0, p: 1.5,
+                                        bgcolor: 'background.default',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 1,
+                                        fontFamily: 'monospace',
+                                        fontSize: '0.75rem',
+                                        color: 'text.primary',
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-word',
+                                        maxHeight: 320,
+                                        overflowY: 'auto',
+                                      }}
+                                    >
+                                      {JSON.stringify(n.payload, null, 2)}
+                                    </Box>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Collapse>
+                          </TableCell>
+                        </TableRow>
+                      </React.Fragment>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {/* Pagination */}
+              {computedTotalPages > 1 && (
+                <Box sx={{ px: 2, py: 1.5, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end' }}>
+                  <Pagination count={computedTotalPages} page={page} onChange={(_, p) => setPage(p)} size="small" />
+                </Box>
+              )}
+            </>
           )}
         </Box>
       </Box>
 
-      {/* Status Tabs */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: 0 }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={handleTabChange}
-            sx={{
-              '& .MuiTab-root': {
-                minHeight: 64,
-                fontSize: '0.875rem',
-                fontWeight: 600,
-              },
-            }}
-          >
-            <Tab 
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Typography>All</Typography>
-                  <Chip label={filteredNotifications.length} size="small" color="primary" />
-                </Box>
-              } 
-            />
-            <Tab 
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CheckCircleIcon fontSize="small" />
-                  <Typography>Success</Typography>
-                  <Chip label={successNotifications.length} size="small" color="success" />
-                </Box>
-              } 
-            />
-            <Tab 
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <ErrorIcon fontSize="small" />
-                  <Typography>Failed</Typography>
-                  <Chip label={failedNotifications.length} size="small" color="error" />
-                </Box>
-              } 
-            />
-            <Tab 
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <PendingIcon fontSize="small" />
-                  <Typography>Pending</Typography>
-                  <Chip label={pendingNotifications.length} size="small" color="warning" />
-                </Box>
-              } 
-            />
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Search and Filters */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                placeholder="Search by email or template..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Status Filter</InputLabel>
-                <Select
-                  value={currentStatusFilter}
-                  onChange={(e) => handleStatusFilterChange(e.target.value)}
-                  label="Status Filter"
-                >
-                  <MenuItem value="all">All</MenuItem>
-                  <MenuItem value="success">Success</MenuItem>
-                  <MenuItem value="failed">Failed</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Button
-                variant="outlined"
-                startIcon={<FilterListIcon />}
-                onClick={() => {
-                  setSearchTerm('');
-                  handleStatusFilterChange('all');
-                }}
-                fullWidth
-              >
-                Clear Filters
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-
-      {loading ? (
-        <Box display="flex" justifyContent="center" p={3}>
-          <CircularProgress />
-        </Box>
-      ) : filteredNotifications.length === 0 ? (
-        <Card>
-          <CardContent>
-            <Box textAlign="center" py={4}>
-              <EmailIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                No notifications found
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {searchTerm ? 'Try adjusting your search criteria' : 'No notifications have been sent yet'}
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <TableContainer component={Paper} sx={{ mb: 2 }}>
-            <Table>
-              <TableHead>
-                <TableRow sx={{ backgroundColor: 'grey.50' }}>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Template</TableCell>
-                  <TableCell>Email</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Executed At</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedNotifications.map((notification) => (
-                  <React.Fragment key={notification.id}>
-                    <TableRow hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight="medium">
-                          #{notification.id}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2" fontWeight="medium">
-                            {notification.template_id}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box display="flex" alignItems="center">
-                          <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: 'primary.main' }}>
-                            {notification.email.charAt(0).toUpperCase()}
-                          </Avatar>
-                          <Typography variant="body2">
-                            {notification.email}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          {getStatusIcon(notification.status)}
-                          <Chip
-                            label={notification.status}
-                            size="small"
-                            color={getStatusColor(notification.status) as any}
-                          />
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2">
-                          {formatDate(notification.executed_at)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Box display="flex" gap={1}>
-                          <Tooltip title="View Details">
-                            <IconButton
-                              size="small"
-                              onClick={() => toggleRowExpansion(notification.id)}
-                            >
-                              {expandedRows.has(notification.id) ? 
-                                <ExpandLessIcon /> : <ExpandMoreIcon />
-                              }
-                            </IconButton>
-                          </Tooltip>
-                          {notification.status === 'failed' && (
-                            <Tooltip title="Retry">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleRetry(notification.id)}
-                                disabled={retryLoading === notification.id}
-                                color="error"
-                              >
-                                {retryLoading === notification.id ? (
-                                  <CircularProgress size={20} />
-                                ) : (
-                                  <ReplayIcon />
-                                )}
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          <Tooltip title="Resend">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleResend(notification.id)}
-                              disabled={resendLoading === notification.id}
-                              color="primary"
-                            >
-                              {resendLoading === notification.id ? (
-                                <CircularProgress size={20} />
-                              ) : (
-                                <EmailIcon />
-                              )}
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
-                        <Collapse in={expandedRows.has(notification.id)} timeout="auto" unmountOnExit>
-                          <Box sx={{ margin: 1 }}>
-                            <Card variant="outlined">
-                              <CardContent>
-                                <Typography variant="h6" gutterBottom>
-                                  Notification Details
-                                </Typography>
-                                <Grid container spacing={2}>
-                                  <Grid item xs={12} md={6}>
-                                    <Typography variant="subtitle2" color="text.secondary">
-                                      Template ID
-                                    </Typography>
-                                    <Typography variant="body2" gutterBottom>
-                                      {notification.template_id}
-                                    </Typography>
-                                  </Grid>
-                                  <Grid item xs={12} md={6}>
-                                    <Typography variant="subtitle2" color="text.secondary">
-                                      Email Address
-                                    </Typography>
-                                    <Typography variant="body2" gutterBottom>
-                                      {notification.email}
-                                    </Typography>
-                                  </Grid>
-                                  <Grid item xs={12} md={6}>
-                                    <Typography variant="subtitle2" color="text.secondary">
-                                      Status
-                                    </Typography>
-                                    {getStatusChip(notification.status)}
-                                  </Grid>
-                                  <Grid item xs={12} md={6}>
-                                    <Typography variant="subtitle2" color="text.secondary">
-                                      Executed At
-                                    </Typography>
-                                    <Typography variant="body2" gutterBottom>
-                                      {formatDate(notification.executed_at)}
-                                    </Typography>
-                                  </Grid>
-                                  {notification.error_message && (
-                                    <Grid item xs={12}>
-                                      <Typography variant="subtitle2" color="text.secondary">
-                                        Error Message
-                                      </Typography>
-                                      <Alert severity="error" sx={{ mt: 1 }}>
-                                        {notification.error_message}
-                                      </Alert>
-                                    </Grid>
-                                  )}
-                                  {notification.payload && Object.keys(notification.payload).length > 0 && (
-                                    <Grid item xs={12}>
-                                      <Typography variant="subtitle2" color="text.secondary">
-                                        Payload Data
-                                      </Typography>
-                                      <Box sx={{ 
-                                        bgcolor: 'grey.50', 
-                                        p: 2, 
-                                        borderRadius: 1,
-                                        fontFamily: 'monospace',
-                                        fontSize: '0.875rem'
-                                      }}>
-                                        {JSON.stringify(notification.payload, null, 2)}
-                                      </Box>
-                                    </Grid>
-                                  )}
-                                </Grid>
-                              </CardContent>
-                            </Card>
-                          </Box>
-                        </Collapse>
-                      </TableCell>
-                    </TableRow>
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Box display="flex" justifyContent="center" mt={3}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_, newPage) => setPage(newPage)}
-                color="primary"
-              />
-            </Box>
-          )}
-        </>
-      )}
-
-      {/* Snackbar for retry feedback */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-      >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: '100%' }}
-        >
+      <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar(s => ({ ...s, open: false }))}>
+        <Alert onClose={() => setSnackbar(s => ({ ...s, open: false }))} severity={snackbar.severity} sx={{ width: '100%' }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
@@ -661,4 +442,4 @@ const Notifications: React.FC = () => {
   );
 };
 
-export default Notifications; 
+export default Notifications;

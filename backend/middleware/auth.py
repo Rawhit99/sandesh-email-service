@@ -108,16 +108,48 @@ def get_current_user_from_api_key(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+
+def resolve_user_from_bearer_token(db: Session, token: str) -> Optional[User]:
+    """Resolve tenant user from JWT or database API key. Env-only API keys return None."""
+    if not token or not str(token).strip():
+        return None
+    t = str(token).strip()
+    payload = decode_access_token(t)
+    if payload and payload.get("sub"):
+        user = db.query(User).filter(User.username == payload["sub"]).first()
+        if user:
+            return user
+    if t in auth.api_keys:
+        return None
+    for key_obj in db.query(APIKey).filter(APIKey.is_active.is_(True)).all():
+        if APIKey.verify_key(t, key_obj.key_hash):
+            key_obj.last_used_at = datetime.utcnow()
+            db.commit()
+            return db.query(User).filter(User.id == key_obj.user_id).first()
+    return None
+
+
 def get_current_user_optional(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Security(security_optional),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ) -> Optional[User]:
-    """Get current user from API key (optional)"""
+    """Resolve user from JWT (dashboard) or database API key (optional)."""
     if credentials is None:
         return None
-    
-    try:
-        return get_current_user_from_api_key(request, credentials, db)
-    except HTTPException:
-        return None
+    return resolve_user_from_bearer_token(db, credentials.credentials)
+
+
+def get_current_user_any(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Security(security),
+    db: Session = Depends(get_db),
+) -> User:
+    """Require a logged-in user (JWT) or a database-linked API key."""
+    user = resolve_user_from_bearer_token(db, credentials.credentials)
+    if user is not None:
+        return user
+    raise HTTPException(
+        status_code=401,
+        detail="Use a database API key from API Keys, or sign in with JWT",
+    )

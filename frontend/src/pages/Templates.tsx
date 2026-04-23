@@ -1,45 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  CircularProgress,
   Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
+  LinearProgress,
+  Stack,
   Tabs,
   Tab,
-  Paper,
-  Divider,
   Tooltip,
-  Grid,
-  Chip,
-  Avatar,
-  LinearProgress,
+  Typography,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
+  Close as CloseIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   Preview as PreviewIcon,
   Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
-  Code as CodeIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
-import apiService, { EmailTemplate, TemplateCreate, TemplateValidationRequest, TemplateFormData } from '../services/api';
+import apiService, { EmailTemplate, TemplateFormData } from '../services/api';
 import TemplateEditor from '../components/TemplateEditor';
 
 const Templates: React.FC = () => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
@@ -48,44 +43,28 @@ const Templates: React.FC = () => {
   const [previewContent, setPreviewContent] = useState('');
   const [activeTab, setActiveTab] = useState(0);
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
+  const totalVariables = templates.reduce((acc, t) => acc + Object.keys(t.variables || {}).length, 0);
+  const activeTemplates   = templates.filter(t => t.is_active);
+  const inactiveTemplates = templates.filter(t => !t.is_active);
+  const currentTemplates  = activeTab === 0 ? activeTemplates : inactiveTemplates;
 
-  const fetchTemplates = async () => {
+  const fetchTemplates = async (background = false) => {
     try {
-      setLoading(true);
+      background ? setRefreshing(true) : setLoading(true);
       setError(null);
       const data = await apiService.getTemplates();
       setTemplates(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch templates');
-      console.error(err);
     } finally {
-      setLoading(false);
+      background ? setRefreshing(false) : setLoading(false);
     }
   };
 
-  const handleCreateTemplate = () => {
-    setSelectedTemplate(null);
-    setIsEditorOpen(true);
-  };
-
-  const handleEditTemplate = (template: EmailTemplate) => {
-    setSelectedTemplate(template);
-    setIsEditorOpen(true);
-  };
-
-  const handlePreviewTemplate = (template: EmailTemplate) => {
-    setPreviewContent(template.content);
-    setIsPreviewOpen(true);
-  };
+  useEffect(() => { void fetchTemplates(); }, []);
 
   const handleSaveTemplate = async (templateData: TemplateFormData) => {
     try {
-      setError(null);
-      setSuccess(null);
-
       if (selectedTemplate) {
         await apiService.updateTemplate(selectedTemplate.template_id, templateData);
         setSuccess('Template updated successfully');
@@ -93,400 +72,240 @@ const Templates: React.FC = () => {
         await apiService.addTemplate(templateData);
         setSuccess('Template created successfully');
       }
-
       setIsEditorOpen(false);
       setSelectedTemplate(null);
-      fetchTemplates();
-    } catch (error) {
-      console.error('Error saving template:', error);
+      void fetchTemplates(true);
+    } catch {
       setError('Failed to save template');
     }
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    if (window.confirm('Are you sure you want to delete this template?')) {
-      try {
-        await apiService.deleteTemplate(templateId);
-        setSuccess('Template deleted successfully');
-        fetchTemplates();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete template');
-        console.error(err);
-      }
+    if (!window.confirm('Delete this template? This cannot be undone.')) return;
+    try {
+      await apiService.deleteTemplate(templateId);
+      setSuccess('Template deleted');
+      void fetchTemplates(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete template');
     }
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
   const columns: GridColDef[] = [
-    { 
-      field: 'template_id', 
-      headerName: 'Template ID', 
-      width: 150,
-      renderCell: (params) => (
-        <Box display="flex" alignItems="center">
-          <Avatar sx={{ width: 32, height: 32, mr: 1, bgcolor: 'primary.main' }}>
-            {params.value.charAt(0).toUpperCase()}
-          </Avatar>
-          <Typography variant="body2" fontWeight="medium">
-            {params.value}
-          </Typography>
-        </Box>
-      )
-    },
-    { 
-      field: 'name', 
-      headerName: 'Name', 
-      width: 200,
-      renderCell: (params) => (
-        <Typography variant="body2" fontWeight="medium">
-          {params.value}
-        </Typography>
-      )
-    },
-    { 
-      field: 'subject', 
-      headerName: 'Subject', 
-      width: 250,
-      renderCell: (params) => (
-        <Typography variant="body2" noWrap>
-          {params.value}
-        </Typography>
-      )
+    {
+      field: 'template_id', headerName: 'Template ID', width: 160,
+      renderCell: (p) => <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: 'monospace', color: 'primary.main' }}>{p.value}</Typography>,
     },
     {
-      field: 'content',
-      headerName: 'Content Preview',
-      width: 300,
-      renderCell: (params) => {
-        const content = params.value as string;
-        const preview = content.replace(/<[^>]*>/g, '').substring(0, 100);
-        return (
-          <Typography variant="body2" color="text.secondary" noWrap>
-            {preview}...
-          </Typography>
-        );
-      },
+      field: 'name', headerName: 'Name', width: 180,
+      renderCell: (p) => <Typography variant="body2" sx={{ fontWeight: 500 }}>{p.value}</Typography>,
     },
     {
-      field: 'variables',
-      headerName: 'Variables',
-      width: 150,
-      renderCell: (params) => {
-        const variables = params.value as Record<string, string>;
-        const count = Object.keys(variables || {}).length;
-        return (
-          <Chip 
-            label={`${count} vars`} 
-            size="small" 
-            color="primary" 
-            variant="outlined"
-          />
-        );
-      },
+      field: 'subject', headerName: 'Subject', width: 240,
+      renderCell: (p) => <Typography variant="body2" noWrap>{p.value}</Typography>,
     },
     {
-      field: 'is_active',
-      headerName: 'Status',
-      width: 120,
-      renderCell: (params) => (
-        <Chip
-          label={params.value ? 'Active' : 'Inactive'}
-          size="small"
-          color={params.value ? 'success' : 'default'}
-          variant="filled"
-        />
-      ),
-    },
-    {
-      field: 'created_at',
-      headerName: 'Created',
-      width: 180,
-      renderCell: (params) => (
-        <Typography variant="body2" color="text.secondary">
-          {new Date(params.value).toLocaleDateString()}
+      field: 'content', headerName: 'Content preview', flex: 1, minWidth: 200,
+      renderCell: (p) => (
+        <Typography variant="body2" color="text.secondary" noWrap>
+          {(p.value as string).replace(/<[^>]*>/g, '').substring(0, 120)}
         </Typography>
       ),
     },
     {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 200,
-      sortable: false,
-      renderCell: (params) => (
-        <Box display="flex" gap={1}>
-          <Tooltip title="Preview Template">
-            <IconButton
-              size="small"
-              onClick={() => handlePreviewTemplate(params.row)}
-              color="primary"
-            >
-              <PreviewIcon />
+      field: 'variables', headerName: 'Variables', width: 110,
+      renderCell: (p) => (
+        <Chip label={`${Object.keys(p.value || {}).length} vars`} size="small" variant="outlined" />
+      ),
+    },
+    {
+      field: 'is_active', headerName: 'Status', width: 100,
+      renderCell: (p) => (
+        <Chip label={p.value ? 'Active' : 'Inactive'} size="small" variant="outlined" color={p.value ? 'success' : 'default'} />
+      ),
+    },
+    {
+      field: 'created_at', headerName: 'Created', width: 120,
+      renderCell: (p) => <Typography variant="body2" color="text.secondary">{new Date(p.value).toLocaleDateString()}</Typography>,
+    },
+    {
+      field: 'actions', headerName: 'Actions', width: 130, sortable: false,
+      renderCell: (p) => (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Preview">
+            <IconButton size="small" onClick={() => { setPreviewContent(p.row.content); setIsPreviewOpen(true); }}>
+              <PreviewIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Edit Template">
-            <IconButton
-              size="small"
-              onClick={() => handleEditTemplate(params.row)}
-              color="primary"
-            >
-              <EditIcon />
+          <Tooltip title="Edit">
+            <IconButton size="small" color="primary" onClick={() => { setSelectedTemplate(p.row); setIsEditorOpen(true); }}>
+              <EditIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete Template">
-            <IconButton
-              size="small"
-              onClick={() => handleDeleteTemplate(params.row.template_id)}
-              color="error"
-            >
-              <DeleteIcon />
+          <Tooltip title="Delete">
+            <IconButton size="small" color="error" onClick={() => void handleDeleteTemplate(p.row.template_id)}>
+              <DeleteIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-        </Box>
+        </Stack>
       ),
     },
   ];
 
-  // Filter templates based on active tab
-  const activeTemplates = templates.filter(t => t.is_active);
-  const inactiveTemplates = templates.filter(t => !t.is_active);
-  const currentTemplates = activeTab === 0 ? activeTemplates : inactiveTemplates;
-
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-        <CircularProgress />
+      <Box sx={{ bgcolor: 'background.default', minHeight: '100%', display: 'grid', placeItems: 'center', pt: 8 }}>
+        <CircularProgress size={32} />
       </Box>
     );
   }
 
   return (
-    <Box p={3}>
-      {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 1 }}>
-            Email Templates
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Create and manage your email templates
-          </Typography>
-        </Box>
-        <Box display="flex" gap={2}>
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchTemplates} color="primary">
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreateTemplate}
-            sx={{ borderRadius: 2 }}
-          >
-            Create Template
-          </Button>
+    <Box sx={{ bgcolor: 'background.default', minHeight: '100%' }}>
+      {/* ── Page header band ─────────────────────────────────────── */}
+      <Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', px: { xs: 2, md: 3 }, pt: 2.5, pb: 2 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.75 }}>
+          Console › Templates
+        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Box>
+            <Typography variant="h4">Email templates</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+              Create and manage reusable email templates with dynamic variables
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={1} flexShrink={0}>
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon sx={{ fontSize: 15 }} />}
+              onClick={() => void fetchTemplates(true)}
+              disabled={refreshing}
+              size="small"
+            >
+              Refresh
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon sx={{ fontSize: 15 }} />}
+              onClick={() => { setSelectedTemplate(null); setIsEditorOpen(true); }}
+              size="small"
+            >
+              Create template
+            </Button>
+          </Stack>
+        </Stack>
+
+        {/* Summary strip */}
+        <Stack direction="row" spacing={1} sx={{ mt: 1.75 }} flexWrap="wrap">
+          <Chip size="small" variant="outlined" label={`${templates.length} total`} />
+          <Chip size="small" variant="outlined" label={`${activeTemplates.length} active`} color="success" />
+          {inactiveTemplates.length > 0 && (
+            <Chip size="small" variant="outlined" label={`${inactiveTemplates.length} inactive`} />
+          )}
+          <Chip size="small" variant="outlined" label={`${totalVariables} variables`} />
+        </Stack>
+      </Box>
+
+      {refreshing && <LinearProgress />}
+
+      {/* ── Content area ─────────────────────────────────────────── */}
+      <Box sx={{ p: { xs: 2, md: 3 } }}>
+        {error   && <Alert severity="error"   sx={{ mb: 2 }} onClose={() => setError(null)}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>{success}</Alert>}
+
+        {/* Main content panel */}
+        <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
+          {/* Tabs */}
+          <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
+            <Tab
+              label={
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <VisibilityIcon sx={{ fontSize: 14 }} />
+                  <span>Active</span>
+                  <Chip label={activeTemplates.length} size="small" variant="outlined" />
+                </Stack>
+              }
+            />
+            <Tab
+              label={
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <VisibilityOffIcon sx={{ fontSize: 14 }} />
+                  <span>Inactive</span>
+                  <Chip label={inactiveTemplates.length} size="small" variant="outlined" />
+                </Stack>
+              }
+            />
+          </Tabs>
+
+          {/* Table / empty */}
+          {currentTemplates.length === 0 ? (
+            <Box sx={{ py: 8, textAlign: 'center' }}>
+              <VisibilityOffIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1.5, opacity: 0.5 }} />
+              <Typography variant="h6" color="text.secondary">
+                No {activeTab === 0 ? 'active' : 'inactive'} templates
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {activeTab === 0 ? 'Create your first template to get started' : 'All templates are currently active'}
+              </Typography>
+              {activeTab === 0 && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => { setSelectedTemplate(null); setIsEditorOpen(true); }}
+                  sx={{ mt: 2 }}
+                  size="small"
+                >
+                  Create template
+                </Button>
+              )}
+            </Box>
+          ) : (
+            <DataGrid
+              rows={currentTemplates}
+              columns={columns}
+              getRowId={(r) => r.template_id}
+              pageSizeOptions={[10, 25, 50]}
+              initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+              disableRowSelectionOnClick
+              autoHeight
+              sx={{
+                border: 'none',
+                borderRadius: 0,
+                '& .MuiDataGrid-columnHeaders': {
+                  backgroundColor: 'background.paper',
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  fontSize: '0.8125rem',
+                  fontWeight: 700,
+                  color: 'text.primary',
+                },
+                '& .MuiDataGrid-cell': {
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  fontSize: '0.8125rem',
+                },
+                '& .MuiDataGrid-row:hover': { backgroundColor: 'action.hover' },
+                '& .MuiDataGrid-footerContainer': {
+                  borderTop: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'background.paper',
+                },
+              }}
+            />
+          )}
         </Box>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {success && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {success}
-        </Alert>
-      )}
-
-      {/* Stats Cards */}
-      <Grid container spacing={2} mb={3}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <CodeIcon sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
-                <Box>
-                  <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                    {templates.length}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Templates
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <VisibilityIcon sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
-                <Box>
-                  <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                    {activeTemplates.length}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Active Templates
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <VisibilityOffIcon sx={{ fontSize: 40, color: 'warning.main', mr: 2 }} />
-                <Box>
-                  <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                    {inactiveTemplates.length}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Inactive Templates
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box display="flex" alignItems="center">
-                <CodeIcon sx={{ fontSize: 40, color: 'info.main', mr: 2 }} />
-                <Box>
-                  <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                    {templates.reduce((acc, t) => acc + Object.keys(t.variables || {}).length, 0)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Variables
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Template Tabs */}
-      <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: 0 }}>
-          <Tabs 
-            value={activeTab} 
-            onChange={handleTabChange}
-            sx={{
-              '& .MuiTab-root': {
-                minHeight: 64,
-                fontSize: '0.875rem',
-                fontWeight: 600,
-              },
-            }}
-          >
-            <Tab 
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <VisibilityIcon fontSize="small" />
-                  <Typography>Active Templates</Typography>
-                  <Chip label={activeTemplates.length} size="small" color="success" />
-                </Box>
-              } 
-            />
-            <Tab 
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <VisibilityOffIcon fontSize="small" />
-                  <Typography>Inactive Templates</Typography>
-                  <Chip label={inactiveTemplates.length} size="small" color="warning" />
-                </Box>
-              } 
-            />
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Templates Table */}
-      <Card>
-        <CardContent>
-          <Box sx={{ height: 600, width: '100%' }}>
-            {currentTemplates.length === 0 ? (
-              <Box 
-                display="flex" 
-                flexDirection="column" 
-                alignItems="center" 
-                justifyContent="center" 
-                height="100%"
-                py={4}
-              >
-                <VisibilityOffIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h6" color="text.secondary" gutterBottom>
-                  No {activeTab === 0 ? 'Active' : 'Inactive'} Templates
-                </Typography>
-                <Typography variant="body2" color="text.secondary" textAlign="center">
-                  {activeTab === 0 
-                    ? 'Create your first template to get started' 
-                    : 'All templates are currently active'
-                  }
-                </Typography>
-                {activeTab === 0 && (
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={handleCreateTemplate}
-                    sx={{ mt: 2 }}
-                  >
-                    Create Template
-                  </Button>
-                )}
-              </Box>
-            ) : (
-              <DataGrid
-                rows={currentTemplates}
-                columns={columns}
-                pageSizeOptions={[10, 25, 50]}
-                initialState={{
-                  pagination: { paginationModel: { pageSize: 10 } },
-                }}
-                disableRowSelectionOnClick
-                sx={{
-                  '& .MuiDataGrid-cell:hover': {
-                    backgroundColor: 'action.hover',
-                  },
-                  '& .MuiDataGrid-row:hover': {
-                    backgroundColor: 'action.hover',
-                  },
-                }}
-              />
-            )}
-          </Box>
-        </CardContent>
-      </Card>
-
-      {/* Template Editor Dialog */}
-      <Dialog
-        open={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
-        maxWidth="xl"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">
-              {selectedTemplate ? 'Edit Template' : 'Create New Template'}
-            </Typography>
-            <IconButton onClick={() => setIsEditorOpen(false)}>
-              <DeleteIcon />
-            </IconButton>
-          </Box>
+      {/* ── Editor dialog ──────────────────────────────────────────── */}
+      <Dialog open={isEditorOpen} onClose={() => setIsEditorOpen(false)} maxWidth="xl" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>{selectedTemplate ? 'Edit template' : 'Create template'}</span>
+          <IconButton size="small" onClick={() => setIsEditorOpen(false)}>
+            <CloseIcon sx={{ fontSize: 18 }} />
+          </IconButton>
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ p: 2 }}>
+          <Box sx={{ pt: 1 }}>
             <TemplateEditor
               initialData={selectedTemplate || undefined}
               onSave={handleSaveTemplate}
@@ -496,36 +315,25 @@ const Templates: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Preview Dialog */}
-      <Dialog
-        open={isPreviewOpen}
-        onClose={() => setIsPreviewOpen(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h6">Template Preview</Typography>
+      {/* ── Preview dialog ──────────────────────────────────────────── */}
+      <Dialog open={isPreviewOpen} onClose={() => setIsPreviewOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>Template preview</span>
+          <IconButton size="small" onClick={() => setIsPreviewOpen(false)}><CloseIcon sx={{ fontSize: 18 }} /></IconButton>
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ minHeight: 400 }}>
-            <div
-              dangerouslySetInnerHTML={{ __html: previewContent }}
-              style={{
-                border: '1px solid #e0e0e0',
-                borderRadius: '8px',
-                padding: '20px',
-                minHeight: '300px',
-                backgroundColor: '#ffffff'
-              }}
-            />
+          <Box sx={{ bgcolor: 'background.default', p: 2, borderRadius: 1 }}>
+            <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 3 }}>
+              <div dangerouslySetInnerHTML={{ __html: previewContent }} />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsPreviewOpen(false)}>Close</Button>
+          <Button variant="outlined" size="small" onClick={() => setIsPreviewOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
   );
 };
 
-export default Templates; 
+export default Templates;

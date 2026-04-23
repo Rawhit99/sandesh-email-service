@@ -10,8 +10,17 @@ Base = declarative_base()
 
 class NotificationStatus(enum.Enum):
     PENDING = "pending"
+    QUEUED = "queued"
+    RUNNING = "running"
     SUCCESS = "success"
     FAILED = "failed"
+
+
+class AttachmentItem(BaseModel):
+    filename: str
+    content_base64: str
+    mime_type: str = "application/octet-stream"
+
 
 class NotificationCreate(BaseModel):
     """Schema for creating a new notification."""
@@ -21,6 +30,11 @@ class NotificationCreate(BaseModel):
     payload: Dict[str, Any]
     subject: Optional[str] = None
     content: Optional[str] = None
+    subscriber_external_id: Optional[str] = None
+    channels: Optional[List[str]] = None
+    from_email: Optional[str] = None
+    sender_name: Optional[str] = None
+    attachments: Optional[List[AttachmentItem]] = None
 
     @field_validator('template_id')
     def validate_template_id(cls, v):
@@ -36,9 +50,9 @@ class NotificationCreate(BaseModel):
 
     @field_validator('payload')
     def validate_payload(cls, v):
-        if not v:
-            raise ValueError("Payload cannot be empty")
-        return v
+        if v is None:
+            raise ValueError("Payload cannot be None")
+        return v if isinstance(v, dict) else {}
 
     @field_validator('cc_emails')
     def validate_cc_emails(cls, v):
@@ -54,6 +68,10 @@ class NotificationResponse(BaseModel):
     payload: Dict[str, Any]
     executed_at: datetime
     status: NotificationStatus
+    execution_run_id: Optional[str] = None
+    subscriber_external_id: Optional[str] = None
+    seen_at: Optional[datetime] = None
+    user_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -62,12 +80,113 @@ class NotificationUpdate(BaseModel):
     """Schema for updating notification status."""
     status: NotificationStatus
 
+
+class EventTriggerRequest(NotificationCreate):
+    """SDK-style trigger body (same as notification + optional workflow label)."""
+
+    workflow_name: Optional[str] = Field(default=None, description="Logical workflow name for observability")
+
+
+class SubscriberCreate(BaseModel):
+    subscriber_id: str = Field(..., min_length=1, max_length=255)
+    email: EmailStr
+    data: Optional[Dict[str, Any]] = None
+    channels: Optional[List[str]] = None
+
+
+class SubscriberResponse(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    subscriber_id: str
+    email: str
+    data: Optional[Dict[str, Any]] = None
+    channels: Optional[List[str]] = None
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class SubscriberUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    data: Optional[Dict[str, Any]] = None
+    channels: Optional[List[str]] = None
+    is_active: Optional[bool] = None
+
+
+class IntegrationMeUpdate(BaseModel):
+    """Partial update for user-owned integrations (stored in DB). Omitted unchanged; empty string clears."""
+
+    slack_webhook_url: Optional[str] = None
+    teams_webhook_url: Optional[str] = None
+    firebase_credentials_path: Optional[str] = None
+    sns_push_topic_arn: Optional[str] = None
+    sns_access_key_id: Optional[str] = None
+    sns_secret_access_key: Optional[str] = None
+    sns_session_token: Optional[str] = None
+    sns_region: Optional[str] = None
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_whatsapp_from: Optional[str] = None
+    redis_url: Optional[str] = None
+    email_delivery: Optional[Dict[str, Any]] = None
+
+    @field_validator(
+        "slack_webhook_url",
+        "teams_webhook_url",
+        "firebase_credentials_path",
+        "sns_push_topic_arn",
+        "sns_access_key_id",
+        "sns_secret_access_key",
+        "sns_session_token",
+        "sns_region",
+        "twilio_account_sid",
+        "twilio_auth_token",
+        "twilio_whatsapp_from",
+        "redis_url",
+        mode="before",
+    )
+    @classmethod
+    def strip_optional(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return v.strip()
+        return v
+
+
+class IntegrationEnvStatus(BaseModel):
+    slack_incoming_webhook: bool
+    ms_teams_incoming_webhook: bool
+    firebase: bool
+    sns: bool
+    twilio_whatsapp: bool
+    redis_queue: bool
+    subscriber_required: bool
+    email_ses: bool
+    email_smtp: bool
+
+
+class IntegrationMeResponse(BaseModel):
+    slack_user_configured: bool
+    slack_user_hint: Optional[str] = None
+    teams_user_configured: bool
+    teams_user_hint: Optional[str] = None
+    environment: IntegrationEnvStatus
+    email_delivery: Optional[Dict[str, Any]] = None
+
+
 class TemplateBase(BaseModel):
     """Base schema for template operations."""
     name: str = Field(..., description="Template name")
     subject: str = Field(..., description="Email subject")
     content: str = Field(..., description="HTML content of the template")
     is_active: bool = Field(default=True, description="Whether the template is active")
+    default_attachments: Optional[List[Dict[str, Any]]] = Field(
+        default=None,
+        description="Optional default attachments [{filename, content_base64, mime_type}]",
+    )
 
 class TemplateValidationRequest(TemplateBase):
     """Schema for template validation request."""
@@ -133,6 +252,7 @@ class TemplateResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     preview_url: Optional[str] = None
+    user_id: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -144,6 +264,7 @@ class TemplateUpdate(BaseModel):
     content: Optional[str] = None
     variables: Optional[Dict[str, str]] = None
     is_active: Optional[bool] = None
+    default_attachments: Optional[List[Dict[str, Any]]] = None
 
     @field_validator('name')
     def validate_name(cls, v):
@@ -186,7 +307,7 @@ class StatsResponse(BaseModel):
     recent_notifications: List[NotificationSummary]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Notification(Base):
     __tablename__ = "notifications"
@@ -284,10 +405,115 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     username: str
+    organization_id: Optional[int] = None
     organization_name: Optional[str]
+    organization_role: Optional[str] = None
+    is_platform_admin: bool = False
     is_active: bool
     created_at: datetime
     
+    class Config:
+        from_attributes = True
+
+
+class PlatformOrganizationOut(BaseModel):
+    id: int
+    name: str
+    org_slug: Optional[str] = None
+    service_username: Optional[str] = None
+    has_tenant_account: bool = False
+
+
+class PlatformOrganizationCreate(BaseModel):
+    name: str
+    org_slug: Optional[str] = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        s = str(v).strip()
+        if len(s) < 2:
+            raise ValueError("Organization name must be at least 2 characters")
+        if len(s) > 255:
+            raise ValueError("Organization name is too long")
+        return s
+
+    @field_validator("org_slug")
+    @classmethod
+    def validate_slug(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        s = str(v).strip().lower()
+        import re
+        s = re.sub(r"[^a-z0-9\-_]", "-", s).strip("-")
+        if s and (len(s) < 2 or len(s) > 60):
+            raise ValueError("Organization ID must be 2-60 characters")
+        return s or None
+
+
+class PlatformOrganizationUpdate(BaseModel):
+    name: Optional[str] = None
+    org_slug: Optional[str] = None
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        s = str(v).strip()
+        if len(s) < 2:
+            raise ValueError("Organization name must be at least 2 characters")
+        if len(s) > 255:
+            raise ValueError("Organization name is too long")
+        return s
+
+
+class OrganizationSummary(BaseModel):
+    id: int
+    name: str
+    member_count: int
+
+
+class OrganizationMeResponse(BaseModel):
+    has_organization: bool
+    my_role: Optional[str] = None
+    organization: Optional[OrganizationSummary] = None
+
+
+class OrganizationCreate(BaseModel):
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_org_name(cls, v: str) -> str:
+        s = str(v).strip()
+        if len(s) < 2:
+            raise ValueError("Organization name must be at least 2 characters")
+        if len(s) > 255:
+            raise ValueError("Organization name is too long")
+        return s
+
+
+class OrganizationUpdate(BaseModel):
+    name: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_org_rename(cls, v: str) -> str:
+        s = str(v).strip()
+        if len(s) < 2:
+            raise ValueError("Organization name must be at least 2 characters")
+        if len(s) > 255:
+            raise ValueError("Organization name is too long")
+        return s
+
+
+class OrganizationMemberOut(BaseModel):
+    id: int
+    username: str
+    organization_role: Optional[str] = None
+    created_at: datetime
+
     class Config:
         from_attributes = True
 
@@ -333,3 +559,75 @@ class AuditLogResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# ── Integration Credentials ──────────────────────────────────────────────────
+
+SUPPORTED_CHANNELS = [
+    "aws_ses", "smtp", "sns", "slack", "ms_teams",
+    "firebase", "twilio_whatsapp", "redis_queue",
+]
+
+
+class IntegrationCredentialCreate(BaseModel):
+    channel: str
+    name: str
+    config: Dict[str, Any] = {}
+    is_default: bool = False
+
+    @field_validator("channel")
+    @classmethod
+    def validate_channel(cls, v: str) -> str:
+        if v not in SUPPORTED_CHANNELS:
+            raise ValueError(f"channel must be one of: {', '.join(SUPPORTED_CHANNELS)}")
+        return v
+
+    @field_validator("name")
+    @classmethod
+    def validate_cred_name(cls, v: str) -> str:
+        s = v.strip()
+        if len(s) < 1 or len(s) > 120:
+            raise ValueError("Credential name must be 1–120 characters")
+        return s
+
+
+class IntegrationCredentialUpdate(BaseModel):
+    name: Optional[str] = None
+    config: Optional[Dict[str, Any]] = None
+    is_default: Optional[bool] = None
+
+
+class IntegrationCredentialOut(BaseModel):
+    id: int
+    channel: str
+    name: str
+    config: Dict[str, Any]
+    is_default: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# ── Org Template Scope ──────────────────────────────────────────────────────
+
+class OrgTemplateSettingOut(BaseModel):
+    """One template's enabled/disabled status within an organisation context."""
+    template_id:   str
+    template_name: str
+    subject:       str
+    is_active:     bool   # template's own active flag
+    is_enabled:    bool   # org-level override (True = accessible to this org)
+
+    class Config:
+        from_attributes = True
+
+
+class OrgTemplateSettingUpdate(BaseModel):
+    is_enabled: bool
+
+
+class OrgTemplateBulkUpdate(BaseModel):
+    is_enabled:   bool
+    template_ids: Optional[List[str]] = None  # None → apply to ALL templates in the org
