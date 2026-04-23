@@ -22,9 +22,14 @@ def upgrade() -> None:
         return
     cols = {c["name"] for c in insp.get_columns("users")}
     if "integration_settings" not in cols:
-        op.add_column("users", sa.Column("integration_settings", JSONB(), nullable=True))
+        op.add_column(
+            "users", sa.Column("integration_settings", JSONB(), nullable=True)
+        )
     if "email_delivery_settings" not in cols:
-        op.add_column("users", sa.Column("email_delivery_settings", JSONB(), nullable=True))
+        op.add_column(
+            "users",
+            sa.Column("email_delivery_settings", JSONB(), nullable=True),
+        )
 
 
 def downgrade() -> None:

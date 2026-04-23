@@ -5,7 +5,12 @@ import secrets
 import uuid
 from typing import Optional, Tuple
 
-from fastapi import HTTPException
+from exceptions import (
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+)
 from middleware.auth_utils import (
     create_access_token,
     get_password_hash,
@@ -56,7 +61,9 @@ def _create_org_with_service_user(
 ) -> Organization:
     org = Organization(
         name=organization_name,
-        org_slug=_ensure_unique_org_slug(db, _build_org_slug(organization_name)),
+        org_slug=_ensure_unique_org_slug(
+            db, _build_org_slug(organization_name)
+        ),
     )
     db.add(org)
     db.flush()
@@ -86,7 +93,9 @@ def _assign_org_for_registration(
         return None, None, None
 
     display = str(organization_name).strip()
-    existing_org = db.query(Organization).filter(Organization.name == display).first()
+    existing_org = (
+        db.query(Organization).filter(Organization.name == display).first()
+    )
     if existing_org:
         return existing_org.id, display, "member"
 
@@ -95,9 +104,11 @@ def _assign_org_for_registration(
 
 
 def register_user(db: Session, user_data: UserCreate) -> UserResponse:
-    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    existing_user = (
+        db.query(User).filter(User.username == user_data.username).first()
+    )
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username already exists")
+        raise ConflictError("Username already exists")
 
     try:
         org_id, org_display, org_role = _assign_org_for_registration(
@@ -119,21 +130,21 @@ def register_user(db: Session, user_data: UserCreate) -> UserResponse:
         return to_user_response(user)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Conflict while creating user")
+        raise ConflictError("Conflict while creating user")
 
 
 def login_user(db: Session, credentials: LoginRequest) -> LoginResponse:
     user = db.query(User).filter(User.username == credentials.username).first()
-    if not user or not verify_password(credentials.password, user.password_hash):
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+    if not user or not verify_password(
+        credentials.password, user.password_hash
+    ):
+        raise UnauthorizedError("Incorrect username or password")
     if not user.is_active:
-        raise HTTPException(status_code=403, detail="User account is inactive")
+        raise ForbiddenError("User account is inactive")
 
-    access_token = create_access_token(data={"sub": user.username, "user_id": user.id})
+    access_token = create_access_token(
+        data={"sub": user.username, "user_id": user.id}
+    )
     return LoginResponse(
         access_token=access_token,
         token_type="bearer",
@@ -144,5 +155,5 @@ def login_user(db: Session, credentials: LoginRequest) -> LoginResponse:
 def get_user_by_username(db: Session, username: str) -> UserResponse:
     user = db.query(User).filter(User.username == username).first()
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise NotFoundError("User not found")
     return to_user_response(user)

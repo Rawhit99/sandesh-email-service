@@ -50,7 +50,9 @@ class NotificationCreate(BaseModel):
 
     @field_validator("payload")
     @classmethod
-    def validate_payload(cls, value: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def validate_payload(
+        cls, value: Optional[Dict[str, Any]]
+    ) -> Dict[str, Any]:
         if value is None:
             raise ValueError("Payload cannot be None")
         return value if isinstance(value, dict) else {}
@@ -90,7 +92,10 @@ class NotificationUpdate(BaseModel):
 
 
 class EventTriggerRequest(NotificationCreate):
-    """SDK-style trigger body (same as notification + optional workflow label)."""
+    """SDK-style trigger body.
+
+    Same as notification plus an optional workflow label.
+    """
 
     workflow_name: Optional[str] = Field(
         default=None,

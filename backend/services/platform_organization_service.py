@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 from typing import List
 
-from fastapi import HTTPException
+from exceptions import BadRequestError, ConflictError, NotFoundError
 from middleware.auth_utils import get_password_hash
 from models.models import EmailTemplate, Organization, OrgTemplateSetting, User
 from models.schema_domains.org_template_scope import (
@@ -48,20 +48,19 @@ def create_organization(
 ) -> PlatformOrganizationOut:
     name = body.name.strip()
     if len(name) < 2:
-        raise HTTPException(
-            status_code=400, detail="Organization name must be at least 2 characters"
+        raise BadRequestError(
+            "Organization name must be at least 2 characters"
         )
     if db.query(Organization).filter(Organization.name == name).first():
-        raise HTTPException(
-            status_code=409, detail="An organization with this name already exists"
-        )
+        raise ConflictError("An organization with this name already exists")
 
-    raw_slug = body.org_slug or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40]
+    raw_slug = (
+        body.org_slug
+        or re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:40]
+    )
     slug = raw_slug or "org"
     if db.query(Organization).filter(Organization.org_slug == slug).first():
-        raise HTTPException(
-            status_code=409, detail=f"Organization ID '{slug}' is already taken"
-        )
+        raise ConflictError(f"Organization ID '{slug}' is already taken")
 
     org = Organization(name=name, org_slug=slug)
     db.add(org)
@@ -69,9 +68,8 @@ def create_organization(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=409,
-            detail="An organization with this name or ID already exists",
+        raise ConflictError(
+            "An organization with this name or ID already exists"
         )
 
     svc = User(
@@ -88,9 +86,9 @@ def create_organization(
         db.flush()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail="Could not create tenant service account; retry with a different organization name.",
+        raise BadRequestError(
+            "Could not create tenant service account; "
+            "retry with a different organization name."
         )
     org.service_user_id = svc.id
     db.add(org)
@@ -106,7 +104,7 @@ def update_organization(
 ) -> PlatformOrganizationOut:
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
+        raise NotFoundError("Organization not found")
 
     if body.name is not None:
         new_name = body.name.strip()
@@ -119,8 +117,8 @@ def update_organization(
             .first()
         )
         if existing:
-            raise HTTPException(
-                status_code=409, detail="An organization with this name already exists"
+            raise ConflictError(
+                "An organization with this name already exists"
             )
         org.name = new_name
         if org.service_user_id:
@@ -140,9 +138,8 @@ def update_organization(
                 .first()
             )
             if existing:
-                raise HTTPException(
-                    status_code=409,
-                    detail=f"Organization ID '{new_slug}' is already taken",
+                raise ConflictError(
+                    f"Organization ID '{new_slug}' is already taken"
                 )
             org.org_slug = new_slug
 
@@ -151,14 +148,14 @@ def update_organization(
         db.refresh(org)
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Conflict updating organization")
+        raise ConflictError("Conflict updating organization")
     return _org_to_out(org, db)
 
 
 def _get_org_or_404(org_id: int, db: Session) -> Organization:
     org = db.query(Organization).filter(Organization.id == org_id).first()
     if not org:
-        raise HTTPException(status_code=404, detail="Organization not found")
+        raise NotFoundError("Organization not found")
     return org
 
 
@@ -174,9 +171,13 @@ def _settings_map(org_id: int, template_ids: List[str], db: Session) -> dict:
     return {r.template_id: r for r in rows}
 
 
-def list_org_template_scope(db: Session, org_id: int) -> List[OrgTemplateSettingOut]:
+def list_org_template_scope(
+    db: Session, org_id: int
+) -> List[OrgTemplateSettingOut]:
     _get_org_or_404(org_id, db)
-    templates = db.query(EmailTemplate).order_by(EmailTemplate.name.asc()).all()
+    templates = (
+        db.query(EmailTemplate).order_by(EmailTemplate.name.asc()).all()
+    )
     latest_by_template_id = {}
     for row in templates:
         if row.template_id not in latest_by_template_id:
@@ -213,9 +214,7 @@ def update_org_template_scope(
         .first()
     )
     if not tpl:
-        raise HTTPException(
-            status_code=404, detail="Template not found for this organisation"
-        )
+        raise NotFoundError("Template not found for this organisation")
 
     setting = (
         db.query(OrgTemplateSetting)

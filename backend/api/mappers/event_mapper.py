@@ -4,7 +4,10 @@ from typing import Optional
 
 from fastapi import HTTPException
 from models.models import Subscriber, User
-from models.schema_domains.notifications import AttachmentItem, NotificationCreate
+from models.schema_domains.notifications import (
+    AttachmentItem,
+    NotificationCreate,
+)
 from sqlalchemy.orm import Session
 
 from api.contracts.events import EventTriggerRequestV1

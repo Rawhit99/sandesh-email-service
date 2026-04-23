@@ -24,7 +24,12 @@ def upgrade() -> None:
     if "is_platform_admin" not in user_cols:
         op.add_column(
             "users",
-            sa.Column("is_platform_admin", sa.Boolean(), nullable=False, server_default="false"),
+            sa.Column(
+                "is_platform_admin",
+                sa.Boolean(),
+                nullable=False,
+                server_default="false",
+            ),
         )
         op.alter_column("users", "is_platform_admin", server_default=None)
 
@@ -63,7 +68,10 @@ def upgrade() -> None:
                     GROUP BY organization_id
                 ) sub
                 WHERE o.id = sub.oid
-                  AND (o.service_user_id IS NULL OR o.service_user_id <> sub.uid)
+                  AND (
+                      o.service_user_id IS NULL
+                      OR o.service_user_id <> sub.uid
+                  )
                 """
             )
         )
@@ -80,7 +88,10 @@ def downgrade() -> None:
                 "organizations",
                 type_="foreignkey",
             )
-            op.drop_index(op.f("ix_organizations_service_user_id"), table_name="organizations")
+            op.drop_index(
+                op.f("ix_organizations_service_user_id"),
+                table_name="organizations",
+            )
             op.drop_column("organizations", "service_user_id")
     if insp.has_table("users"):
         user_cols = {c["name"] for c in insp.get_columns("users")}

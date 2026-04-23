@@ -26,9 +26,8 @@ def user_effective_platform_admin(user: User) -> bool:
 
 
 def _parse_org_header(request: Request) -> Optional[str]:
-    raw = (
-        request.headers.get(ORG_HEADER)
-        or request.headers.get(ORG_HEADER.lower())
+    raw = request.headers.get(ORG_HEADER) or request.headers.get(
+        ORG_HEADER.lower()
     )
     if not raw or not str(raw).strip():
         return None

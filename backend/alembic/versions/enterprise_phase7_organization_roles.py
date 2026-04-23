@@ -21,7 +21,12 @@ def upgrade() -> None:
         return
     cols = {c["name"] for c in insp.get_columns("users")}
     if "organization_role" not in cols:
-        op.add_column("users", sa.Column("organization_role", sa.String(length=20), nullable=True))
+        op.add_column(
+            "users",
+            sa.Column(
+                "organization_role", sa.String(length=20), nullable=True
+            ),
+        )
 
     conn = bind
     conn.execute(
@@ -29,13 +34,22 @@ def upgrade() -> None:
             """
             WITH ranked AS (
                 SELECT id,
-                       ROW_NUMBER() OVER (PARTITION BY organization_id ORDER BY id) AS rn
+                       ROW_NUMBER() OVER (
+                           PARTITION BY organization_id
+                           ORDER BY id
+                       ) AS rn
                 FROM users
                 WHERE organization_id IS NOT NULL
-                  AND (organization_role IS NULL OR TRIM(organization_role) = '')
+                  AND (
+                      organization_role IS NULL
+                      OR TRIM(organization_role) = ''
+                  )
             )
             UPDATE users u
-            SET organization_role = CASE WHEN ranked.rn = 1 THEN 'admin' ELSE 'member' END
+            SET organization_role = CASE
+                WHEN ranked.rn = 1 THEN 'admin'
+                ELSE 'member'
+            END
             FROM ranked
             WHERE u.id = ranked.id
             """

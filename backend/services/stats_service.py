@@ -3,7 +3,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from models.models import EmailTemplate, Notification
-from models.schema_domains.notifications import NotificationSummary, StatsResponse
+from models.schema_domains.notifications import (
+    NotificationSummary,
+    StatsResponse,
+)
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -44,7 +47,9 @@ def get_stats(db: Session, user_id: int) -> StatsResponse:
         status_counts.get(s, 0) for s in ("pending", "queued", "running")
     )
     success_rate = (
-        (success_count / total_notifications * 100) if total_notifications > 0 else 0
+        (success_count / total_notifications * 100)
+        if total_notifications > 0
+        else 0
     )
     recent_notifications = (
         db.query(Notification)

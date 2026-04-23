@@ -49,26 +49,48 @@ def upgrade() -> None:
             sa.Column("updated_at", sa.DateTime(), nullable=False),
             sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
             sa.PrimaryKeyConstraint("id"),
-            sa.UniqueConstraint("user_id", "subscriber_id", name="uq_subscriber_user_ext"),
+            sa.UniqueConstraint(
+                "user_id", "subscriber_id", name="uq_subscriber_user_ext"
+            ),
         )
         try:
-            op.create_index(op.f("ix_subscribers_subscriber_id"), "subscribers", ["subscriber_id"], unique=False)
+            op.create_index(
+                op.f("ix_subscribers_subscriber_id"),
+                "subscribers",
+                ["subscriber_id"],
+                unique=False,
+            )
         except Exception:
             pass
         try:
-            op.create_index(op.f("ix_subscribers_user_id"), "subscribers", ["user_id"], unique=False)
+            op.create_index(
+                op.f("ix_subscribers_user_id"),
+                "subscribers",
+                ["user_id"],
+                unique=False,
+            )
         except Exception:
             pass
     else:
         idx = {ix["name"] for ix in insp.get_indexes("subscribers")}
         if "ix_subscribers_subscriber_id" not in idx:
             try:
-                op.create_index(op.f("ix_subscribers_subscriber_id"), "subscribers", ["subscriber_id"], unique=False)
+                op.create_index(
+                    op.f("ix_subscribers_subscriber_id"),
+                    "subscribers",
+                    ["subscriber_id"],
+                    unique=False,
+                )
             except Exception:
                 pass
         if "ix_subscribers_user_id" not in idx:
             try:
-                op.create_index(op.f("ix_subscribers_user_id"), "subscribers", ["user_id"], unique=False)
+                op.create_index(
+                    op.f("ix_subscribers_user_id"),
+                    "subscribers",
+                    ["user_id"],
+                    unique=False,
+                )
             except Exception:
                 pass
 
@@ -76,6 +98,7 @@ def upgrade() -> None:
         return
 
     cols = _notif_columns(bind)
+
     def _addcol(name: str, col) -> None:
         if name in cols:
             return
@@ -84,18 +107,39 @@ def upgrade() -> None:
         except Exception:
             pass
 
-    _addcol("subscriber_external_id", sa.Column("subscriber_external_id", sa.String(length=255), nullable=True))
-    _addcol("execution_run_id", sa.Column("execution_run_id", sa.String(length=36), nullable=True))
-    _addcol("channels_requested", sa.Column("channels_requested", sa.JSON(), nullable=True))
-    _addcol("from_email_override", sa.Column("from_email_override", sa.String(length=255), nullable=True))
-    _addcol("sender_display_name", sa.Column("sender_display_name", sa.String(length=255), nullable=True))
+    _addcol(
+        "subscriber_external_id",
+        sa.Column(
+            "subscriber_external_id", sa.String(length=255), nullable=True
+        ),
+    )
+    _addcol(
+        "execution_run_id",
+        sa.Column("execution_run_id", sa.String(length=36), nullable=True),
+    )
+    _addcol(
+        "channels_requested",
+        sa.Column("channels_requested", sa.JSON(), nullable=True),
+    )
+    _addcol(
+        "from_email_override",
+        sa.Column("from_email_override", sa.String(length=255), nullable=True),
+    )
+    _addcol(
+        "sender_display_name",
+        sa.Column("sender_display_name", sa.String(length=255), nullable=True),
+    )
     _addcol("attachments", sa.Column("attachments", sa.JSON(), nullable=True))
     _addcol("seen_at", sa.Column("seen_at", sa.DateTime(), nullable=True))
 
     idxn = _notif_indexes(bind)
     if "ix_notifications_execution_run_id" not in idxn:
         try:
-            op.create_index("ix_notifications_execution_run_id", "notifications", ["execution_run_id"])
+            op.create_index(
+                "ix_notifications_execution_run_id",
+                "notifications",
+                ["execution_run_id"],
+            )
         except Exception:
             pass
     if "ix_notifications_subscriber_external_id" not in idxn:
@@ -113,7 +157,10 @@ def downgrade() -> None:
     bind = op.get_bind()
     insp = inspect(bind)
     if insp.has_table("notifications"):
-        for ix in ("ix_notifications_subscriber_external_id", "ix_notifications_execution_run_id"):
+        for ix in (
+            "ix_notifications_subscriber_external_id",
+            "ix_notifications_execution_run_id",
+        ):
             try:
                 op.drop_index(ix, table_name="notifications")
             except Exception:
@@ -135,11 +182,15 @@ def downgrade() -> None:
                     pass
     if insp.has_table("subscribers"):
         try:
-            op.drop_index(op.f("ix_subscribers_user_id"), table_name="subscribers")
+            op.drop_index(
+                op.f("ix_subscribers_user_id"), table_name="subscribers"
+            )
         except Exception:
             pass
         try:
-            op.drop_index(op.f("ix_subscribers_subscriber_id"), table_name="subscribers")
+            op.drop_index(
+                op.f("ix_subscribers_subscriber_id"), table_name="subscribers"
+            )
         except Exception:
             pass
         op.drop_table("subscribers")

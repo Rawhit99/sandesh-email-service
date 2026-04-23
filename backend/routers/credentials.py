@@ -32,7 +32,7 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api/v1/credentials", tags=["credentials"])
 
-# ── endpoints ─────────────────────────────────────────────────────────────────
+# Endpoints
 
 
 @router.get("", response_model=List[IntegrationCredentialOut])
@@ -72,7 +72,9 @@ def update_credential(
     return update_credential_service(db, user.id, cred_id, body)
 
 
-@router.patch("/{cred_id}/set-default", response_model=IntegrationCredentialOut)
+@router.patch(
+    "/{cred_id}/set-default", response_model=IntegrationCredentialOut
+)
 def set_default_credential(
     cred_id: int,
     user: User = Depends(get_scope_tenant_user),

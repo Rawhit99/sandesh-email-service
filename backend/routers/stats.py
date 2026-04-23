@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from middleware.tenant_scope import get_scope_tenant_user
 from models.models import User, get_db
 from models.schema_domains.notifications import StatsResponse
@@ -13,10 +13,4 @@ async def get_stats(
     db: Session = Depends(get_db),
     user: User = Depends(get_scope_tenant_user),
 ):
-    try:
-        return get_stats_service(db, user.id)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error fetching statistics: {str(e)}",
-        )
+    return get_stats_service(db, user.id)

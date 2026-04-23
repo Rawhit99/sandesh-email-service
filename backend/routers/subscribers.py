@@ -40,7 +40,9 @@ def create_subscriber_contract_v1(
     return create_subscriber_v1(db, user, body)
 
 
-@router.get("/api/v1/subscribers/{subscriber_id}", response_model=SubscriberResponse)
+@router.get(
+    "/api/v1/subscribers/{subscriber_id}", response_model=SubscriberResponse
+)
 def get_subscriber_endpoint(
     subscriber_id: str,
     db: Session = Depends(get_db),
@@ -49,7 +51,9 @@ def get_subscriber_endpoint(
     return get_subscriber(db, user, subscriber_id)
 
 
-@router.patch("/api/v1/subscribers/{subscriber_id}", response_model=SubscriberResponse)
+@router.patch(
+    "/api/v1/subscribers/{subscriber_id}", response_model=SubscriberResponse
+)
 def update_subscriber_endpoint(
     subscriber_id: str,
     body: SubscriberUpdate,
@@ -68,7 +72,8 @@ def list_subscribers_endpoint(
 
 
 @router.patch(
-    "/api/v1/subscribers/{subscriber_id}/deactivate", response_model=SubscriberResponse
+    "/api/v1/subscribers/{subscriber_id}/deactivate",
+    response_model=SubscriberResponse,
 )
 def deactivate_subscriber_endpoint(
     subscriber_id: str,

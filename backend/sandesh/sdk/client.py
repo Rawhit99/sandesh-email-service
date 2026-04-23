@@ -8,13 +8,20 @@ import httpx
 
 
 class Sandesh:
-    def __init__(self, base_url: str, bearer_token: str, timeout: float = 60.0) -> None:
+    def __init__(
+        self, base_url: str, bearer_token: str, timeout: float = 60.0
+    ) -> None:
         self._base = base_url.rstrip("/")
-        self._headers = {"Authorization": f"Bearer {bearer_token}", "Content-Type": "application/json"}
+        self._headers = {
+            "Authorization": f"Bearer {bearer_token}",
+            "Content-Type": "application/json",
+        }
         self._timeout = timeout
 
     def _client(self) -> httpx.Client:
-        return httpx.Client(base_url=self._base, headers=self._headers, timeout=self._timeout)
+        return httpx.Client(
+            base_url=self._base, headers=self._headers, timeout=self._timeout
+        )
 
     def events_trigger(self, body: Dict[str, Any]) -> Dict[str, Any]:
         with self._client() as c:
@@ -28,7 +35,9 @@ class Sandesh:
             r.raise_for_status()
             return r.json()
 
-    def update_subscriber(self, subscriber_id: str, body: Dict[str, Any]) -> Dict[str, Any]:
+    def update_subscriber(
+        self, subscriber_id: str, body: Dict[str, Any]
+    ) -> Dict[str, Any]:
         with self._client() as c:
             r = c.patch(f"/api/v1/subscribers/{subscriber_id}", json=body)
             r.raise_for_status()

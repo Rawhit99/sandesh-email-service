@@ -2,7 +2,8 @@ from typing import Optional
 
 from api.contracts.events import EventTriggerRequestV1
 from config import settings
-from fastapi import APIRouter, Depends, HTTPException, Request
+from exceptions import ValidationError
+from fastapi import APIRouter, Depends, Request
 from middleware.auth import get_current_user_optional
 from middleware.rate_limit import limiter
 from models.models import User, get_db
@@ -36,12 +37,8 @@ async def trigger_event(
             email_service=email_service,
             current_user=current_user,
         )
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError as exc:
+        raise ValidationError(str(exc))
 
 
 @router.post("/v1/events/trigger", response_model=NotificationResponse)
@@ -61,9 +58,5 @@ async def trigger_event_contract_v1(
             current_user=current_user,
             email_service=email_service,
         )
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError as exc:
+        raise ValidationError(str(exc))

@@ -17,11 +17,14 @@ class UserCreate(BaseModel):
 
         has_alpha = any(char.isalpha() for char in value)
         has_digit = any(char.isdigit() for char in value)
-        has_special = any(char in "!@#$%^&*()_+-=[]{}|;:,.<>?" for char in value)
+        has_special = any(
+            char in "!@#$%^&*()_+-=[]{}|;:,.<>?" for char in value
+        )
 
         if not (has_alpha and has_digit and has_special):
             raise ValueError(
-                "Password must contain at least one letter, one number, and one special character"
+                "Password must contain at least one letter, one number, "
+                "and one special character"
             )
         return value
 

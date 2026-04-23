@@ -26,16 +26,25 @@ def upgrade() -> None:
         return
 
     for ix in insp.get_indexes("email_templates"):
-        if ix.get("name") == "ix_email_templates_template_id" and ix.get("unique"):
-            op.drop_index("ix_email_templates_template_id", table_name="email_templates")
+        if ix.get("name") == "ix_email_templates_template_id" and ix.get(
+            "unique"
+        ):
+            op.drop_index(
+                "ix_email_templates_template_id", table_name="email_templates"
+            )
             break
 
     cols = {c["name"] for c in insp.get_columns("email_templates")}
     if "user_id" not in cols:
-        op.add_column("email_templates", sa.Column("user_id", sa.Integer(), nullable=True))
+        op.add_column(
+            "email_templates",
+            sa.Column("user_id", sa.Integer(), nullable=True),
+        )
 
     insp = inspect(bind)
-    fk_names = {fk.get("name") for fk in insp.get_foreign_keys("email_templates")}
+    fk_names = {
+        fk.get("name") for fk in insp.get_foreign_keys("email_templates")
+    }
     if "fk_email_templates_user_id_users" not in fk_names:
         op.create_foreign_key(
             "fk_email_templates_user_id_users",
@@ -49,14 +58,18 @@ def upgrade() -> None:
     insp = inspect(bind)
     idx_names = {ix.get("name") for ix in insp.get_indexes("email_templates")}
     if "ix_email_templates_user_id" not in idx_names:
-        op.create_index("ix_email_templates_user_id", "email_templates", ["user_id"])
+        op.create_index(
+            "ix_email_templates_user_id", "email_templates", ["user_id"]
+        )
 
     op.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS uq_email_templates_legacy_template_id "
+        "CREATE UNIQUE INDEX IF NOT EXISTS "
+        "uq_email_templates_legacy_template_id "
         "ON email_templates (template_id) WHERE user_id IS NULL"
     )
     op.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS uq_email_templates_user_template_id "
+        "CREATE UNIQUE INDEX IF NOT EXISTS "
+        "uq_email_templates_user_template_id "
         "ON email_templates (user_id, template_id) WHERE user_id IS NOT NULL"
     )
 
@@ -73,7 +86,10 @@ def downgrade() -> None:
     cols = {c["name"] for c in insp.get_columns("email_templates")}
     if "user_id" in cols:
         op.execute("DROP INDEX IF EXISTS ix_email_templates_user_id")
-        op.execute("ALTER TABLE email_templates DROP CONSTRAINT IF EXISTS fk_email_templates_user_id_users")
+        op.execute(
+            "ALTER TABLE email_templates DROP CONSTRAINT IF EXISTS "
+            "fk_email_templates_user_id_users"
+        )
         op.drop_column("email_templates", "user_id")
 
     op.create_index(

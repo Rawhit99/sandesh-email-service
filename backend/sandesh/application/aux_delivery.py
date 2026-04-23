@@ -9,7 +9,9 @@ from typing import Any, Dict, List
 from sqlalchemy.orm import Session
 
 from models.models import Notification
-from sandesh.application.integration_webhooks import merge_user_webhooks_into_payload
+from sandesh.application.integration_webhooks import (
+    merge_user_webhooks_into_payload,
+)
 from sandesh.domain.enums import ChannelType
 from sandesh.infrastructure.channels.registry import dispatch_channel
 
@@ -46,7 +48,9 @@ async def deliver_auxiliary_channels(
         "to_email": notification.email,
         **(notification.payload or {}),
     }
-    payload = merge_user_webhooks_into_payload(db, getattr(notification, "user_id", None), payload)
+    payload = merge_user_webhooks_into_payload(
+        db, getattr(notification, "user_id", None), payload
+    )
     for name in names:
         if name == "email":
             continue

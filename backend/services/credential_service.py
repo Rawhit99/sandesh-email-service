@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import HTTPException
+from exceptions import ConflictError, NotFoundError
 from models.models import IntegrationCredential
 from models.schema_domains.integrations import (
     IntegrationCredentialCreate,
@@ -13,7 +13,9 @@ from models.schema_domains.integrations import (
 from sqlalchemy.orm import Session
 
 
-def _get_or_404(cred_id: int, user_id: int, db: Session) -> IntegrationCredential:
+def _get_or_404(
+    cred_id: int, user_id: int, db: Session
+) -> IntegrationCredential:
     cred = (
         db.query(IntegrationCredential)
         .filter(
@@ -23,7 +25,7 @@ def _get_or_404(cred_id: int, user_id: int, db: Session) -> IntegrationCredentia
         .first()
     )
     if not cred:
-        raise HTTPException(status_code=404, detail="Credential not found")
+        raise NotFoundError("Credential not found")
     return cred
 
 
@@ -49,10 +51,14 @@ def list_credentials(
     user_id: int,
     channel: Optional[str],
 ) -> List[IntegrationCredentialOut]:
-    q = db.query(IntegrationCredential).filter(IntegrationCredential.user_id == user_id)
+    q = db.query(IntegrationCredential).filter(
+        IntegrationCredential.user_id == user_id
+    )
     if channel:
         q = q.filter(IntegrationCredential.channel == channel)
-    return q.order_by(IntegrationCredential.channel, IntegrationCredential.name).all()
+    return q.order_by(
+        IntegrationCredential.channel, IntegrationCredential.name
+    ).all()
 
 
 def create_credential(
@@ -70,12 +76,9 @@ def create_credential(
         .first()
     )
     if existing:
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                f"A credential named '{body.name}' already exists "
-                f"for channel '{body.channel}'"
-            ),
+        raise ConflictError(
+            f"A credential named '{body.name}' already exists "
+            f"for channel '{body.channel}'"
         )
 
     now = datetime.utcnow()
@@ -96,7 +99,9 @@ def create_credential(
     return cred
 
 
-def get_credential(db: Session, user_id: int, cred_id: int) -> IntegrationCredentialOut:
+def get_credential(
+    db: Session, user_id: int, cred_id: int
+) -> IntegrationCredentialOut:
     return _get_or_404(cred_id, user_id, db)
 
 
@@ -119,11 +124,9 @@ def update_credential(
             .first()
         )
         if clash:
-            raise HTTPException(
-                status_code=409,
-                detail=(
-                    f"A credential named '{body.name}' already exists for this channel"
-                ),
+            raise ConflictError(
+                f"A credential named '{body.name}' already exists "
+                "for this channel"
             )
         cred.name = body.name
     if body.config is not None:

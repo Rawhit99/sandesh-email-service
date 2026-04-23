@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from exceptions import ValidationError
+from fastapi import APIRouter, Depends, Query
 from models.models import get_db
 from services.email_service import EmailService
 from services.ses_service import (
@@ -18,14 +19,8 @@ email_service = EmailService()
 
 @router.get("/v1/ses/quota")
 async def get_ses_quota(db: Session = Depends(get_db)):
-    try:
-        _ = db
-        return get_ses_quota_service()
-    except Exception:
-        raise HTTPException(
-            status_code=500,
-            detail="Error fetching SES quota information",
-        )
+    _ = db
+    return get_ses_quota_service()
 
 
 @router.post("/ses/verify-email")
@@ -33,25 +28,14 @@ async def verify_email_address(
     email: str = Query(..., description="Email address to verify"),
     db: Session = Depends(get_db),
 ):
+    _ = db
     try:
-        _ = db
         return verify_email_service(email_service, email)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError as exc:
+        raise ValidationError(str(exc))
 
 
 @router.get("/v1/verified-emails")
 async def get_verified_emails(db: Session = Depends(get_db)):
-    try:
-        _ = db
-        return get_verified_emails_service()
-    except Exception:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Error fetching verified emails. "
-                "Please check AWS credentials and permissions."
-            ),
-        )
+    _ = db
+    return get_verified_emails_service()

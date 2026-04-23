@@ -1,4 +1,4 @@
-"""Sandesh — enterprise notification primitives (queue, channels, subscribers)."""
+"""Sandesh enterprise notification primitives."""
 
 from sandesh.sdk import Sandesh
 

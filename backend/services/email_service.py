@@ -12,7 +12,13 @@ from typing import Any, Dict, List, Optional
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from config import settings
-from models.models import AuditLog, EmailTemplate, IntegrationCredential, Notification, User
+from models.models import (
+    AuditLog,
+    EmailTemplate,
+    IntegrationCredential,
+    Notification,
+    User,
+)
 from models.schema_domains.notifications import (
     NotificationCreate,
     NotificationResponse,
@@ -25,7 +31,10 @@ from sandesh.infrastructure.queue.publisher import (
 )
 from sqlalchemy.orm import Session
 
-from services.template_service import TemplateService, resolve_email_template_row
+from services.template_service import (
+    TemplateService,
+    resolve_email_template_row,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +48,11 @@ def _resolve_user_email_delivery(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         return None
-    base_cfg = user.email_delivery_settings if isinstance(user.email_delivery_settings, dict) else {}
+    base_cfg = (
+        user.email_delivery_settings
+        if isinstance(user.email_delivery_settings, dict)
+        else {}
+    )
     merged: Dict[str, Any] = dict(base_cfg)
 
     preferred_provider = (
@@ -124,8 +137,12 @@ def _resolve_user_email_delivery(
         ) or merged.get("ses_configuration_set")
     else:
         merged["email_provider"] = "smtp"
-        merged["smtp_host"] = pick("smtp_host", "host") or merged.get("smtp_host")
-        merged["smtp_port"] = pick("smtp_port", "port") or merged.get("smtp_port")
+        merged["smtp_host"] = pick("smtp_host", "host") or merged.get(
+            "smtp_host"
+        )
+        merged["smtp_port"] = pick("smtp_port", "port") or merged.get(
+            "smtp_port"
+        )
         merged["smtp_username"] = pick(
             "smtp_username",
             "username",
@@ -142,8 +159,12 @@ def _resolve_user_email_delivery(
             "from_email",
             "email_from",
         ) or merged.get("smtp_sender_email")
-        merged["smtp_use_tls"] = cfg.get("smtp_use_tls", merged.get("smtp_use_tls"))
-        merged["smtp_use_ssl"] = cfg.get("smtp_use_ssl", merged.get("smtp_use_ssl"))
+        merged["smtp_use_tls"] = cfg.get(
+            "smtp_use_tls", merged.get("smtp_use_tls")
+        )
+        merged["smtp_use_ssl"] = cfg.get(
+            "smtp_use_ssl", merged.get("smtp_use_ssl")
+        )
 
     return merged
 
@@ -159,7 +180,7 @@ def _optional_str(*candidates: Any) -> Optional[str]:
 
 
 def _coerce_attachment_list(raw: Any) -> List[Dict[str, Any]]:
-    """Build send-ready attachment dicts from ORM JSON (snake_case or camelCase keys)."""
+    """Build send-ready attachment dicts from ORM JSON."""
     if not raw or not isinstance(raw, list):
         return []
     out: List[Dict[str, Any]] = []
@@ -224,7 +245,7 @@ class EmailService:
         offset: int = 0,
         scope_user_id: Optional[int] = None,
     ) -> List[NotificationResponse]:
-        """Get notifications with optional filtering. When scope_user_id is set, only that tenant's rows."""
+        """Get notifications with optional filtering for tenant-owned rows."""
         query = db.query(Notification)
         if scope_user_id is not None:
             query = query.filter(Notification.user_id == scope_user_id)
@@ -249,7 +270,9 @@ class EmailService:
             .all()
         )
 
-        return [NotificationResponse.from_orm(notif) for notif in notifications]
+        return [
+            NotificationResponse.from_orm(notif) for notif in notifications
+        ]
 
     def get_notification_by_id(
         self,
@@ -257,22 +280,30 @@ class EmailService:
         notification_id: int,
         scope_user_id: Optional[int] = None,
     ) -> Optional[NotificationResponse]:
-        """Get specific notification by ID. When scope_user_id is set, enforce tenant ownership."""
+        """Get notification by ID with optional tenant ownership check."""
         q = db.query(Notification).filter(Notification.id == notification_id)
         if scope_user_id is not None:
             q = q.filter(Notification.user_id == scope_user_id)
         notification = q.first()
-        return NotificationResponse.from_orm(notification) if notification else None
+        return (
+            NotificationResponse.from_orm(notification)
+            if notification
+            else None
+        )
 
     def create_notification(
         self, db: Session, notification: NotificationCreate
     ) -> NotificationResponse:
         """Create a new notification"""
         # Validate template exists
-        template = resolve_email_template_row(db, notification.template_id, None)
+        template = resolve_email_template_row(
+            db, notification.template_id, None
+        )
 
         if not template:
-            raise ValueError(f"Template with ID '{notification.template_id}' not found")
+            raise ValueError(
+                f"Template with ID '{notification.template_id}' not found"
+            )
 
         db_notification = Notification(
             template_id=notification.template_id,
@@ -295,7 +326,7 @@ class EmailService:
         error_message: Optional[str] = None,
         scope_user_id: Optional[int] = None,
     ) -> Optional[NotificationResponse]:
-        """Update notification status. scope_user_id restricts caller-facing updates to the owning tenant."""
+        """Update notification status with optional tenant ownership check."""
         q = db.query(Notification).filter(Notification.id == notification_id)
         if scope_user_id is not None:
             q = q.filter(Notification.user_id == scope_user_id)
@@ -317,13 +348,19 @@ class EmailService:
         """Get notification statistics"""
         total = db.query(Notification).count()
         success_count = (
-            db.query(Notification).filter(Notification.status == "success").count()
+            db.query(Notification)
+            .filter(Notification.status == "success")
+            .count()
         )
         failed_count = (
-            db.query(Notification).filter(Notification.status == "failed").count()
+            db.query(Notification)
+            .filter(Notification.status == "failed")
+            .count()
         )
         pending_count = (
-            db.query(Notification).filter(Notification.status == "pending").count()
+            db.query(Notification)
+            .filter(Notification.status == "pending")
+            .count()
         )
         total_templates = db.query(EmailTemplate).count()
 
@@ -359,7 +396,9 @@ class EmailService:
                 return
 
             uid = getattr(notification, "user_id", None)
-            template = resolve_email_template_row(db, notification.template_id, uid)
+            template = resolve_email_template_row(
+                db, notification.template_id, uid
+            )
 
             if not template:
                 logger.error(f"Template {notification.template_id} not found")
@@ -382,21 +421,28 @@ class EmailService:
             except Exception as e:
                 logger.error(f"Error rendering template: {str(e)}")
                 self.update_notification_status(
-                    db, notification_id, "failed", f"Error rendering template: {str(e)}"
+                    db,
+                    notification_id,
+                    "failed",
+                    f"Error rendering template: {str(e)}",
                 )
                 return
 
             # Send email via configured provider
             try:
                 cc_emails = notification.payload.get("cc_emails", [])
-                # Prefer ORM column; payload _attachments is a duplicate copy from trigger — do not merge both.
+                # Prefer ORM attachments to avoid duplicate payload merges.
                 if notification.attachments:
-                    attach_list = _coerce_attachment_list(notification.attachments)
+                    attach_list = _coerce_attachment_list(
+                        notification.attachments
+                    )
                 else:
                     attach_list = _coerce_attachment_list(
                         notification.payload.get("_attachments")
                     )
-                tpl_attach = getattr(template, "default_attachments", None) or []
+                tpl_attach = (
+                    getattr(template, "default_attachments", None) or []
+                )
                 if tpl_attach:
                     attach_list = attach_list + _coerce_attachment_list(
                         list(tpl_attach)
@@ -410,17 +456,24 @@ class EmailService:
                     notification.payload.get("_sender_name"),
                 )
                 logger.info(
-                    "Send id=%s attachments=%s from_override=%s sender_name=%s",
+                    (
+                        "Send id=%s attachments=%s "
+                        "from_override=%s sender_name=%s"
+                    ),
                     notification_id,
                     len(attach_list),
                     bool(from_override),
                     bool(sender_name),
                 )
                 logger.info(f"CC emails from payload: {cc_emails}")
-                logger.info(f"Full notification payload: {notification.payload}")
+                logger.info(
+                    f"Full notification payload: {notification.payload}"
+                )
                 mail_cfg = _resolve_user_email_delivery(db, uid)
                 provider = (
-                    str(mail_cfg.get("email_provider") or "ses").lower().strip()
+                    str(mail_cfg.get("email_provider") or "ses")
+                    .lower()
+                    .strip()
                     if mail_cfg
                     else settings.email_provider.lower()
                 )
@@ -450,7 +503,9 @@ class EmailService:
                 if success:
                     notification.payload["message_id"] = message_id
                     db.commit()
-                    self.update_notification_status(db, notification_id, "success")
+                    self.update_notification_status(
+                        db, notification_id, "success"
+                    )
 
                     # Update audit log status
                     audit_log = (
@@ -473,7 +528,10 @@ class EmailService:
                     )
                 else:
                     self.update_notification_status(
-                        db, notification_id, "failed", error or "Email sending failed"
+                        db,
+                        notification_id,
+                        "failed",
+                        error or "Email sending failed",
                     )
 
                     # Update audit log status
@@ -489,12 +547,17 @@ class EmailService:
 
                     if audit_log:
                         audit_log.status = "failed"
-                        audit_log.error_message = error or "Email sending failed"
+                        audit_log.error_message = (
+                            error or "Email sending failed"
+                        )
                         db.commit()
             except Exception as e:
                 logger.error(f"Error sending email: {str(e)}")
                 self.update_notification_status(
-                    db, notification_id, "failed", f"Error sending email: {str(e)}"
+                    db,
+                    notification_id,
+                    "failed",
+                    f"Error sending email: {str(e)}",
                 )
 
                 # Update audit log status
@@ -516,7 +579,9 @@ class EmailService:
 
                     if audit_log:
                         audit_log.status = "failed"
-                        audit_log.error_message = f"Error sending email: {str(e)}"
+                        audit_log.error_message = (
+                            f"Error sending email: {str(e)}"
+                        )
                         db.commit()
         except Exception as e:
             logger.error(f"Unexpected error in send_email_async: {str(e)}")
@@ -557,7 +622,7 @@ class EmailService:
         attachments: Optional[List[Dict[str, Any]]] = None,
         mail_cfg: Optional[Dict[str, Any]] = None,
     ) -> tuple[bool, Optional[str], Optional[str]]:
-        """Send email using SMTP (optional per-user mail_cfg overrides global settings)."""
+        """Send email using SMTP with optional per-user config overrides."""
         try:
 
             def pick(key: str, fallback: Any) -> Any:
@@ -626,7 +691,9 @@ class EmailService:
             message_id = f"smtp_{int(datetime.utcnow().timestamp())}"
 
             logger.info(
-                f"SMTP email sent successfully to {to_email}. MessageId: {message_id}"
+                "SMTP email sent successfully to %s. MessageId: %s",
+                to_email,
+                message_id,
             )
             return True, message_id, None
 
@@ -665,10 +732,13 @@ class EmailService:
                     aws_session_token=mail_cfg.get("aws_session_token")
                     or settings.aws_session_token
                     or None,
-                    region_name=mail_cfg.get("aws_region") or settings.aws_region,
+                    region_name=mail_cfg.get("aws_region")
+                    or settings.aws_region,
                 )
                 default_sender = (
-                    mail_cfg.get("ses_sender_email") or settings.ses_sender_email or ""
+                    mail_cfg.get("ses_sender_email")
+                    or settings.ses_sender_email
+                    or ""
                 ).strip()
                 config_set = (
                     mail_cfg.get("ses_configuration_set")
@@ -728,7 +798,9 @@ class EmailService:
             message_id = response["MessageId"]
 
             logger.info(
-                f"Email sent successfully to {to_email}. MessageId: {message_id}"
+                "Email sent successfully to %s. MessageId: %s",
+                to_email,
+                message_id,
             )
             return True, message_id, None
 
@@ -747,11 +819,16 @@ class EmailService:
             return False, None, f"Unexpected error: {str(e)}"
 
     async def retry_notification(
-        self, db: Session, notification_id: int, scope_user_id: Optional[int] = None
+        self,
+        db: Session,
+        notification_id: int,
+        scope_user_id: Optional[int] = None,
     ) -> bool:
-        """Retry a failed notification. When scope_user_id is set, only that tenant's rows."""
+        """Retry a failed notification with optional tenant scoping."""
         try:
-            q = db.query(Notification).filter(Notification.id == notification_id)
+            q = db.query(Notification).filter(
+                Notification.id == notification_id
+            )
             if scope_user_id is not None:
                 q = q.filter(Notification.user_id == scope_user_id)
             notification = q.first()
@@ -765,14 +842,21 @@ class EmailService:
                     if enqueue_email_delivery(notification_id):
                         return True
                 except Exception:
-                    logger.exception("Retry enqueue failed; sending inline")
+                    logger.exception("Retry enqueue failed")
+                if not settings.queue_inline_fallback:
+                    notification.status = "failed"
+                    notification.error_message = "Queue enqueue failed"
+                    db.commit()
+                    return False
 
             notification.status = "pending"
             db.commit()
             await self.send_email_async(db, notification_id)
             return True
         except Exception as e:
-            logger.error(f"Error retrying notification {notification_id}: {str(e)}")
+            logger.error(
+                f"Error retrying notification {notification_id}: {str(e)}"
+            )
             return False
 
     def bulk_create_notifications(
@@ -801,7 +885,9 @@ class EmailService:
         for notif in notifications:
             db.refresh(notif)
 
-        return [NotificationResponse.from_orm(notif) for notif in notifications]
+        return [
+            NotificationResponse.from_orm(notif) for notif in notifications
+        ]
 
     def get_ses_send_quota(self) -> Dict[str, Any]:
         """Get SES sending quota and statistics"""
@@ -877,7 +963,9 @@ class EmailService:
                 settings.smtp_password = new_settings.get("smtp_password")
                 settings.smtp_use_tls = new_settings.get("smtp_use_tls", True)
                 settings.smtp_use_ssl = new_settings.get("smtp_use_ssl", False)
-                settings.smtp_sender_email = new_settings.get("smtp_sender_email")
+                settings.smtp_sender_email = new_settings.get(
+                    "smtp_sender_email"
+                )
 
             else:
                 # Test SES settings
@@ -886,12 +974,16 @@ class EmailService:
 
                 # Update SES settings
                 settings.email_provider = "ses"
-                settings.aws_access_key_id = new_settings.get("aws_access_key_id")
+                settings.aws_access_key_id = new_settings.get(
+                    "aws_access_key_id"
+                )
                 settings.aws_secret_access_key = new_settings.get(
                     "aws_secret_access_key"
                 )
                 settings.aws_region = new_settings.get("aws_region")
-                settings.ses_sender_email = new_settings.get("ses_sender_email")
+                settings.ses_sender_email = new_settings.get(
+                    "ses_sender_email"
+                )
                 settings.ses_configuration_set = new_settings.get(
                     "ses_configuration_set"
                 )
@@ -939,7 +1031,9 @@ class EmailService:
             test_client = boto3.client(
                 "ses",
                 aws_access_key_id=test_settings.get("aws_access_key_id"),
-                aws_secret_access_key=test_settings.get("aws_secret_access_key"),
+                aws_secret_access_key=test_settings.get(
+                    "aws_secret_access_key"
+                ),
                 region_name=test_settings.get("aws_region"),
             )
 

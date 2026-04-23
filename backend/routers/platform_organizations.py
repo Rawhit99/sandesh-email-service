@@ -2,7 +2,8 @@
 
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from exceptions import ForbiddenError
+from fastapi import APIRouter, Depends
 from middleware.auth import get_current_user_any
 from middleware.tenant_scope import user_effective_platform_admin
 from models.models import User, get_db
@@ -43,9 +44,8 @@ def _require_platform_admin(
     user: User = Depends(get_current_user_any),
 ) -> User:
     if not user_effective_platform_admin(user):
-        raise HTTPException(
-            status_code=403,
-            detail=("Platform administrator access is required for this operation."),
+        raise ForbiddenError(
+            "Platform administrator access is required for this operation."
         )
     return user
 

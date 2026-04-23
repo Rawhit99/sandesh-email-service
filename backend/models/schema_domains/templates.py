@@ -11,10 +11,15 @@ class TemplateBase(BaseModel):
     name: str = Field(..., description="Template name")
     subject: str = Field(..., description="Email subject")
     content: str = Field(..., description="HTML content of the template")
-    is_active: bool = Field(default=True, description="Whether the template is active")
+    is_active: bool = Field(
+        default=True, description="Whether the template is active"
+    )
     default_attachments: Optional[List[Dict[str, Any]]] = Field(
         default=None,
-        description="Optional default attachments [{filename, content_base64, mime_type}]",
+        description=(
+            "Optional default attachments "
+            "[{filename, content_base64, mime_type}]"
+        ),
     )
 
 
@@ -47,7 +52,8 @@ class TemplateCreate(TemplateBase):
             raise ValueError("Template ID cannot be empty")
         if not re.match(r"^[a-zA-Z0-9_-]+$", value.strip()):
             raise ValueError(
-                "Template ID can only contain letters, numbers, hyphens, and underscores"
+                "Template ID can only contain letters, numbers, "
+                "hyphens, and underscores"
             )
         return value.strip()
 

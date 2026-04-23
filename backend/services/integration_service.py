@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 from config import settings
-from fastapi import HTTPException
+from exceptions import BadRequestError
 from models.models import User
 from models.schema_domains.integrations import (
     IntegrationEnvStatus,
@@ -124,9 +124,7 @@ def update_integration_me(
             _apply_integration_settings_merge(user, url_key, "")
             continue
         if not str(val).startswith("https://"):
-            raise HTTPException(
-                status_code=400, detail=f"{url_key} must be an https URL"
-            )
+            raise BadRequestError(f"{url_key} must be an https URL")
         s = str(val).strip()
         hooks[url_key] = s
         _apply_integration_settings_merge(user, url_key, s)
@@ -156,9 +154,7 @@ def update_integration_me(
     if "email_delivery" in data and data["email_delivery"] is not None:
         patch = data["email_delivery"]
         if not isinstance(patch, dict):
-            raise HTTPException(
-                status_code=400, detail="email_delivery must be an object"
-            )
+            raise BadRequestError("email_delivery must be an object")
         cur = dict(user.email_delivery_settings or {})
         for k, v in patch.items():
             if v is None:
@@ -171,9 +167,7 @@ def update_integration_me(
                 cur[k] = v
         prov = str(cur.get("email_provider") or "").lower().strip()
         if prov and prov not in ("ses", "smtp"):
-            raise HTTPException(
-                status_code=400, detail="email_provider must be ses or smtp"
-            )
+            raise BadRequestError("email_provider must be ses or smtp")
         user.email_delivery_settings = cur or None
 
     user.channel_webhooks = hooks or {}

@@ -34,7 +34,9 @@ def upgrade():
             sa.Column("id", sa.Integer(), nullable=False),
             sa.Column("username", sa.String(length=255), nullable=False),
             sa.Column("password_hash", sa.String(length=255), nullable=False),
-            sa.Column("organization_name", sa.String(length=255), nullable=True),
+            sa.Column(
+                "organization_name", sa.String(length=255), nullable=True
+            ),
             sa.Column("is_active", sa.Boolean(), nullable=False),
             sa.Column("created_at", sa.DateTime(), nullable=False),
             sa.Column("updated_at", sa.DateTime(), nullable=False),
@@ -43,7 +45,9 @@ def upgrade():
     names = _index_names(bind, "users")
     if "ix_users_username" not in names:
         try:
-            op.create_index(op.f("ix_users_username"), "users", ["username"], unique=True)
+            op.create_index(
+                op.f("ix_users_username"), "users", ["username"], unique=True
+            )
         except Exception:
             pass
     if "ix_users_id" not in names:
@@ -68,12 +72,19 @@ def upgrade():
     names = _index_names(bind, "api_keys")
     if "ix_api_keys_key_hash" not in names:
         try:
-            op.create_index(op.f("ix_api_keys_key_hash"), "api_keys", ["key_hash"], unique=True)
+            op.create_index(
+                op.f("ix_api_keys_key_hash"),
+                "api_keys",
+                ["key_hash"],
+                unique=True,
+            )
         except Exception:
             pass
     if "ix_api_keys_id" not in names:
         try:
-            op.create_index(op.f("ix_api_keys_id"), "api_keys", ["id"], unique=False)
+            op.create_index(
+                op.f("ix_api_keys_id"), "api_keys", ["id"], unique=False
+            )
         except Exception:
             pass
 
@@ -97,22 +108,39 @@ def upgrade():
     names = _index_names(bind, "audit_logs")
     if "ix_audit_logs_created_at" not in names:
         try:
-            op.create_index(op.f("ix_audit_logs_created_at"), "audit_logs", ["created_at"], unique=False)
+            op.create_index(
+                op.f("ix_audit_logs_created_at"),
+                "audit_logs",
+                ["created_at"],
+                unique=False,
+            )
         except Exception:
             pass
     if "ix_audit_logs_id" not in names:
         try:
-            op.create_index(op.f("ix_audit_logs_id"), "audit_logs", ["id"], unique=False)
+            op.create_index(
+                op.f("ix_audit_logs_id"), "audit_logs", ["id"], unique=False
+            )
         except Exception:
             pass
     if "idx_user_created_at" not in names:
         try:
-            op.create_index("idx_user_created_at", "audit_logs", ["user_id", "created_at"], unique=False)
+            op.create_index(
+                "idx_user_created_at",
+                "audit_logs",
+                ["user_id", "created_at"],
+                unique=False,
+            )
         except Exception:
             pass
     if "idx_action_created_at" not in names:
         try:
-            op.create_index("idx_action_created_at", "audit_logs", ["action", "created_at"], unique=False)
+            op.create_index(
+                "idx_action_created_at",
+                "audit_logs",
+                ["action", "created_at"],
+                unique=False,
+            )
         except Exception:
             pass
 

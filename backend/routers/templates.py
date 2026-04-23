@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from middleware.tenant_scope import get_scope_tenant_user
 from models.models import User, get_db
 from models.schema_domains.templates import (
@@ -45,39 +45,32 @@ async def get_templates(
     db: Session = Depends(get_db),
     user: User = Depends(get_scope_tenant_user),
 ):
-    try:
-        return list_templates(
-            template_service=template_service,
-            db=db,
-            user_id=user.id,
-            limit=limit,
-            offset=offset,
-            active_only=active_only,
-        )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error")
+    return list_templates(
+        template_service=template_service,
+        db=db,
+        user_id=user.id,
+        limit=limit,
+        offset=offset,
+        active_only=active_only,
+    )
 
 
 @router.post("/v1/templates/preview")
-async def preview_template(template: TemplatePreview, db: Session = Depends(get_db)):
-    try:
-        _ = db
-        return preview_template_service(template_service, template)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception:
-        raise HTTPException(status_code=500, detail="Error previewing template")
+async def preview_template(
+    template: TemplatePreview,
+    db: Session = Depends(get_db),
+):
+    _ = db
+    return preview_template_service(template_service, template)
 
 
 @router.post("/v1/templates/validate")
-async def validate_template(template: TemplateCreate, db: Session = Depends(get_db)):
-    try:
-        _ = db
-        return validate_template_service(template_service, template)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error validating template: {str(e)}"
-        )
+async def validate_template(
+    template: TemplateCreate,
+    db: Session = Depends(get_db),
+):
+    _ = db
+    return validate_template_service(template_service, template)
 
 
 @router.post("/v1/templates", response_model=TemplateResponse)
@@ -86,10 +79,7 @@ async def create_template(
     db: Session = Depends(get_db),
     user: User = Depends(get_scope_tenant_user),
 ):
-    try:
-        return create_template_service(template_service, db, user.id, template)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return create_template_service(template_service, db, user.id, template)
 
 
 @router.get("/templates/{template_id}", response_model=TemplateResponse)
@@ -98,10 +88,7 @@ async def get_template(
     db: Session = Depends(get_db),
     user: User = Depends(get_scope_tenant_user),
 ):
-    try:
-        return get_template_service(template_service, db, user.id, template_id)
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error")
+    return get_template_service(template_service, db, user.id, template_id)
 
 
 @router.put("/v1/templates/{template_id}", response_model=TemplateResponse)
@@ -111,16 +98,13 @@ async def update_template(
     db: Session = Depends(get_db),
     user: User = Depends(get_scope_tenant_user),
 ):
-    try:
-        return update_template_service(
-            template_service,
-            db,
-            user.id,
-            template_id,
-            template,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return update_template_service(
+        template_service,
+        db,
+        user.id,
+        template_id,
+        template,
+    )
 
 
 @router.delete("/v1/templates/{template_id}")
@@ -129,12 +113,9 @@ async def delete_template(
     db: Session = Depends(get_db),
     user: User = Depends(get_scope_tenant_user),
 ):
-    try:
-        return delete_template_service(
-            template_service,
-            db,
-            user.id,
-            template_id,
-        )
-    except Exception:
-        raise HTTPException(status_code=500, detail="Internal server error")
+    return delete_template_service(
+        template_service,
+        db,
+        user.id,
+        template_id,
+    )

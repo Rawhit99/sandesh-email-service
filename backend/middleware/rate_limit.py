@@ -1,4 +1,4 @@
-"""Central SlowAPI limiter (IP / X-Forwarded-For). Toggle via settings.rate_limit_enabled."""
+"""Central SlowAPI limiter (IP / X-Forwarded-For)."""
 
 from __future__ import annotations
 

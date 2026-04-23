@@ -3,7 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import HTTPException, Request
+from fastapi import Request
+from exceptions import NotFoundError
 from models.models import Notification, User
 from models.schema_domains.notifications import (
     NotificationCreate,
@@ -69,7 +70,7 @@ def _owned_notification(
         .first()
     )
     if not row:
-        raise HTTPException(status_code=404, detail="Notification not found")
+        raise NotFoundError("Notification not found")
     return row
 
 
@@ -102,7 +103,7 @@ def update_notification_status(
         scope_user_id=user.id,
     )
     if not row:
-        raise HTTPException(status_code=404, detail="Notification not found")
+        raise NotFoundError("Notification not found")
     return row
 
 
@@ -119,7 +120,7 @@ def get_notification(
         scope_user_id=user.id,
     )
     if not row:
-        raise HTTPException(status_code=404, detail="Notification not found")
+        raise NotFoundError("Notification not found")
     return row
 
 
@@ -136,5 +137,5 @@ async def retry_notification(
         scope_user_id=user.id,
     )
     if not ok:
-        raise HTTPException(status_code=404, detail="Notification not found")
+        raise NotFoundError("Notification not found")
     return {"message": "Notification retry initiated successfully"}

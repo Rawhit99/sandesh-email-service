@@ -1,4 +1,4 @@
-"""Firebase Cloud Messaging — payload must include fcm_device_token (or device_token)."""
+"""Firebase Cloud Messaging delivery."""
 
 import logging
 from typing import Any, Dict
@@ -12,13 +12,19 @@ async def deliver_fcm(payload: Dict[str, Any]) -> ChannelResult:
     from config import settings
 
     cred_path = (
-        (payload.get("_firebase_credentials_path") or settings.firebase_credentials_path or "")
+        payload.get("_firebase_credentials_path")
+        or settings.firebase_credentials_path
+        or ""
     ).strip()
-    token = (payload.get("fcm_device_token") or payload.get("device_token") or "").strip()
+    token = (
+        payload.get("fcm_device_token") or payload.get("device_token") or ""
+    ).strip()
     if not cred_path:
         return ChannelResult(ok=False, detail="fcm_credentials_not_configured")
     if not token:
-        return ChannelResult(ok=False, detail="fcm_device_token_missing_in_payload")
+        return ChannelResult(
+            ok=False, detail="fcm_device_token_missing_in_payload"
+        )
 
     def _send() -> None:
         import firebase_admin

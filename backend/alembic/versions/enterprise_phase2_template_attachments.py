@@ -26,7 +26,10 @@ def upgrade() -> None:
     cols = {c["name"] for c in insp.get_columns("email_templates")}
     if "default_attachments" not in cols:
         try:
-            op.add_column("email_templates", sa.Column("default_attachments", JSONB, nullable=True))
+            op.add_column(
+                "email_templates",
+                sa.Column("default_attachments", JSONB, nullable=True),
+            )
         except Exception:
             pass
 

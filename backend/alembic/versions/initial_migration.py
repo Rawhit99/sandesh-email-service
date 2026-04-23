@@ -4,7 +4,8 @@ Revision ID: initial_migration
 Revises:
 Create Date: 2024-xx-xx
 
-Idempotent: skips if email_templates already exists (e.g. created by SQLAlchemy create_all).
+Idempotent: skips if email_templates already exists
+(e.g. created by SQLAlchemy create_all).
 """
 
 from alembic import op
@@ -38,7 +39,12 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("template_id"),
     )
-    op.create_index(op.f("ix_email_templates_template_id"), "email_templates", ["template_id"], unique=True)
+    op.create_index(
+        op.f("ix_email_templates_template_id"),
+        "email_templates",
+        ["template_id"],
+        unique=True,
+    )
 
 
 def downgrade() -> None:
@@ -46,5 +52,7 @@ def downgrade() -> None:
     insp = inspect(bind)
     if not insp.has_table("email_templates"):
         return
-    op.drop_index(op.f("ix_email_templates_template_id"), table_name="email_templates")
+    op.drop_index(
+        op.f("ix_email_templates_template_id"), table_name="email_templates"
+    )
     op.drop_table("email_templates")

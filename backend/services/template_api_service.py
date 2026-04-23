@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import HTTPException
+from exceptions import NotFoundError
 from models.schema_domains.templates import (
     TemplateCreate,
     TemplatePreview,
@@ -33,14 +33,20 @@ def preview_template(
     template_service: TemplateService,
     body: TemplatePreview,
 ) -> dict:
-    return {"preview": template_service.preview_template(body.content, body.variables)}
+    return {
+        "preview": template_service.preview_template(
+            body.content, body.variables
+        )
+    }
 
 
 def validate_template(
     template_service: TemplateService,
     body: TemplateCreate,
 ) -> dict:
-    body.variables = TemplateCreate.extract_variables(body.content, body.subject)
+    body.variables = TemplateCreate.extract_variables(
+        body.content, body.subject
+    )
     return template_service.validate_template_syntax(body.content)
 
 
@@ -50,7 +56,9 @@ def create_template(
     user_id: int,
     body: TemplateCreate,
 ) -> TemplateResponse:
-    body.variables = TemplateCreate.extract_variables(body.content, body.subject)
+    body.variables = TemplateCreate.extract_variables(
+        body.content, body.subject
+    )
     return template_service.create_template(db, body, owner_user_id=user_id)
 
 
@@ -66,7 +74,7 @@ def get_template(
         scope_user_id=user_id,
     )
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise NotFoundError("Template not found")
     return template
 
 
@@ -83,7 +91,7 @@ def update_template(
         scope_user_id=user_id,
     )
     if not existing:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise NotFoundError("Template not found")
     return template_service.update_template(
         db=db,
         template_id=template_id,
@@ -104,5 +112,5 @@ def delete_template(
         scope_user_id=user_id,
     )
     if not ok:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise NotFoundError("Template not found")
     return {"message": "Template deleted successfully"}

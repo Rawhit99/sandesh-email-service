@@ -37,7 +37,9 @@ email_service = EmailService()
 async def get_notifications(
     status: Optional[str] = Query(
         None,
-        description=("Filter by status: pending, queued, running, success, failed"),
+        description=(
+            "Filter by status: pending, queued, running, success, failed"
+        ),
     ),
     template_id: Optional[str] = Query(
         None,
@@ -50,7 +52,9 @@ async def get_notifications(
         le=1000,
         description="Number of notifications to return",
     ),
-    offset: int = Query(0, ge=0, description="Number of notifications to skip"),
+    offset: int = Query(
+        0, ge=0, description="Number of notifications to skip"
+    ),
     db: Session = Depends(get_db),
     user: User = Depends(get_scope_tenant_user),
 ):

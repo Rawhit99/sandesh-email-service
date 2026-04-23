@@ -29,12 +29,24 @@ def upgrade() -> None:
             sa.Column("updated_at", sa.DateTime(), nullable=False),
             sa.PrimaryKeyConstraint("id"),
         )
-        op.create_index(op.f("ix_organizations_id"), "organizations", ["id"], unique=False)
-        op.create_index(op.f("ix_organizations_name"), "organizations", ["name"], unique=True)
+        op.create_index(
+            op.f("ix_organizations_id"), "organizations", ["id"], unique=False
+        )
+        op.create_index(
+            op.f("ix_organizations_name"),
+            "organizations",
+            ["name"],
+            unique=True,
+        )
     else:
         org_indexes = {ix["name"] for ix in insp.get_indexes("organizations")}
         if "ix_organizations_name" not in org_indexes:
-            op.create_index(op.f("ix_organizations_name"), "organizations", ["name"], unique=True)
+            op.create_index(
+                op.f("ix_organizations_name"),
+                "organizations",
+                ["name"],
+                unique=True,
+            )
 
     user_cols = {c["name"] for c in insp.get_columns("users")}
     if "organization_id" not in user_cols:
@@ -50,7 +62,12 @@ def upgrade() -> None:
             ["id"],
             ondelete="SET NULL",
         )
-        op.create_index(op.f("ix_users_organization_id"), "users", ["organization_id"], unique=False)
+        op.create_index(
+            op.f("ix_users_organization_id"),
+            "users",
+            ["organization_id"],
+            unique=False,
+        )
 
     # Backfill org rows from legacy organization_name and link users.
     conn = bind
@@ -111,9 +128,15 @@ def downgrade() -> None:
     user_cols = {c["name"] for c in insp.get_columns("users")}
     if "organization_id" in user_cols:
         op.drop_index(op.f("ix_users_organization_id"), table_name="users")
-        op.drop_constraint(op.f("fk_users_organization_id_organizations"), "users", type_="foreignkey")
+        op.drop_constraint(
+            op.f("fk_users_organization_id_organizations"),
+            "users",
+            type_="foreignkey",
+        )
         op.drop_column("users", "organization_id")
     if insp.has_table("organizations"):
-        op.drop_index(op.f("ix_organizations_name"), table_name="organizations")
+        op.drop_index(
+            op.f("ix_organizations_name"), table_name="organizations"
+        )
         op.drop_index(op.f("ix_organizations_id"), table_name="organizations")
         op.drop_table("organizations")

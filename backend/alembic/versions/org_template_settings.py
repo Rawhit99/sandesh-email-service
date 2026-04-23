@@ -26,8 +26,8 @@ def _constraint_exists(conn, table: str, constraint: str) -> bool:
     return constraint in {c["name"] for c in ucs}
 
 
-revision = 'org_template_settings'
-down_revision = 'add_org_slug_creds'
+revision = "org_template_settings"
+down_revision = "add_org_slug_creds"
 branch_labels = None
 depends_on = None
 
@@ -35,30 +35,50 @@ depends_on = None
 def upgrade():
     conn = op.get_bind()
 
-    if not _table_exists(conn, 'org_template_settings'):
+    if not _table_exists(conn, "org_template_settings"):
         op.create_table(
-            'org_template_settings',
-            sa.Column('id',              sa.Integer(),     primary_key=True, autoincrement=True),
-            sa.Column('organization_id', sa.Integer(),     sa.ForeignKey('organizations.id', ondelete='CASCADE'), nullable=False),
-            sa.Column('template_id',     sa.String(255),   nullable=False),
-            sa.Column('is_enabled',      sa.Boolean(),     nullable=False, server_default='true'),
-            sa.Column('created_at',      sa.DateTime(),    nullable=False),
-            sa.Column('updated_at',      sa.DateTime(),    nullable=False),
+            "org_template_settings",
+            sa.Column(
+                "id", sa.Integer(), primary_key=True, autoincrement=True
+            ),
+            sa.Column(
+                "organization_id",
+                sa.Integer(),
+                sa.ForeignKey("organizations.id", ondelete="CASCADE"),
+                nullable=False,
+            ),
+            sa.Column("template_id", sa.String(255), nullable=False),
+            sa.Column(
+                "is_enabled",
+                sa.Boolean(),
+                nullable=False,
+                server_default="true",
+            ),
+            sa.Column("created_at", sa.DateTime(), nullable=False),
+            sa.Column("updated_at", sa.DateTime(), nullable=False),
         )
 
-    if _table_exists(conn, 'org_template_settings'):
-        if not _index_exists(conn, 'org_template_settings', 'ix_org_tpl_org_id'):
-            op.create_index('ix_org_tpl_org_id', 'org_template_settings', ['organization_id'])
+    if _table_exists(conn, "org_template_settings"):
+        if not _index_exists(
+            conn, "org_template_settings", "ix_org_tpl_org_id"
+        ):
+            op.create_index(
+                "ix_org_tpl_org_id",
+                "org_template_settings",
+                ["organization_id"],
+            )
 
-        if not _constraint_exists(conn, 'org_template_settings', 'uq_org_template_setting'):
+        if not _constraint_exists(
+            conn, "org_template_settings", "uq_org_template_setting"
+        ):
             op.create_unique_constraint(
-                'uq_org_template_setting',
-                'org_template_settings',
-                ['organization_id', 'template_id'],
+                "uq_org_template_setting",
+                "org_template_settings",
+                ["organization_id", "template_id"],
             )
 
 
 def downgrade():
     conn = op.get_bind()
-    if _table_exists(conn, 'org_template_settings'):
-        op.drop_table('org_template_settings')
+    if _table_exists(conn, "org_template_settings"):
+        op.drop_table("org_template_settings")

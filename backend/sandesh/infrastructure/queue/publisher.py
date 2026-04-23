@@ -17,12 +17,18 @@ def enqueue_email_delivery(notification_id: int) -> Optional[str]:
     import redis
     from rq import Queue
 
-    conn = redis.from_url(settings.redis_url)
-    q = Queue("sandesh-email", connection=conn)
+    conn = redis.from_url(
+        settings.redis_url,
+        socket_timeout=settings.redis_socket_timeout_seconds,
+        socket_connect_timeout=settings.redis_connect_timeout_seconds,
+    )
+    q = Queue(settings.queue_name, connection=conn)
     job = q.enqueue(
         "services.worker_tasks.process_email_notification",
         notification_id,
-        job_timeout="10m",
+        job_timeout=settings.queue_job_timeout,
+        result_ttl=settings.queue_result_ttl_seconds,
+        failure_ttl=settings.queue_failure_ttl_seconds,
     )
     logger.info("Queued notification %s as job %s", notification_id, job.id)
     return job.id

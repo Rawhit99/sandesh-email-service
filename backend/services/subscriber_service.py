@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from api.contracts.subscribers import SubscriberCreateRequestV1
-from fastapi import HTTPException
+from exceptions import ConflictError, NotFoundError
 from models.models import Subscriber, User
 from models.schema_domains.subscribers import (
     SubscriberCreate,
@@ -21,12 +21,13 @@ def _get_owned_subscriber(
     row = (
         db.query(Subscriber)
         .filter(
-            Subscriber.user_id == user.id, Subscriber.subscriber_id == subscriber_id
+            Subscriber.user_id == user.id,
+            Subscriber.subscriber_id == subscriber_id,
         )
         .first()
     )
     if not row:
-        raise HTTPException(status_code=404, detail="Subscriber not found")
+        raise NotFoundError("Subscriber not found")
     return row
 
 
@@ -65,10 +66,7 @@ def create_subscriber(
         .first()
     )
     if exists:
-        raise HTTPException(
-            status_code=409,
-            detail="subscriber_id already exists for this account",
-        )
+        raise ConflictError("subscriber_id already exists for this account")
     row = Subscriber(
         user_id=user.id,
         subscriber_id=body.subscriber_id.strip(),
@@ -88,7 +86,9 @@ def get_subscriber(
     user: User,
     subscriber_id: str,
 ) -> SubscriberResponse:
-    return SubscriberResponse.from_orm(_get_owned_subscriber(db, user, subscriber_id))
+    return SubscriberResponse.from_orm(
+        _get_owned_subscriber(db, user, subscriber_id)
+    )
 
 
 def update_subscriber(

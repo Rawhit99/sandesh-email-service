@@ -22,7 +22,14 @@ from sqlalchemy.orm import relationship, sessionmaker
 from config import settings
 
 # Database setup
-engine = create_engine(settings.database_url)
+engine = create_engine(
+    settings.database_url,
+    pool_pre_ping=True,
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
+    pool_timeout=settings.db_pool_timeout_seconds,
+    pool_recycle=settings.db_pool_recycle_seconds,
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -83,9 +90,9 @@ class User(Base):
         onupdate=datetime.utcnow,
         nullable=False,
     )
-    # Per-user outbound webhooks (Slack/Teams); merged with env defaults at send time.
+    # Per-user outbound webhooks (Slack/Teams), merged with env defaults.
     channel_webhooks = Column(JSONB, nullable=True)
-    # DB-backed integration + email delivery (preferred over .env when user owns the send).
+    # DB-backed integration and email delivery overrides when user owns send.
     integration_settings = Column(JSONB, nullable=True)
     email_delivery_settings = Column(JSONB, nullable=True)
 
@@ -110,7 +117,9 @@ class APIKey(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     key_hash = Column(String(255), nullable=False, unique=True, index=True)
-    key_prefix = Column(String(20), nullable=False)  # First 8 chars for display
+    key_prefix = Column(
+        String(20), nullable=False
+    )  # First 8 chars for display
     is_active = Column(Boolean, default=True, nullable=False)
     last_used_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -139,7 +148,9 @@ class AuditLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    action = Column(String(100), nullable=False)  # e.g., "email_sent", "email_failed"
+    action = Column(
+        String(100), nullable=False
+    )  # e.g., "email_sent", "email_failed"
     email_to = Column(String(255), nullable=True)
     template_id = Column(String(255), nullable=True)
     payload = Column(JSON, nullable=True)
@@ -169,7 +180,9 @@ class Subscriber(Base):
     __tablename__ = "subscribers"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id"), nullable=True, index=True
+    )
     subscriber_id = Column(String(255), nullable=False, index=True)
     email = Column(String(255), nullable=False)
     data = Column(JSON, nullable=True)
@@ -186,7 +199,9 @@ class Subscriber(Base):
     user = relationship("User", backref="subscribers")
 
     __table_args__ = (
-        UniqueConstraint("user_id", "subscriber_id", name="uq_subscriber_user_ext"),
+        UniqueConstraint(
+            "user_id", "subscriber_id", name="uq_subscriber_user_ext"
+        ),
     )
 
 
@@ -317,7 +332,9 @@ class OrgTemplateSetting(Base):
     organization = relationship("Organization", backref="template_settings")
 
     __table_args__ = (
-        UniqueConstraint("organization_id", "template_id", name="uq_org_template_setting"),
+        UniqueConstraint(
+            "organization_id", "template_id", name="uq_org_template_setting"
+        ),
         Index("ix_org_tpl_org_id", "organization_id"),
     )
 

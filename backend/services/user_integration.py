@@ -18,7 +18,7 @@ def _as_dict(raw: Any) -> Dict[str, Any]:
 
 
 def merged_integration_settings(user: User) -> Dict[str, str]:
-    """Slack/Teams/Firebase/SNS/Twilio strings merged from integration_settings + legacy channel_webhooks."""
+    """Merge integration strings from settings plus legacy channel_webhooks."""
     cfg: Dict[str, Any] = {}
     cfg.update(_as_dict(user.integration_settings))
     hooks = _as_dict(user.channel_webhooks)
@@ -42,7 +42,7 @@ def resolve_named_credential(
     user_id: int,
     credential_name: str,
 ) -> Optional[Dict[str, Any]]:
-    """Look up a named IntegrationCredential and return its config dict, or None if not found."""
+    """Look up a named IntegrationCredential and return config dict."""
     cred = (
         db.query(IntegrationCredential)
         .filter(
@@ -62,10 +62,10 @@ def resolve_named_credential(
 def merge_channel_overrides_into_payload(
     db: Session, user_id: Optional[int], payload: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """Inject _slack_webhook_url, _teams_*, Twilio/SNS/FCM overrides for auxiliary channels.
+    """Inject channel overrides for auxiliary channels.
 
-    If the payload contains ``credential_name``, the matching IntegrationCredential is looked
-    up and its config values are injected alongside the regular JSONB-based overrides.
+    If payload contains ``credential_name``, matching IntegrationCredential
+    values are injected alongside regular JSONB-based overrides.
     """
     out = dict(payload)
 
@@ -81,7 +81,9 @@ def merge_channel_overrides_into_payload(
                 if cfg.get("aws_access_key_id"):
                     out["_aws_access_key_id"] = cfg["aws_access_key_id"]
                 if cfg.get("aws_secret_access_key"):
-                    out["_aws_secret_access_key"] = cfg["aws_secret_access_key"]
+                    out["_aws_secret_access_key"] = cfg[
+                        "aws_secret_access_key"
+                    ]
                 if cfg.get("aws_session_token"):
                     out["_aws_session_token"] = cfg["aws_session_token"]
                 if cfg.get("aws_region"):
@@ -92,7 +94,9 @@ def merge_channel_overrides_into_payload(
                 if cfg.get("aws_access_key_id"):
                     out["_sns_access_key_id"] = cfg["aws_access_key_id"]
                 if cfg.get("aws_secret_access_key"):
-                    out["_sns_secret_access_key"] = cfg["aws_secret_access_key"]
+                    out["_sns_secret_access_key"] = cfg[
+                        "aws_secret_access_key"
+                    ]
                 if cfg.get("aws_session_token"):
                     out["_sns_session_token"] = cfg["aws_session_token"]
                 if cfg.get("aws_region"):
@@ -215,7 +219,8 @@ def effective_integration_flags(
 
     def on_redis() -> bool:
         return bool(
-            (ucfg.get("redis_url") or "").strip() or (settings.redis_url or "").strip()
+            (ucfg.get("redis_url") or "").strip()
+            or (settings.redis_url or "").strip()
         )
 
     def on_email_ses() -> bool:

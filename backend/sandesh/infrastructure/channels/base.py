@@ -15,5 +15,4 @@ class Channel(Protocol):
 
     name: ChannelType
 
-    async def send(self, payload: Dict[str, Any]) -> ChannelResult:
-        ...
+    async def send(self, payload: Dict[str, Any]) -> ChannelResult: ...

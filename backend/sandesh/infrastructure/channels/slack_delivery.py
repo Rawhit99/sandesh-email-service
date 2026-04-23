@@ -12,7 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 async def deliver_slack(payload: Dict[str, Any]) -> ChannelResult:
-    url = (payload.get("_slack_webhook_url") or settings.slack_incoming_webhook_url or "").strip()
+    url = (
+        payload.get("_slack_webhook_url")
+        or settings.slack_incoming_webhook_url
+        or ""
+    ).strip()
     if not url:
         return ChannelResult(ok=False, detail="slack_webhook_not_configured")
     title = str(payload.get("title") or "Notification")

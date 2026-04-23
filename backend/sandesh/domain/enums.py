@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class DeliveryPhase(str, Enum):
-    """Lifecycle for a single delivery unit (maps to DB notification.status)."""
+    """Lifecycle for a single delivery unit."""
 
     PENDING = "pending"
     QUEUED = "queued"

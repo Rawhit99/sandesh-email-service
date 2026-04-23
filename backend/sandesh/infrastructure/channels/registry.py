@@ -15,7 +15,9 @@ from sandesh.infrastructure.channels import (
 logger = logging.getLogger(__name__)
 
 
-async def dispatch_channel(channel: ChannelType, payload: Dict[str, Any]) -> ChannelResult:
+async def dispatch_channel(
+    channel: ChannelType, payload: Dict[str, Any]
+) -> ChannelResult:
     if channel == ChannelType.EMAIL:
         return ChannelResult(ok=True, detail="email_delegated")
     if channel == ChannelType.SLACK:
@@ -31,7 +33,9 @@ async def dispatch_channel(channel: ChannelType, payload: Dict[str, Any]) -> Cha
     return await stubs._stub_send(channel, payload)
 
 
-async def dispatch_all(channels: List[ChannelType], payload: Dict[str, Any]) -> List[ChannelResult]:
+async def dispatch_all(
+    channels: List[ChannelType], payload: Dict[str, Any]
+) -> List[ChannelResult]:
     out: List[ChannelResult] = []
     for ch in channels:
         out.append(await dispatch_channel(ch, payload))

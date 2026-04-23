@@ -1,4 +1,4 @@
-"""RQ worker entrypoints (sync). Keep small — DB session + status transitions."""
+"""RQ worker entrypoints (sync)."""
 
 import asyncio
 import logging
@@ -13,7 +13,11 @@ logger = logging.getLogger(__name__)
 def process_email_notification(notification_id: int) -> None:
     db = SessionLocal()
     try:
-        row = db.query(Notification).filter(Notification.id == notification_id).first()
+        row = (
+            db.query(Notification)
+            .filter(Notification.id == notification_id)
+            .first()
+        )
         if not row:
             logger.error("Notification %s missing", notification_id)
             return

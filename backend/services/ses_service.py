@@ -19,7 +19,8 @@ def get_ses_quota() -> dict:
         "max_24_hour_send": response["Max24HourSend"],
         "sent_last_24_hours": response["SentLast24Hours"],
         "sending_rate": response["MaxSendRate"],
-        "remaining_quota": response["Max24HourSend"] - response["SentLast24Hours"],
+        "remaining_quota": response["Max24HourSend"]
+        - response["SentLast24Hours"],
     }
 
 

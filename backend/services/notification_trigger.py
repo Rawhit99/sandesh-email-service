@@ -7,7 +7,13 @@ import uuid
 from typing import Optional
 
 from config import settings
-from fastapi import HTTPException, Request
+from exceptions import (
+    BadRequestError,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+)
+from fastapi import Request
 from middleware.tenant_scope import resolve_notification_scope_user
 from models.models import (
     AuditLog,
@@ -17,7 +23,10 @@ from models.models import (
     Subscriber,
     User,
 )
-from models.schema_domains.notifications import NotificationCreate, NotificationResponse
+from models.schema_domains.notifications import (
+    NotificationCreate,
+    NotificationResponse,
+)
 from sandesh.infrastructure.queue.publisher import (
     enqueue_email_delivery,
     is_queue_enabled,
@@ -44,13 +53,10 @@ async def trigger_email_notification(
     if settings.subscriber_required:
         sid = notification.subscriber_external_id
         if not sid:
-            raise HTTPException(
-                status_code=400, detail="subscriber_external_id is required"
-            )
+            raise BadRequestError("subscriber_external_id is required")
         if uid is None:
-            raise HTTPException(
-                status_code=401,
-                detail="Authentication required for subscriber-gated sends",
+            raise UnauthorizedError(
+                "Authentication required for subscriber-gated sends"
             )
         exists = (
             db.query(Subscriber)
@@ -62,24 +68,25 @@ async def trigger_email_notification(
             .first()
         )
         if not exists:
-            raise HTTPException(status_code=404, detail="Subscriber not found")
+            raise NotFoundError("Subscriber not found")
 
     template = resolve_email_template_row(db, notification.template_id, uid)
 
-    # ── Org-level template scope check ────────────────────────────────────────
+    # Org-level template scope check.
     if template and scope_user and scope_user.organization_id:
         scope_setting = (
             db.query(OrgTemplateSetting)
             .filter(
-                OrgTemplateSetting.organization_id == scope_user.organization_id,
+                OrgTemplateSetting.organization_id
+                == scope_user.organization_id,
                 OrgTemplateSetting.template_id == notification.template_id,
             )
             .first()
         )
         if scope_setting is not None and not scope_setting.is_enabled:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Template '{notification.template_id}' is disabled for this organisation.",
+            raise ForbiddenError(
+                f"Template '{notification.template_id}' is disabled "
+                "for this organisation."
             )
 
     if not template:
@@ -105,7 +112,9 @@ async def trigger_email_notification(
     if notification.sender_name:
         payload["_sender_name"] = notification.sender_name
     if notification.attachments:
-        payload["_attachments"] = [a.model_dump() for a in notification.attachments]
+        payload["_attachments"] = [
+            a.model_dump() for a in notification.attachments
+        ]
 
     channels = notification.channels or ["email"]
 
@@ -151,11 +160,16 @@ async def trigger_email_notification(
     job_id = None
     try:
         job_id = enqueue_email_delivery(db_row.id)
-    except Exception:
-        logger.exception("Queue enqueue failed; falling back to inline send")
+    except (ConnectionError, TimeoutError, OSError, RuntimeError, ValueError):
+        logger.exception("Queue enqueue failed")
     if not job_id:
-        db_row.status = "pending"
-        db.commit()
-        await email_service.send_email_async(db, db_row.id)
+        if settings.queue_inline_fallback:
+            db_row.status = "pending"
+            db.commit()
+            await email_service.send_email_async(db, db_row.id)
+        else:
+            db_row.status = "failed"
+            db_row.error_message = "Queue enqueue failed"
+            db.commit()
     db.refresh(db_row)
     return NotificationResponse.from_orm(db_row)

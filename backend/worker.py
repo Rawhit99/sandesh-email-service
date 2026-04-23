@@ -10,7 +10,7 @@ def main() -> None:
     url = (settings.redis_url or "").strip() or "redis://localhost:6379/0"
     conn = redis.from_url(url)
     with Connection(conn):
-        Worker(["sandesh-email"]).work()
+        Worker([settings.queue_name]).work()
 
 
 if __name__ == "__main__":
