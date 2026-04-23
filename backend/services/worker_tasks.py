@@ -3,7 +3,8 @@
 import asyncio
 import logging
 
-from models.models import SessionLocal, Notification
+from models.models import Notification, SessionLocal
+
 from services.email_service import EmailService
 
 logger = logging.getLogger(__name__)

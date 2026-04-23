@@ -4,10 +4,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from sqlalchemy.orm import Session
-
 from config import settings
 from models.models import IntegrationCredential, User
+from sqlalchemy.orm import Session
 
 
 def _as_dict(raw: Any) -> Dict[str, Any]:
@@ -114,7 +113,13 @@ def merge_channel_overrides_into_payload(
                 if cfg.get("from"):
                     out["_twilio_whatsapp_from"] = cfg["from"]
             elif channel == "smtp":
-                for k in ("smtp_host", "smtp_port", "smtp_username", "smtp_password", "smtp_from"):
+                for k in (
+                    "smtp_host",
+                    "smtp_port",
+                    "smtp_username",
+                    "smtp_password",
+                    "smtp_from",
+                ):
                     if cfg.get(k):
                         out[f"_{k}"] = cfg[k]
             elif channel == "firebase":
@@ -167,16 +172,28 @@ def effective_integration_flags(user: Optional[User]) -> Dict[str, Any]:
     ucfg: Dict[str, str] = merged_integration_settings(user) if user else {}
 
     def on_slack() -> bool:
-        return bool(ucfg.get("slack_webhook_url") or (settings.slack_incoming_webhook_url or "").strip())
+        return bool(
+            ucfg.get("slack_webhook_url")
+            or (settings.slack_incoming_webhook_url or "").strip()
+        )
 
     def on_teams() -> bool:
-        return bool(ucfg.get("teams_webhook_url") or (settings.ms_teams_incoming_webhook_url or "").strip())
+        return bool(
+            ucfg.get("teams_webhook_url")
+            or (settings.ms_teams_incoming_webhook_url or "").strip()
+        )
 
     def on_firebase() -> bool:
-        return bool(ucfg.get("firebase_credentials_path") or (settings.firebase_credentials_path or "").strip())
+        return bool(
+            ucfg.get("firebase_credentials_path")
+            or (settings.firebase_credentials_path or "").strip()
+        )
 
     def on_sns() -> bool:
-        return bool(ucfg.get("sns_push_topic_arn") or (settings.sns_push_topic_arn or "").strip())
+        return bool(
+            ucfg.get("sns_push_topic_arn")
+            or (settings.sns_push_topic_arn or "").strip()
+        )
 
     def on_twilio() -> bool:
         if all(
@@ -194,7 +211,9 @@ def effective_integration_flags(user: Optional[User]) -> Dict[str, Any]:
         )
 
     def on_redis() -> bool:
-        return bool((ucfg.get("redis_url") or "").strip() or (settings.redis_url or "").strip())
+        return bool(
+            (ucfg.get("redis_url") or "").strip() or (settings.redis_url or "").strip()
+        )
 
     def on_email_ses() -> bool:
         ed = merged_email_delivery_settings(user) if user else None
@@ -216,8 +235,10 @@ def effective_integration_flags(user: Optional[User]) -> Dict[str, Any]:
             return bool(
                 (str(ed.get("smtp_host") or "").strip())
                 and (str(ed.get("smtp_username") or "").strip())
-                and (str(ed.get("smtp_sender_email") or "").strip()
-                     or str(ed.get("smtp_username") or "").strip())
+                and (
+                    str(ed.get("smtp_sender_email") or "").strip()
+                    or str(ed.get("smtp_username") or "").strip()
+                )
             )
         return bool(
             settings.email_provider.lower() == "smtp"

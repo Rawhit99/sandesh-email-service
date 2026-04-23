@@ -7,9 +7,10 @@ from config import settings
 # Password hashing - using argon2 which has no password length limits
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-SECRET_KEY = settings.api_keys  # Using API keys as secret key for now
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
+# Prefer dedicated JWT secret key. Keep API_KEYS fallback for compatibility.
+SECRET_KEY = settings.jwt_secret_key or settings.api_keys
+ALGORITHM = settings.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_access_token_expire_minutes
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hash."""

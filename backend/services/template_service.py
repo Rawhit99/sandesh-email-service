@@ -1,31 +1,45 @@
-import re
 import html
+import re
+from typing import Any, Dict, List, Optional, Union
+
 from bs4 import BeautifulSoup
-from jinja2 import Template, Environment, FileSystemLoader, select_autoescape, TemplateSyntaxError
-from sqlalchemy.orm import Session
-from typing import Optional, List, Dict, Any, Set, Union
-from datetime import datetime
 from fastapi import HTTPException
-import time
-import uuid
-
+from jinja2 import (
+    Environment,
+    FileSystemLoader,
+    Template,
+    TemplateSyntaxError,
+    select_autoescape,
+)
 from models.models import EmailTemplate, Organization
-from models.schemas import TemplateCreate, TemplateResponse, TemplateUpdate
+from models.schema_domains.templates import (
+    TemplateCreate,
+    TemplateResponse,
+    TemplateUpdate,
+)
+from sqlalchemy.orm import Session
 
 
-def resolve_email_template_row(db: Session, template_id: str, user_id: Optional[int]) -> Optional[EmailTemplate]:
+def resolve_email_template_row(
+    db: Session, template_id: str, user_id: Optional[int]
+) -> Optional[EmailTemplate]:
     """Pick tenant-owned row first, then legacy shared row (user_id IS NULL)."""
     if user_id is not None:
         row = (
             db.query(EmailTemplate)
-            .filter(EmailTemplate.template_id == template_id, EmailTemplate.user_id == user_id)
+            .filter(
+                EmailTemplate.template_id == template_id,
+                EmailTemplate.user_id == user_id,
+            )
             .first()
         )
         if row:
             return row
     return (
         db.query(EmailTemplate)
-        .filter(EmailTemplate.template_id == template_id, EmailTemplate.user_id.is_(None))
+        .filter(
+            EmailTemplate.template_id == template_id, EmailTemplate.user_id.is_(None)
+        )
         .first()
     )
 
@@ -34,12 +48,15 @@ class TemplateService:
     def __init__(self):
         # Initialize Jinja2 environment for template rendering
         self.jinja_env = Environment(
-            loader=FileSystemLoader('app/templates/email'),
-            autoescape=select_autoescape(['html', 'xml'])
+            loader=FileSystemLoader("app/templates/email"),
+            autoescape=select_autoescape(["html", "xml"]),
         )
         # Keep only system-critical reserved variables
-        self.reserved_variables = {'email', 'date'}  # Removed 'name' from reserved variables
-    
+        self.reserved_variables = {
+            "email",
+            "date",
+        }  # Removed 'name' from reserved variables
+
     def get_templates(
         self,
         db: Session,
@@ -57,12 +74,17 @@ class TemplateService:
             if active_only:
                 query = query.filter(EmailTemplate.is_active.is_(True))
 
-            templates = query.order_by(EmailTemplate.created_at.desc()).offset(offset).limit(limit).all()
-            
+            templates = (
+                query.order_by(EmailTemplate.created_at.desc())
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
+
             return [TemplateResponse.from_orm(template) for template in templates]
         except Exception as e:
             raise ValueError(f"Failed to fetch templates: {str(e)}")
-    
+
     def get_template_by_id(
         self, db: Session, template_id: str, scope_user_id: Optional[int] = None
     ) -> Optional[TemplateResponse]:
@@ -76,8 +98,10 @@ class TemplateService:
             return TemplateResponse.from_orm(template) if template else None
         except Exception as e:
             raise ValueError(f"Failed to fetch template: {str(e)}")
-    
-    def create_template(self, db: Session, template: TemplateCreate, owner_user_id: int) -> TemplateResponse:
+
+    def create_template(
+        self, db: Session, template: TemplateCreate, owner_user_id: int
+    ) -> TemplateResponse:
         """Create a template owned by owner_user_id."""
         existing_template = (
             db.query(EmailTemplate)
@@ -119,7 +143,9 @@ class TemplateService:
             return TemplateResponse.from_orm(db_template)
         except Exception as e:
             db.rollback()
-            raise HTTPException(status_code=500, detail=f"Error creating template: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Error creating template: {str(e)}"
+            )
 
     def _replicate_template_to_all_orgs(
         self,
@@ -175,21 +201,28 @@ class TemplateService:
             cloned = dict(template_data)
             cloned["user_id"] = target_user_id
             db.add(EmailTemplate(**cloned))
-    
+
     def update_template(
-        self, db: Session, template_id: str, template: TemplateUpdate, scope_user_id: int
+        self,
+        db: Session,
+        template_id: str,
+        template: TemplateUpdate,
+        scope_user_id: int,
     ) -> TemplateResponse:
         db_template = (
             db.query(EmailTemplate)
-            .filter(EmailTemplate.template_id == template_id, EmailTemplate.user_id == scope_user_id)
+            .filter(
+                EmailTemplate.template_id == template_id,
+                EmailTemplate.user_id == scope_user_id,
+            )
             .first()
         )
         if not db_template:
             raise HTTPException(status_code=404, detail="Template not found")
-        
+
         # Track if we need to re-extract variables
         should_extract_variables = False
-        
+
         # Only update fields that are provided
         if template.name is not None:
             db_template.name = template.name
@@ -199,14 +232,17 @@ class TemplateService:
         if template.content is not None:
             db_template.content = template.content
             should_extract_variables = True
-        
+
         # Auto-extract variables if content or subject changed
         # Ignore variables from frontend to ensure they match the actual template
         if should_extract_variables:
-            from models.schemas import TemplateCreate
-            extracted_vars = TemplateCreate.extract_variables(db_template.content, db_template.subject)
+            from models.schema_domains.templates import TemplateCreate
+
+            extracted_vars = TemplateCreate.extract_variables(
+                db_template.content, db_template.subject
+            )
             db_template.variables = extracted_vars
-        
+
         if template.is_active is not None:
             is_active = template.is_active
             if isinstance(is_active, str):
@@ -222,29 +258,36 @@ class TemplateService:
             return TemplateResponse.from_orm(db_template)
         except Exception as e:
             db.rollback()
-            raise HTTPException(status_code=500, detail=f"Error updating template: {str(e)}")
-    
-    def delete_template(self, db: Session, template_id: str, scope_user_id: int) -> bool:
+            raise HTTPException(
+                status_code=500, detail=f"Error updating template: {str(e)}"
+            )
+
+    def delete_template(
+        self, db: Session, template_id: str, scope_user_id: int
+    ) -> bool:
         """Hard delete a tenant-owned template."""
         try:
             db_template = (
                 db.query(EmailTemplate)
-                .filter(EmailTemplate.template_id == template_id, EmailTemplate.user_id == scope_user_id)
+                .filter(
+                    EmailTemplate.template_id == template_id,
+                    EmailTemplate.user_id == scope_user_id,
+                )
                 .first()
             )
-            
+
             if not db_template:
                 return False
-            
+
             # Perform hard delete
             db.delete(db_template)
             db.commit()
-            
+
             return True
         except Exception as e:
             db.rollback()
             raise ValueError(f"Failed to delete template: {str(e)}")
-    
+
     def render_template(self, template_content: str, context: Dict[str, Any]) -> str:
         """Render template with provided context using Jinja2"""
         try:
@@ -252,7 +295,7 @@ class TemplateService:
             return template.render(**context)
         except TemplateSyntaxError as e:
             raise ValueError(f"Template syntax error: {str(e)}")
-        except Exception as e:
+        except Exception:
             # Fallback to simple string replacement for basic templates
             try:
                 rendered = template_content
@@ -262,76 +305,76 @@ class TemplateService:
                 return rendered
             except Exception as e2:
                 raise ValueError(f"Failed to render template: {str(e2)}")
-    
-    def validate_template_syntax(self, template_content: str, variables: Union[Dict[str, str], List[str]] = None) -> Dict[str, Any]:
+
+    def validate_template_syntax(
+        self, template_content: str, variables: Union[Dict[str, str], List[str]] = None
+    ) -> Dict[str, Any]:
         """Validate template syntax and extract variables"""
         try:
             # First, unescape HTML entities
             unescaped_content = html.unescape(template_content)
-            
+
             # Parse HTML with BeautifulSoup
-            soup = BeautifulSoup(unescaped_content, 'html.parser')
-            
+            soup = BeautifulSoup(unescaped_content, "html.parser")
+
             # Remove all style attributes
             for tag in soup.find_all(attrs={"style": True}):
                 del tag["style"]
-            
+
             # Remove all color spans
             for span in soup.find_all("span", style=lambda x: x and "color:" in x):
                 span.unwrap()
-            
+
             # Get the cleaned HTML
             cleaned_content = str(soup)
-            
+
             # Extract variables using regex
             found_variables = set()
-            
+
             # Find all Jinja2 variables in the content
-            jinja_vars = re.findall(r'\{\{\s*(\w+)\s*\}\}', cleaned_content)
+            jinja_vars = re.findall(r"\{\{\s*(\w+)\s*\}\}", cleaned_content)
             found_variables.update(jinja_vars)
-            
+
             # Also look for variables in HTML attributes
             for tag in soup.find_all():
                 for attr in tag.attrs:
                     if isinstance(tag[attr], str):
-                        attr_vars = re.findall(r'\{\{\s*(\w+)\s*\}\}', tag[attr])
+                        attr_vars = re.findall(r"\{\{\s*(\w+)\s*\}\}", tag[attr])
                         found_variables.update(attr_vars)
-            
+
             # Convert variables to list if it's a dict
             if isinstance(variables, dict):
                 variables = list(variables.keys())
-            
+
             # Check if all found variables are in the provided variables list
             if variables and not all(var in variables for var in found_variables):
                 missing_vars = found_variables - set(variables)
                 return {
                     "valid": False,
                     "variables": list(found_variables),
-                    "error": f"Missing variables in template: {', '.join(missing_vars)}"
+                    "error": f"Missing variables in template: {', '.join(missing_vars)}",
                 }
-            
+
             # Only check for invalid variables (those that might conflict with system variables)
             invalid_vars = found_variables.intersection(self.reserved_variables)
             if invalid_vars:
                 return {
                     "valid": False,
                     "variables": list(found_variables),
-                    "error": f"Reserved variables cannot be used: {', '.join(invalid_vars)}"
+                    "error": f"Reserved variables cannot be used: {', '.join(invalid_vars)}",
                 }
-            
-            return {
-                "valid": True,
-                "variables": list(found_variables),
-                "error": None
-            }
+
+            return {"valid": True, "variables": list(found_variables), "error": None}
         except Exception as e:
             return {
                 "valid": False,
                 "variables": [],
-                "error": f"Template validation error: {str(e)}"
+                "error": f"Template validation error: {str(e)}",
             }
-    
-    def preview_template(self, template_content: str, sample_data: Dict[str, Any]) -> str:
+
+    def preview_template(
+        self, template_content: str, sample_data: Dict[str, Any]
+    ) -> str:
         """Preview template with sample data"""
         try:
             return self.render_template(template_content, sample_data)

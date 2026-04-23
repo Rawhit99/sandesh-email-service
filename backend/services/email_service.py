@@ -1,30 +1,38 @@
 import base64
-import boto3
-import asyncio
 import logging
 import smtplib
+from datetime import datetime
 from email import encoders
 from email.mime.base import MIMEBase
-from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from email.utils import formataddr, parseaddr
-from botocore.exceptions import ClientError, BotoCoreError
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from models.models import Notification, EmailTemplate, AuditLog, User
-from models.schemas import NotificationCreate, NotificationResponse, StatsResponse, TemplateCreate, TemplateResponse
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
 from config import settings
+from models.models import AuditLog, EmailTemplate, Notification, User
+from models.schema_domains.notifications import (
+    NotificationCreate,
+    NotificationResponse,
+    StatsResponse,
+)
 from sandesh.application.aux_delivery import deliver_auxiliary_channels
-from sandesh.infrastructure.queue.publisher import enqueue_email_delivery, is_queue_enabled
+from sandesh.infrastructure.queue.publisher import (
+    enqueue_email_delivery,
+    is_queue_enabled,
+)
+from sqlalchemy.orm import Session
+
 from services.template_service import TemplateService, resolve_email_template_row
 
 logger = logging.getLogger(__name__)
 
 
-def _resolve_user_email_delivery(db: Session, user_id: Optional[int]) -> Optional[Dict[str, Any]]:
+def _resolve_user_email_delivery(
+    db: Session, user_id: Optional[int]
+) -> Optional[Dict[str, Any]]:
     """Return per-user email_delivery_settings dict if configured; else None (use global settings)."""
     if user_id is None:
         return None
@@ -62,7 +70,11 @@ def _coerce_attachment_list(raw: Any) -> List[Dict[str, Any]]:
             {
                 "filename": str(item.get("filename") or "attachment"),
                 "content_base64": b64,
-                "mime_type": str(item.get("mime_type") or item.get("mimeType") or "application/octet-stream"),
+                "mime_type": str(
+                    item.get("mime_type")
+                    or item.get("mimeType")
+                    or "application/octet-stream"
+                ),
             }
         )
     return out
@@ -90,15 +102,15 @@ def _mime_attachment_part(item: Dict[str, Any]) -> MIMEBase:
 class EmailService:
     def __init__(self):
         self.template_service = TemplateService()
-        
+
         # Initialize AWS SES client
         self.ses_client = boto3.client(
-            'ses',
+            "ses",
             aws_access_key_id=settings.aws_access_key_id,
             aws_secret_access_key=settings.aws_secret_access_key,
-            region_name=settings.aws_region
+            region_name=settings.aws_region,
         )
-        
+
     def get_notifications(
         self,
         db: Session,
@@ -117,20 +129,25 @@ class EmailService:
         if status and status.lower() != "all":
             sl = status.lower()
             if sl == "pending":
-                query = query.filter(Notification.status.in_(["pending", "queued", "running"]))
+                query = query.filter(
+                    Notification.status.in_(["pending", "queued", "running"])
+                )
             else:
                 query = query.filter(Notification.status == sl)
         if template_id:
             query = query.filter(Notification.template_id == template_id)
         if email:
             query = query.filter(Notification.email.ilike(f"%{email}%"))
-            
-        notifications = query.order_by(
-            Notification.executed_at.desc()
-        ).offset(offset).limit(limit).all()
-        
+
+        notifications = (
+            query.order_by(Notification.executed_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
         return [NotificationResponse.from_orm(notif) for notif in notifications]
-    
+
     def get_notification_by_id(
         self,
         db: Session,
@@ -143,28 +160,30 @@ class EmailService:
             q = q.filter(Notification.user_id == scope_user_id)
         notification = q.first()
         return NotificationResponse.from_orm(notification) if notification else None
-    
-    def create_notification(self, db: Session, notification: NotificationCreate) -> NotificationResponse:
+
+    def create_notification(
+        self, db: Session, notification: NotificationCreate
+    ) -> NotificationResponse:
         """Create a new notification"""
         # Validate template exists
         template = resolve_email_template_row(db, notification.template_id, None)
 
         if not template:
             raise ValueError(f"Template with ID '{notification.template_id}' not found")
-        
+
         db_notification = Notification(
             template_id=notification.template_id,
             email=notification.email,
             payload=notification.payload,
-            status="pending"
+            status="pending",
         )
-        
+
         db.add(db_notification)
         db.commit()
         db.refresh(db_notification)
-        
+
         return NotificationResponse.from_orm(db_notification)
-    
+
     def update_notification_status(
         self,
         db: Session,
@@ -181,80 +200,104 @@ class EmailService:
 
         if not notification:
             return None
-            
+
         notification.status = status
         if error_message:
             notification.error_message = error_message
-            
+
         db.commit()
         db.refresh(notification)
-        
+
         return NotificationResponse.from_orm(notification)
-    
+
     def get_notification_stats(self, db: Session) -> StatsResponse:
         """Get notification statistics"""
         total = db.query(Notification).count()
-        success_count = db.query(Notification).filter(Notification.status == "success").count()
-        failed_count = db.query(Notification).filter(Notification.status == "failed").count()
-        pending_count = db.query(Notification).filter(Notification.status == "pending").count()
+        success_count = (
+            db.query(Notification).filter(Notification.status == "success").count()
+        )
+        failed_count = (
+            db.query(Notification).filter(Notification.status == "failed").count()
+        )
+        pending_count = (
+            db.query(Notification).filter(Notification.status == "pending").count()
+        )
         total_templates = db.query(EmailTemplate).count()
-        
+
         # Get recent notifications
-        recent_notifications = db.query(Notification).order_by(
-            Notification.executed_at.desc()
-        ).limit(5).all()
-        
+        recent_notifications = (
+            db.query(Notification)
+            .order_by(Notification.executed_at.desc())
+            .limit(5)
+            .all()
+        )
+
         return StatsResponse(
             total_notifications=total,
             success_count=success_count,
             failed_count=failed_count,
             pending_count=pending_count,
             total_templates=total_templates,
-            recent_notifications=[NotificationResponse.from_orm(n) for n in recent_notifications]
+            recent_notifications=[
+                NotificationResponse.from_orm(n) for n in recent_notifications
+            ],
         )
-    
+
     async def send_email_async(self, db: Session, notification_id: int):
         """Send email asynchronously using configured provider"""
         try:
-            notification = db.query(Notification).filter(Notification.id == notification_id).first()
+            notification = (
+                db.query(Notification)
+                .filter(Notification.id == notification_id)
+                .first()
+            )
             if not notification:
                 logger.error(f"Notification {notification_id} not found")
                 return
-            
+
             uid = getattr(notification, "user_id", None)
             template = resolve_email_template_row(db, notification.template_id, uid)
 
             if not template:
                 logger.error(f"Template {notification.template_id} not found")
                 self.update_notification_status(
-                    db, notification_id, "failed", 
-                    f"Template {notification.template_id} not found"
+                    db,
+                    notification_id,
+                    "failed",
+                    f"Template {notification.template_id} not found",
                 )
                 return
-            
+
             # Render email content
             try:
-                rendered_subject = self.template_service.render_template(template.subject, notification.payload)
-                rendered_content = self.template_service.render_template(template.content, notification.payload)
+                rendered_subject = self.template_service.render_template(
+                    template.subject, notification.payload
+                )
+                rendered_content = self.template_service.render_template(
+                    template.content, notification.payload
+                )
             except Exception as e:
                 logger.error(f"Error rendering template: {str(e)}")
                 self.update_notification_status(
-                    db, notification_id, "failed",
-                    f"Error rendering template: {str(e)}"
+                    db, notification_id, "failed", f"Error rendering template: {str(e)}"
                 )
                 return
-            
+
             # Send email via configured provider
             try:
-                cc_emails = notification.payload.get('cc_emails', [])
+                cc_emails = notification.payload.get("cc_emails", [])
                 # Prefer ORM column; payload _attachments is a duplicate copy from trigger — do not merge both.
                 if notification.attachments:
                     attach_list = _coerce_attachment_list(notification.attachments)
                 else:
-                    attach_list = _coerce_attachment_list(notification.payload.get("_attachments"))
+                    attach_list = _coerce_attachment_list(
+                        notification.payload.get("_attachments")
+                    )
                 tpl_attach = getattr(template, "default_attachments", None) or []
                 if tpl_attach:
-                    attach_list = attach_list + _coerce_attachment_list(list(tpl_attach))
+                    attach_list = attach_list + _coerce_attachment_list(
+                        list(tpl_attach)
+                    )
                 from_override = _optional_str(
                     notification.from_email_override,
                     notification.payload.get("_from_email"),
@@ -300,17 +343,22 @@ class EmailService:
                         attachments=attach_list,
                         mail_cfg=mail_cfg,
                     )
-                
+
                 if success:
-                    notification.payload['message_id'] = message_id
+                    notification.payload["message_id"] = message_id
                     db.commit()
                     self.update_notification_status(db, notification_id, "success")
 
                     # Update audit log status
-                    audit_log = db.query(AuditLog).filter(
-                        AuditLog.email_to == notification.email,
-                        AuditLog.template_id == notification.template_id
-                    ).order_by(AuditLog.created_at.desc()).first()
+                    audit_log = (
+                        db.query(AuditLog)
+                        .filter(
+                            AuditLog.email_to == notification.email,
+                            AuditLog.template_id == notification.template_id,
+                        )
+                        .order_by(AuditLog.created_at.desc())
+                        .first()
+                    )
 
                     if audit_log:
                         audit_log.status = "success"
@@ -324,13 +372,18 @@ class EmailService:
                     self.update_notification_status(
                         db, notification_id, "failed", error or "Email sending failed"
                     )
-                    
+
                     # Update audit log status
-                    audit_log = db.query(AuditLog).filter(
-                        AuditLog.email_to == notification.email,
-                        AuditLog.template_id == notification.template_id
-                    ).order_by(AuditLog.created_at.desc()).first()
-                    
+                    audit_log = (
+                        db.query(AuditLog)
+                        .filter(
+                            AuditLog.email_to == notification.email,
+                            AuditLog.template_id == notification.template_id,
+                        )
+                        .order_by(AuditLog.created_at.desc())
+                        .first()
+                    )
+
                     if audit_log:
                         audit_log.status = "failed"
                         audit_log.error_message = error or "Email sending failed"
@@ -338,18 +391,26 @@ class EmailService:
             except Exception as e:
                 logger.error(f"Error sending email: {str(e)}")
                 self.update_notification_status(
-                    db, notification_id, "failed",
-                    f"Error sending email: {str(e)}"
+                    db, notification_id, "failed", f"Error sending email: {str(e)}"
                 )
-                
+
                 # Update audit log status
-                notification = db.query(Notification).filter(Notification.id == notification_id).first()
+                notification = (
+                    db.query(Notification)
+                    .filter(Notification.id == notification_id)
+                    .first()
+                )
                 if notification:
-                    audit_log = db.query(AuditLog).filter(
-                        AuditLog.email_to == notification.email,
-                        AuditLog.template_id == notification.template_id
-                    ).order_by(AuditLog.created_at.desc()).first()
-                    
+                    audit_log = (
+                        db.query(AuditLog)
+                        .filter(
+                            AuditLog.email_to == notification.email,
+                            AuditLog.template_id == notification.template_id,
+                        )
+                        .order_by(AuditLog.created_at.desc())
+                        .first()
+                    )
+
                     if audit_log:
                         audit_log.status = "failed"
                         audit_log.error_message = f"Error sending email: {str(e)}"
@@ -357,23 +418,31 @@ class EmailService:
         except Exception as e:
             logger.error(f"Unexpected error in send_email_async: {str(e)}")
             self.update_notification_status(
-                db, notification_id, "failed",
-                f"Unexpected error: {str(e)}"
+                db, notification_id, "failed", f"Unexpected error: {str(e)}"
             )
-            
+
             # Update audit log status
-            notification = db.query(Notification).filter(Notification.id == notification_id).first()
+            notification = (
+                db.query(Notification)
+                .filter(Notification.id == notification_id)
+                .first()
+            )
             if notification:
-                audit_log = db.query(AuditLog).filter(
-                    AuditLog.email_to == notification.email,
-                    AuditLog.template_id == notification.template_id
-                ).order_by(AuditLog.created_at.desc()).first()
-                
+                audit_log = (
+                    db.query(AuditLog)
+                    .filter(
+                        AuditLog.email_to == notification.email,
+                        AuditLog.template_id == notification.template_id,
+                    )
+                    .order_by(AuditLog.created_at.desc())
+                    .first()
+                )
+
                 if audit_log:
                     audit_log.status = "failed"
                     audit_log.error_message = f"Unexpected error: {str(e)}"
                     db.commit()
-    
+
     async def _send_smtp_email(
         self,
         to_email: str,
@@ -389,7 +458,11 @@ class EmailService:
         try:
 
             def pick(key: str, fallback: Any) -> Any:
-                if mail_cfg is not None and key in mail_cfg and mail_cfg.get(key) not in (None, ""):
+                if (
+                    mail_cfg is not None
+                    and key in mail_cfg
+                    and mail_cfg.get(key) not in (None, "")
+                ):
                     return mail_cfg.get(key)
                 return fallback
 
@@ -399,7 +472,9 @@ class EmailService:
             smtp_password = str(pick("smtp_password", settings.smtp_password))
             smtp_use_ssl = bool(pick("smtp_use_ssl", settings.smtp_use_ssl))
             smtp_use_tls = bool(pick("smtp_use_tls", settings.smtp_use_tls))
-            envelope_from = from_email or str(pick("smtp_sender_email", settings.smtp_sender_email))
+            envelope_from = from_email or str(
+                pick("smtp_sender_email", settings.smtp_sender_email)
+            )
 
             if attachments:
                 msg = MIMEMultipart("mixed")
@@ -447,7 +522,9 @@ class EmailService:
 
             message_id = f"smtp_{int(datetime.utcnow().timestamp())}"
 
-            logger.info(f"SMTP email sent successfully to {to_email}. MessageId: {message_id}")
+            logger.info(
+                f"SMTP email sent successfully to {to_email}. MessageId: {message_id}"
+            )
             return True, message_id, None
 
         except smtplib.SMTPAuthenticationError as e:
@@ -461,7 +538,7 @@ class EmailService:
         except Exception as e:
             logger.error(f"Unexpected SMTP error: {str(e)}")
             return False, None, f"Unexpected error: {str(e)}"
-    
+
     async def _send_ses_email(
         self,
         to_email: str,
@@ -478,12 +555,20 @@ class EmailService:
             if mail_cfg:
                 ses_client = boto3.client(
                     "ses",
-                    aws_access_key_id=mail_cfg.get("aws_access_key_id") or settings.aws_access_key_id,
-                    aws_secret_access_key=mail_cfg.get("aws_secret_access_key") or settings.aws_secret_access_key,
+                    aws_access_key_id=mail_cfg.get("aws_access_key_id")
+                    or settings.aws_access_key_id,
+                    aws_secret_access_key=mail_cfg.get("aws_secret_access_key")
+                    or settings.aws_secret_access_key,
                     region_name=mail_cfg.get("aws_region") or settings.aws_region,
                 )
-                default_sender = (mail_cfg.get("ses_sender_email") or settings.ses_sender_email or "").strip()
-                config_set = (mail_cfg.get("ses_configuration_set") or settings.ses_configuration_set or "").strip()
+                default_sender = (
+                    mail_cfg.get("ses_sender_email") or settings.ses_sender_email or ""
+                ).strip()
+                config_set = (
+                    mail_cfg.get("ses_configuration_set")
+                    or settings.ses_configuration_set
+                    or ""
+                ).strip()
             else:
                 ses_client = self.ses_client
                 default_sender = (settings.ses_sender_email or "").strip()
@@ -535,24 +620,26 @@ class EmailService:
                     kwargs["ConfigurationSetName"] = config_set
                 response = ses_client.send_email(**kwargs)
             message_id = response["MessageId"]
-            
-            logger.info(f"Email sent successfully to {to_email}. MessageId: {message_id}")
+
+            logger.info(
+                f"Email sent successfully to {to_email}. MessageId: {message_id}"
+            )
             return True, message_id, None
-            
+
         except ClientError as e:
-            error_code = e.response['Error']['Code']
-            error_message = e.response['Error']['Message']
+            error_code = e.response["Error"]["Code"]
+            error_message = e.response["Error"]["Message"]
             logger.error(f"SES ClientError ({error_code}): {error_message}")
             return False, None, f"SES Error: {error_code} - {error_message}"
-            
+
         except BotoCoreError as e:
             logger.error(f"SES BotoCoreError: {str(e)}")
             return False, None, f"SES Connection Error: {str(e)}"
-            
+
         except Exception as e:
             logger.error(f"Unexpected SES error: {str(e)}")
             return False, None, f"Unexpected error: {str(e)}"
-    
+
     async def retry_notification(
         self, db: Session, notification_id: int, scope_user_id: Optional[int] = None
     ) -> bool:
@@ -581,54 +668,51 @@ class EmailService:
         except Exception as e:
             logger.error(f"Error retrying notification {notification_id}: {str(e)}")
             return False
-    
+
     def bulk_create_notifications(
-        self, 
-        db: Session, 
-        template_id: str, 
-        recipients: List[Dict[str, Any]]
+        self, db: Session, template_id: str, recipients: List[Dict[str, Any]]
     ) -> List[NotificationResponse]:
         """Create multiple notifications at once"""
         # Validate template exists
         template = resolve_email_template_row(db, template_id, None)
         if not template:
             raise ValueError(f"Template with ID '{template_id}' not found")
-        
+
         notifications = []
         for recipient in recipients:
             db_notification = Notification(
                 template_id=template_id,
-                email=recipient['email'],
-                payload=recipient.get('payload', {}),
-                status="pending"
+                email=recipient["email"],
+                payload=recipient.get("payload", {}),
+                status="pending",
             )
             db.add(db_notification)
             notifications.append(db_notification)
-        
+
         db.commit()
-        
+
         # Refresh all notifications
         for notif in notifications:
             db.refresh(notif)
-        
+
         return [NotificationResponse.from_orm(notif) for notif in notifications]
-    
+
     def get_ses_send_quota(self) -> Dict[str, Any]:
         """Get SES sending quota and statistics"""
         try:
             quota_response = self.ses_client.get_send_quota()
             stats_response = self.ses_client.get_send_statistics()
-            
+
             return {
-                "max_24_hour": quota_response.get('Max24HourSend', 0),
-                "max_send_rate": quota_response.get('MaxSendRate', 0),
-                "sent_last_24_hours": quota_response.get('SentLast24Hours', 0),
-                "send_data_points": stats_response.get('SendDataPoints', [])
+                "max_24_hour": quota_response.get("Max24HourSend", 0),
+                "max_send_rate": quota_response.get("MaxSendRate", 0),
+                "sent_last_24_hours": quota_response.get("SentLast24Hours", 0),
+                "send_data_points": stats_response.get("SendDataPoints", []),
             }
         except Exception as e:
             logger.error(f"Error getting SES quota: {str(e)}")
             return {"error": str(e)}
-    
+
     def verify_email_address(self, email: str) -> bool:
         """Verify an email address with SES"""
         try:
@@ -638,16 +722,16 @@ class EmailService:
         except Exception as e:
             logger.error(f"Error verifying email {email}: {str(e)}")
             return False
-    
+
     def get_verified_emails(self) -> List[str]:
         """Get list of verified email addresses"""
         try:
             response = self.ses_client.list_verified_email_addresses()
-            return response.get('VerifiedEmailAddresses', [])
+            return response.get("VerifiedEmailAddresses", [])
         except Exception as e:
             logger.error(f"Error getting verified emails: {str(e)}")
             return []
-    
+
     def get_email_settings(self) -> Dict[str, Any]:
         """Get current email provider settings"""
         if settings.email_provider.lower() == "smtp":
@@ -658,7 +742,7 @@ class EmailService:
                 "smtp_username": settings.smtp_username,
                 "smtp_sender_email": settings.smtp_sender_email,
                 "smtp_use_tls": settings.smtp_use_tls,
-                "smtp_use_ssl": settings.smtp_use_ssl
+                "smtp_use_ssl": settings.smtp_use_ssl,
             }
         else:
             return {
@@ -666,100 +750,104 @@ class EmailService:
                 "aws_access_key_id": settings.aws_access_key_id,
                 "aws_region": settings.aws_region,
                 "ses_sender_email": settings.ses_sender_email,
-                "ses_configuration_set": settings.ses_configuration_set
+                "ses_configuration_set": settings.ses_configuration_set,
             }
-    
+
     def update_email_settings(self, new_settings: Dict[str, Any]) -> bool:
         """Update email provider settings"""
         try:
-            provider = new_settings.get('email_provider', 'ses')
-            
+            provider = new_settings.get("email_provider", "ses")
+
             if provider.lower() == "smtp":
                 # Test SMTP settings
                 if not self._test_smtp_settings(new_settings):
                     return False
-                
+
                 # Update SMTP settings
                 settings.email_provider = "smtp"
-                settings.smtp_host = new_settings.get('smtp_host')
-                settings.smtp_port = int(new_settings.get('smtp_port', 587))
-                settings.smtp_username = new_settings.get('smtp_username')
-                settings.smtp_password = new_settings.get('smtp_password')
-                settings.smtp_use_tls = new_settings.get('smtp_use_tls', True)
-                settings.smtp_use_ssl = new_settings.get('smtp_use_ssl', False)
-                settings.smtp_sender_email = new_settings.get('smtp_sender_email')
-                
+                settings.smtp_host = new_settings.get("smtp_host")
+                settings.smtp_port = int(new_settings.get("smtp_port", 587))
+                settings.smtp_username = new_settings.get("smtp_username")
+                settings.smtp_password = new_settings.get("smtp_password")
+                settings.smtp_use_tls = new_settings.get("smtp_use_tls", True)
+                settings.smtp_use_ssl = new_settings.get("smtp_use_ssl", False)
+                settings.smtp_sender_email = new_settings.get("smtp_sender_email")
+
             else:
                 # Test SES settings
                 if not self._test_ses_settings(new_settings):
                     return False
-                
+
                 # Update SES settings
                 settings.email_provider = "ses"
-                settings.aws_access_key_id = new_settings.get('aws_access_key_id')
-                settings.aws_secret_access_key = new_settings.get('aws_secret_access_key')
-                settings.aws_region = new_settings.get('aws_region')
-                settings.ses_sender_email = new_settings.get('ses_sender_email')
-                settings.ses_configuration_set = new_settings.get('ses_configuration_set')
-                
+                settings.aws_access_key_id = new_settings.get("aws_access_key_id")
+                settings.aws_secret_access_key = new_settings.get(
+                    "aws_secret_access_key"
+                )
+                settings.aws_region = new_settings.get("aws_region")
+                settings.ses_sender_email = new_settings.get("ses_sender_email")
+                settings.ses_configuration_set = new_settings.get(
+                    "ses_configuration_set"
+                )
+
                 # Reinitialize the SES client with new settings
                 self.ses_client = boto3.client(
-                    'ses',
+                    "ses",
                     aws_access_key_id=settings.aws_access_key_id,
                     aws_secret_access_key=settings.aws_secret_access_key,
-                    region_name=settings.aws_region
+                    region_name=settings.aws_region,
                 )
-            
+
             return True
         except Exception as e:
             logger.error(f"Error updating email settings: {str(e)}")
             return False
-    
+
     def _test_smtp_settings(self, test_settings: Dict[str, Any]) -> bool:
         """Test SMTP settings with provided credentials"""
         try:
-            host = test_settings.get('smtp_host')
-            port = int(test_settings.get('smtp_port', 587))
-            username = test_settings.get('smtp_username')
-            password = test_settings.get('smtp_password')
-            use_tls = test_settings.get('smtp_use_tls', True)
-            use_ssl = test_settings.get('smtp_use_ssl', False)
-            
+            host = test_settings.get("smtp_host")
+            port = int(test_settings.get("smtp_port", 587))
+            username = test_settings.get("smtp_username")
+            password = test_settings.get("smtp_password")
+            use_tls = test_settings.get("smtp_use_tls", True)
+            use_ssl = test_settings.get("smtp_use_ssl", False)
+
             if use_ssl:
                 server = smtplib.SMTP_SSL(host, port)
             else:
                 server = smtplib.SMTP(host, port)
                 if use_tls:
                     server.starttls()
-            
+
             server.login(username, password)
             server.quit()
             return True
         except Exception as e:
             logger.error(f"Error testing SMTP settings: {str(e)}")
             return False
-    
+
     def _test_ses_settings(self, test_settings: Dict[str, Any]) -> bool:
         """Test AWS SES settings with provided credentials"""
         try:
             test_client = boto3.client(
-                'ses',
-                aws_access_key_id=test_settings.get('aws_access_key_id'),
-                aws_secret_access_key=test_settings.get('aws_secret_access_key'),
-                region_name=test_settings.get('aws_region')
+                "ses",
+                aws_access_key_id=test_settings.get("aws_access_key_id"),
+                aws_secret_access_key=test_settings.get("aws_secret_access_key"),
+                region_name=test_settings.get("aws_region"),
             )
-            
+
             # Test the connection by getting send quota
             test_client.get_send_quota()
             return True
         except Exception as e:
             logger.error(f"Error testing SES settings: {str(e)}")
             return False
-    
+
     def test_email_settings(self, test_settings: Dict[str, Any]) -> bool:
         """Test email settings with provided credentials"""
-        provider = test_settings.get('email_provider', 'ses')
-        
+        provider = test_settings.get("email_provider", "ses")
+
         if provider.lower() == "smtp":
             return self._test_smtp_settings(test_settings)
         else:

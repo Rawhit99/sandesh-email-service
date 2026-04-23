@@ -6,16 +6,26 @@ import logging
 import uuid
 from typing import Optional
 
+from config import settings
 from fastapi import HTTPException, Request
+from middleware.tenant_scope import resolve_notification_scope_user
+from models.models import (
+    AuditLog,
+    EmailTemplate,
+    Notification,
+    OrgTemplateSetting,
+    Subscriber,
+    User,
+)
+from models.schema_domains.notifications import NotificationCreate, NotificationResponse
+from sandesh.infrastructure.queue.publisher import (
+    enqueue_email_delivery,
+    is_queue_enabled,
+)
 from sqlalchemy.orm import Session
 
-from config import settings
-from models.models import AuditLog, EmailTemplate, Notification, OrgTemplateSetting, Subscriber, User
-from models.schemas import NotificationCreate, NotificationResponse
-from sandesh.infrastructure.queue.publisher import enqueue_email_delivery, is_queue_enabled
 from services.email_service import EmailService
 from services.template_service import resolve_email_template_row
-from middleware.tenant_scope import resolve_notification_scope_user
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +44,14 @@ async def trigger_email_notification(
     if settings.subscriber_required:
         sid = notification.subscriber_external_id
         if not sid:
-            raise HTTPException(status_code=400, detail="subscriber_external_id is required")
+            raise HTTPException(
+                status_code=400, detail="subscriber_external_id is required"
+            )
         if uid is None:
-            raise HTTPException(status_code=401, detail="Authentication required for subscriber-gated sends")
+            raise HTTPException(
+                status_code=401,
+                detail="Authentication required for subscriber-gated sends",
+            )
         exists = (
             db.query(Subscriber)
             .filter(
@@ -106,7 +121,9 @@ async def trigger_email_notification(
         channels_requested=channels,
         from_email_override=notification.from_email,
         sender_display_name=notification.sender_name,
-        attachments=[a.model_dump() for a in notification.attachments] if notification.attachments else None,
+        attachments=[a.model_dump() for a in notification.attachments]
+        if notification.attachments
+        else None,
         user_id=uid,
     )
     db.add(db_row)

@@ -129,24 +129,44 @@ def resolve_user_from_bearer_token(db: Session, token: str) -> Optional[User]:
     return None
 
 
+def _extract_auth_token(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials],
+) -> Optional[str]:
+    if credentials and credentials.credentials:
+        return credentials.credentials
+    raw = request.headers.get("Authorization") or request.headers.get("authorization")
+    if not raw:
+        return None
+    parts = str(raw).strip().split(" ", 1)
+    if len(parts) != 2:
+        return None
+    scheme, token = parts[0].strip().lower(), parts[1].strip()
+    if scheme in {"bearer", "apikey"} and token:
+        return token
+    return None
+
+
 def get_current_user_optional(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Security(security_optional),
     db: Session = Depends(get_db),
 ) -> Optional[User]:
     """Resolve user from JWT (dashboard) or database API key (optional)."""
-    if credentials is None:
+    token = _extract_auth_token(request, credentials)
+    if token is None:
         return None
-    return resolve_user_from_bearer_token(db, credentials.credentials)
+    return resolve_user_from_bearer_token(db, token)
 
 
 def get_current_user_any(
     request: Request,
-    credentials: HTTPAuthorizationCredentials = Security(security),
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(security_optional),
     db: Session = Depends(get_db),
 ) -> User:
     """Require a logged-in user (JWT) or a database-linked API key."""
-    user = resolve_user_from_bearer_token(db, credentials.credentials)
+    token = _extract_auth_token(request, credentials)
+    user = resolve_user_from_bearer_token(db, token or "")
     if user is not None:
         return user
     raise HTTPException(

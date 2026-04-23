@@ -1,15 +1,35 @@
-from fastapi import APIRouter, HTTPException, Depends, Query
-from sqlalchemy.orm import Session
-
+from fastapi import APIRouter, Depends, HTTPException, Query
 from middleware.tenant_scope import get_scope_tenant_user
 from models.models import User, get_db
-from models.schemas import (
+from models.schema_domains.templates import (
     TemplateCreate,
+    TemplatePreview,
     TemplateResponse,
     TemplateUpdate,
-    TemplatePreview,
+)
+from services.template_api_service import (
+    create_template as create_template_service,
+)
+from services.template_api_service import (
+    delete_template as delete_template_service,
+)
+from services.template_api_service import (
+    get_template as get_template_service,
+)
+from services.template_api_service import (
+    list_templates,
+)
+from services.template_api_service import (
+    preview_template as preview_template_service,
+)
+from services.template_api_service import (
+    update_template as update_template_service,
+)
+from services.template_api_service import (
+    validate_template as validate_template_service,
 )
 from services.template_service import TemplateService
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/api", tags=["templates"])
 template_service = TemplateService()
@@ -19,17 +39,20 @@ template_service = TemplateService()
 async def get_templates(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    active_only: bool = Query(False, description="Filter to show only active templates"),
+    active_only: bool = Query(
+        False, description="Filter to show only active templates"
+    ),
     db: Session = Depends(get_db),
     user: User = Depends(get_scope_tenant_user),
 ):
     try:
-        return template_service.get_templates(
+        return list_templates(
+            template_service=template_service,
             db=db,
+            user_id=user.id,
             limit=limit,
             offset=offset,
             active_only=active_only,
-            scope_user_id=user.id,
         )
     except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
@@ -38,8 +61,8 @@ async def get_templates(
 @router.post("/v1/templates/preview")
 async def preview_template(template: TemplatePreview, db: Session = Depends(get_db)):
     try:
-        preview = template_service.preview_template(template.content, template.variables)
-        return {"preview": preview}
+        _ = db
+        return preview_template_service(template_service, template)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception:
@@ -49,12 +72,12 @@ async def preview_template(template: TemplatePreview, db: Session = Depends(get_
 @router.post("/v1/templates/validate")
 async def validate_template(template: TemplateCreate, db: Session = Depends(get_db)):
     try:
-        extracted_vars = TemplateCreate.extract_variables(template.content, template.subject)
-        template.variables = extracted_vars
-        validation = template_service.validate_template_syntax(template.content)
-        return validation
+        _ = db
+        return validate_template_service(template_service, template)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error validating template: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error validating template: {str(e)}"
+        )
 
 
 @router.post("/v1/templates", response_model=TemplateResponse)
@@ -64,9 +87,7 @@ async def create_template(
     user: User = Depends(get_scope_tenant_user),
 ):
     try:
-        extracted_vars = TemplateCreate.extract_variables(template.content, template.subject)
-        template.variables = extracted_vars
-        return template_service.create_template(db, template, owner_user_id=user.id)
+        return create_template_service(template_service, db, user.id, template)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -78,10 +99,7 @@ async def get_template(
     user: User = Depends(get_scope_tenant_user),
 ):
     try:
-        template = template_service.get_template_by_id(db=db, template_id=template_id, scope_user_id=user.id)
-        if not template:
-            raise HTTPException(status_code=404, detail="Template not found")
-        return template
+        return get_template_service(template_service, db, user.id, template_id)
     except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")
 
@@ -94,14 +112,12 @@ async def update_template(
     user: User = Depends(get_scope_tenant_user),
 ):
     try:
-        existing_template = template_service.get_template_by_id(
-            db=db, template_id=template_id, scope_user_id=user.id
-        )
-        if not existing_template:
-            raise HTTPException(status_code=404, detail="Template not found")
-
-        return template_service.update_template(
-            db=db, template_id=template_id, template=template, scope_user_id=user.id
+        return update_template_service(
+            template_service,
+            db,
+            user.id,
+            template_id,
+            template,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -114,9 +130,11 @@ async def delete_template(
     user: User = Depends(get_scope_tenant_user),
 ):
     try:
-        success = template_service.delete_template(db=db, template_id=template_id, scope_user_id=user.id)
-        if not success:
-            raise HTTPException(status_code=404, detail="Template not found")
-        return {"message": "Template deleted successfully"}
+        return delete_template_service(
+            template_service,
+            db,
+            user.id,
+            template_id,
+        )
     except Exception:
         raise HTTPException(status_code=500, detail="Internal server error")

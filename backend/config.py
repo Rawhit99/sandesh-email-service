@@ -14,6 +14,11 @@ class Settings(BaseSettings):
     
     # API Authentication
     api_keys: str = os.getenv("API_KEYS", "")
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "")
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    jwt_access_token_expire_minutes: int = int(
+        os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", str(60 * 24 * 7))
+    )
 
     # Comma-separated usernames treated as platform admins (in addition to users.is_platform_admin).
     platform_admin_usernames: str = os.getenv("PLATFORM_ADMIN_USERNAMES", "")
