@@ -72,7 +72,10 @@ def tenant_user_for_organization_ref(
         )
     su = db.query(User).filter(User.id == org.service_user_id).first()
     if not su:
-        raise HTTPException(status_code=500, detail="Tenant service account is missing")
+        raise HTTPException(
+            status_code=500,
+            detail="Tenant service account is missing",
+        )
     return su
 
 
@@ -101,6 +104,36 @@ def get_scope_tenant_user(
     db: Session = Depends(get_db),
 ) -> User:
     if not user_effective_platform_admin(user):
+        # Org members should operate on their tenant service account scope so
+        # templates/integrations/subscribers are shared at org level.
+        if user.organization_id:
+            org = (
+                db.query(Organization)
+                .filter(Organization.id == user.organization_id)
+                .first()
+            )
+            if org and org.service_user_id:
+                su = (
+                    db.query(User)
+                    .filter(User.id == org.service_user_id)
+                    .first()
+                )
+                if su:
+                    return su
+        elif (user.organization_name or "").strip():
+            org = (
+                db.query(Organization)
+                .filter(Organization.name == user.organization_name.strip())
+                .first()
+            )
+            if org and org.service_user_id:
+                su = (
+                    db.query(User)
+                    .filter(User.id == org.service_user_id)
+                    .first()
+                )
+                if su:
+                    return su
         return user
     oid = _parse_org_header(request)
     if oid is None:
@@ -127,6 +160,36 @@ def resolve_notification_scope_user(
     if current_user is None:
         return None
     if not user_effective_platform_admin(current_user):
+        if current_user.organization_id:
+            org = (
+                db.query(Organization)
+                .filter(Organization.id == current_user.organization_id)
+                .first()
+            )
+            if org and org.service_user_id:
+                su = (
+                    db.query(User)
+                    .filter(User.id == org.service_user_id)
+                    .first()
+                )
+                if su:
+                    return su
+        elif (current_user.organization_name or "").strip():
+            org = (
+                db.query(Organization)
+                .filter(
+                    Organization.name == current_user.organization_name.strip()
+                )
+                .first()
+            )
+            if org and org.service_user_id:
+                su = (
+                    db.query(User)
+                    .filter(User.id == org.service_user_id)
+                    .first()
+                )
+                if su:
+                    return su
         return current_user
     oid = _parse_org_header(request)
     if oid is None:

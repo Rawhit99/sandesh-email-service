@@ -167,7 +167,10 @@ def merge_channel_overrides_into_payload(
     return out
 
 
-def effective_integration_flags(user: Optional[User]) -> Dict[str, Any]:
+def effective_integration_flags(
+    user: Optional[User],
+    db: Optional[Session] = None,
+) -> Dict[str, Any]:
     """Which integrations are on (user DB and/or server env)."""
     ucfg: Dict[str, str] = merged_integration_settings(user) if user else {}
 
@@ -216,6 +219,19 @@ def effective_integration_flags(user: Optional[User]) -> Dict[str, Any]:
         )
 
     def on_email_ses() -> bool:
+        if user is not None and db is not None:
+            has_default_ses_credential = (
+                db.query(IntegrationCredential.id)
+                .filter(
+                    IntegrationCredential.user_id == user.id,
+                    IntegrationCredential.channel == "aws_ses",
+                    IntegrationCredential.is_default.is_(True),
+                )
+                .first()
+                is not None
+            )
+            if has_default_ses_credential:
+                return True
         ed = merged_email_delivery_settings(user) if user else None
         if ed and str(ed.get("email_provider") or "").lower() == "ses":
             return bool(
@@ -230,6 +246,19 @@ def effective_integration_flags(user: Optional[User]) -> Dict[str, Any]:
         )
 
     def on_email_smtp() -> bool:
+        if user is not None and db is not None:
+            has_default_smtp_credential = (
+                db.query(IntegrationCredential.id)
+                .filter(
+                    IntegrationCredential.user_id == user.id,
+                    IntegrationCredential.channel == "smtp",
+                    IntegrationCredential.is_default.is_(True),
+                )
+                .first()
+                is not None
+            )
+            if has_default_smtp_credential:
+                return True
         ed = merged_email_delivery_settings(user) if user else None
         if ed and str(ed.get("email_provider") or "").lower() == "smtp":
             return bool(

@@ -74,13 +74,15 @@ def _as_hooks(raw: Any) -> Dict[str, Any]:
     return {}
 
 
-def get_integration_me(user: User) -> IntegrationMeResponse:
+def get_integration_me(db: Session, user: User) -> IntegrationMeResponse:
     cfg = merged_integration_settings(user)
     slack_u = (cfg.get("slack_webhook_url") or "").strip()
     teams_u = (cfg.get("teams_webhook_url") or "").strip()
-    eff = effective_integration_flags(user)
+    eff = effective_integration_flags(user, db)
     email_raw = merged_email_delivery_settings(user)
-    email_masked = mask_email_delivery_for_api(email_raw) if email_raw else None
+    email_masked = (
+        mask_email_delivery_for_api(email_raw) if email_raw else None
+    )
     return IntegrationMeResponse(
         slack_user_configured=bool(slack_u),
         slack_user_hint=_hint(slack_u),
@@ -178,4 +180,4 @@ def update_integration_me(
     db.add(user)
     db.commit()
     db.refresh(user)
-    return get_integration_me(user)
+    return get_integration_me(db, user)

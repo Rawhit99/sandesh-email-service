@@ -11,7 +11,7 @@ from jinja2 import (
     TemplateSyntaxError,
     select_autoescape,
 )
-from models.models import EmailTemplate, Organization
+from models.models import EmailTemplate, Organization, OrgTemplateSetting
 from models.schema_domains.templates import (
     TemplateCreate,
     TemplateResponse,
@@ -44,6 +44,37 @@ def resolve_email_template_row(
     )
 
 
+def _resolve_scope_organization(
+    db: Session,
+    scope_user_id: Optional[int],
+) -> Optional[Organization]:
+    if scope_user_id is None:
+        return None
+    return (
+        db.query(Organization)
+        .filter(Organization.service_user_id == scope_user_id)
+        .first()
+    )
+
+
+def _effective_enabled_map(
+    db: Session,
+    organization_id: int,
+    template_ids: List[str],
+) -> Dict[str, bool]:
+    if not template_ids:
+        return {}
+    rows = (
+        db.query(OrgTemplateSetting)
+        .filter(
+            OrgTemplateSetting.organization_id == organization_id,
+            OrgTemplateSetting.template_id.in_(template_ids),
+        )
+        .all()
+    )
+    return {row.template_id: bool(row.is_enabled) for row in rows}
+
+
 class TemplateService:
     def __init__(self):
         # Initialize Jinja2 environment for template rendering
@@ -71,17 +102,30 @@ class TemplateService:
             if scope_user_id is not None:
                 query = query.filter(EmailTemplate.user_id == scope_user_id)
 
-            if active_only:
-                query = query.filter(EmailTemplate.is_active.is_(True))
-
             templates = (
                 query.order_by(EmailTemplate.created_at.desc())
                 .offset(offset)
                 .limit(limit)
                 .all()
             )
+            org = _resolve_scope_organization(db, scope_user_id)
+            enabled_map: Dict[str, bool] = {}
+            if org:
+                enabled_map = _effective_enabled_map(
+                    db,
+                    org.id,
+                    [t.template_id for t in templates],
+                )
 
-            return [TemplateResponse.from_orm(template) for template in templates]
+            out: List[TemplateResponse] = []
+            for template in templates:
+                row = TemplateResponse.from_orm(template)
+                org_enabled = enabled_map.get(template.template_id, True)
+                row.is_active = bool(template.is_active) and bool(org_enabled)
+                if active_only and not row.is_active:
+                    continue
+                out.append(row)
+            return out
         except Exception as e:
             raise ValueError(f"Failed to fetch templates: {str(e)}")
 
@@ -94,8 +138,15 @@ class TemplateService:
             if scope_user_id is not None:
                 q = q.filter(EmailTemplate.user_id == scope_user_id)
             template = q.first()
-
-            return TemplateResponse.from_orm(template) if template else None
+            if not template:
+                return None
+            row = TemplateResponse.from_orm(template)
+            org = _resolve_scope_organization(db, scope_user_id)
+            if org:
+                enabled_map = _effective_enabled_map(db, org.id, [template.template_id])
+                org_enabled = enabled_map.get(template.template_id, True)
+                row.is_active = bool(template.is_active) and bool(org_enabled)
+            return row
         except Exception as e:
             raise ValueError(f"Failed to fetch template: {str(e)}")
 
@@ -157,14 +208,6 @@ class TemplateService:
 
         Keep existing rows untouched so per-org enable/disable state remains intact.
         """
-        source_org = (
-            db.query(Organization)
-            .filter(Organization.service_user_id == source_owner_user_id)
-            .first()
-        )
-        if not source_org:
-            return
-
         all_org_service_users = (
             db.query(Organization.service_user_id)
             .filter(Organization.service_user_id.isnot(None))

@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from config import settings
-from models.models import AuditLog, EmailTemplate, Notification, User
+from models.models import AuditLog, EmailTemplate, IntegrationCredential, Notification, User
 from models.schema_domains.notifications import (
     NotificationCreate,
     NotificationResponse,
@@ -33,16 +33,119 @@ logger = logging.getLogger(__name__)
 def _resolve_user_email_delivery(
     db: Session, user_id: Optional[int]
 ) -> Optional[Dict[str, Any]]:
-    """Return per-user email_delivery_settings dict if configured; else None (use global settings)."""
+    """Resolve per-user email config from settings + default credentials."""
     if user_id is None:
         return None
     user = db.query(User).filter(User.id == user_id).first()
-    if not user or not user.email_delivery_settings:
+    if not user:
         return None
-    raw = user.email_delivery_settings
-    if not isinstance(raw, dict) or not (raw.get("email_provider") or "").strip():
+    base_cfg = user.email_delivery_settings if isinstance(user.email_delivery_settings, dict) else {}
+    merged: Dict[str, Any] = dict(base_cfg)
+
+    preferred_provider = (
+        str(merged.get("email_provider") or settings.email_provider or "ses")
+        .lower()
+        .strip()
+    )
+    default_creds = (
+        db.query(IntegrationCredential)
+        .filter(
+            IntegrationCredential.user_id == user_id,
+            IntegrationCredential.is_default.is_(True),
+            IntegrationCredential.channel.in_(["aws_ses", "smtp"]),
+        )
+        .all()
+    )
+
+    by_channel: Dict[str, Dict[str, Any]] = {}
+    for cred in default_creds:
+        cfg = dict(cred.config or {})
+        channel = str(cred.channel or "").strip()
+        if not channel:
+            continue
+        by_channel[channel] = cfg
+
+    chosen_channel: Optional[str] = None
+    if preferred_provider == "smtp" and "smtp" in by_channel:
+        chosen_channel = "smtp"
+    elif preferred_provider == "ses" and "aws_ses" in by_channel:
+        chosen_channel = "aws_ses"
+    elif "aws_ses" in by_channel:
+        chosen_channel = "aws_ses"
+    elif "smtp" in by_channel:
+        chosen_channel = "smtp"
+
+    if not chosen_channel:
+        if merged.get("email_provider"):
+            return merged
         return None
-    return dict(raw)
+
+    cfg = by_channel[chosen_channel]
+
+    def pick(*keys: str) -> Optional[str]:
+        for key in keys:
+            value = cfg.get(key)
+            if value is None:
+                continue
+            text = str(value).strip()
+            if text:
+                return text
+        return None
+
+    if chosen_channel == "aws_ses":
+        merged["email_provider"] = "ses"
+        merged["aws_access_key_id"] = pick(
+            "aws_access_key_id",
+            "access_key_id",
+            "key_id",
+        ) or merged.get("aws_access_key_id")
+        merged["aws_secret_access_key"] = pick(
+            "aws_secret_access_key",
+            "secret_access_key",
+            "secret_key",
+        ) or merged.get("aws_secret_access_key")
+        merged["aws_session_token"] = pick(
+            "aws_session_token",
+            "session_token",
+        ) or merged.get("aws_session_token")
+        merged["aws_region"] = pick(
+            "aws_region",
+            "region",
+        ) or merged.get("aws_region")
+        merged["ses_sender_email"] = pick(
+            "ses_sender_email",
+            "sender_email",
+            "from_email",
+            "email_from",
+        ) or merged.get("ses_sender_email")
+        merged["ses_configuration_set"] = pick(
+            "ses_configuration_set",
+            "configuration_set",
+        ) or merged.get("ses_configuration_set")
+    else:
+        merged["email_provider"] = "smtp"
+        merged["smtp_host"] = pick("smtp_host", "host") or merged.get("smtp_host")
+        merged["smtp_port"] = pick("smtp_port", "port") or merged.get("smtp_port")
+        merged["smtp_username"] = pick(
+            "smtp_username",
+            "username",
+            "user",
+        ) or merged.get("smtp_username")
+        merged["smtp_password"] = pick(
+            "smtp_password",
+            "password",
+            "pass",
+        ) or merged.get("smtp_password")
+        merged["smtp_sender_email"] = pick(
+            "smtp_sender_email",
+            "sender_email",
+            "from_email",
+            "email_from",
+        ) or merged.get("smtp_sender_email")
+        merged["smtp_use_tls"] = cfg.get("smtp_use_tls", merged.get("smtp_use_tls"))
+        merged["smtp_use_ssl"] = cfg.get("smtp_use_ssl", merged.get("smtp_use_ssl"))
+
+    return merged
 
 
 def _optional_str(*candidates: Any) -> Optional[str]:
@@ -559,6 +662,9 @@ class EmailService:
                     or settings.aws_access_key_id,
                     aws_secret_access_key=mail_cfg.get("aws_secret_access_key")
                     or settings.aws_secret_access_key,
+                    aws_session_token=mail_cfg.get("aws_session_token")
+                    or settings.aws_session_token
+                    or None,
                     region_name=mail_cfg.get("aws_region") or settings.aws_region,
                 )
                 default_sender = (

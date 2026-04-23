@@ -27,8 +27,11 @@ def get_integration_status() -> dict:
 
 
 @router.get("/integrations/me", response_model=IntegrationMeResponse)
-def get_integration_me(user: User = Depends(get_scope_tenant_user)):
-    return get_integration_me_service(user)
+def get_integration_me(
+    user: User = Depends(get_scope_tenant_user),
+    db: Session = Depends(get_db),
+):
+    return get_integration_me_service(db, user)
 
 
 @router.put("/integrations/me", response_model=IntegrationMeResponse)

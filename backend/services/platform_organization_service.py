@@ -175,22 +175,26 @@ def _settings_map(org_id: int, template_ids: List[str], db: Session) -> dict:
 
 
 def list_org_template_scope(db: Session, org_id: int) -> List[OrgTemplateSettingOut]:
-    org = _get_org_or_404(org_id, db)
-    templates = (
-        db.query(EmailTemplate)
-        .filter(EmailTemplate.user_id == org.service_user_id)
-        .order_by(EmailTemplate.name.asc())
-        .all()
-    )
+    _get_org_or_404(org_id, db)
+    templates = db.query(EmailTemplate).order_by(EmailTemplate.name.asc()).all()
+    latest_by_template_id = {}
+    for row in templates:
+        if row.template_id not in latest_by_template_id:
+            latest_by_template_id[row.template_id] = row
+    template_rows = list(latest_by_template_id.values())
+    template_ids = [t.template_id for t in template_rows]
+    smap = _settings_map(org_id, template_ids, db) if template_ids else {}
     return [
         OrgTemplateSettingOut(
             template_id=t.template_id,
             template_name=t.name,
             subject=t.subject,
             is_active=t.is_active,
-            is_enabled=t.is_active,
+            is_enabled=smap.get(t.template_id).is_enabled
+            if smap.get(t.template_id)
+            else True,
         )
-        for t in templates
+        for t in template_rows
     ]
 
 
@@ -200,12 +204,11 @@ def update_org_template_scope(
     template_id: str,
     body: OrgTemplateSettingUpdate,
 ) -> dict:
-    org = _get_org_or_404(org_id, db)
+    _get_org_or_404(org_id, db)
     tpl = (
         db.query(EmailTemplate)
         .filter(
             EmailTemplate.template_id == template_id,
-            EmailTemplate.user_id == org.service_user_id,
         )
         .first()
     )
@@ -222,7 +225,6 @@ def update_org_template_scope(
         )
         .first()
     )
-    tpl.is_active = body.is_enabled
     if setting:
         setting.is_enabled = body.is_enabled
         setting.updated_at = datetime.utcnow()
@@ -245,28 +247,34 @@ def bulk_update_org_template_scope(
     org_id: int,
     body: OrgTemplateBulkUpdate,
 ) -> dict:
-    org = _get_org_or_404(org_id, db)
-    q = db.query(EmailTemplate).filter(EmailTemplate.user_id == org.service_user_id)
+    _get_org_or_404(org_id, db)
+    q = db.query(EmailTemplate)
     if body.template_ids:
         q = q.filter(EmailTemplate.template_id.in_(body.template_ids))
     templates = q.all()
+    # Multiple template rows can exist for the same template_id; scope updates
+    # should run once per logical template.
+    unique_templates = {}
+    for row in templates:
+        if row.template_id not in unique_templates:
+            unique_templates[row.template_id] = row
+    templates = list(unique_templates.values())
     tids = [t.template_id for t in templates]
     smap = _settings_map(org_id, tids, db) if tids else {}
     for t in templates:
-        t.is_active = body.is_enabled
         setting = smap.get(t.template_id)
         if setting:
             setting.is_enabled = body.is_enabled
             setting.updated_at = datetime.utcnow()
         else:
-            db.add(
-                OrgTemplateSetting(
-                    organization_id=org_id,
-                    template_id=t.template_id,
-                    is_enabled=body.is_enabled,
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow(),
-                )
+            new_setting = OrgTemplateSetting(
+                organization_id=org_id,
+                template_id=t.template_id,
+                is_enabled=body.is_enabled,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
             )
+            db.add(new_setting)
+            smap[t.template_id] = new_setting
     db.commit()
     return {"updated": len(templates), "is_enabled": body.is_enabled}
