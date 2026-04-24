@@ -20,14 +20,35 @@ client = Sandesh(
 
 result = client.events_trigger(
     {
-        "event": "user.welcome",
-        "to": {"email": "user@example.com"},
-        "payload": {"name": "Rohit"},
+        "name": "vendor-assessment-form-to-vendor",
+        "to": {"subscriberId": "vendor-contact-1"},
+        "payload": {
+            "organisation": "Acme Corp",
+            "vendor_name": "Globex",
+            "assessment_name": "Vendor Risk Check",
+            "due_date": "April 30, 2026",
+            "url": "https://app.example.com/assessment?id=123",
+        },
+        "overrides": {
+            "email": {
+                "cc": ["risk@example.com"],
+                "subject": "Reminder: Vendor Risk Check",
+            }
+        },
     }
 )
 
 print(result)
 ```
+
+## Covered methods
+
+- Events: strict and legacy trigger methods.
+- Subscribers: create/get/list/update/deactivate.
+- Notifications: create/list/get/seen/unseen/retry/resend.
+- Templates: list/create/get/update/delete/preview/validate.
+- Integrations and credentials.
+- Settings, SES helpers, stats, and health.
 
 ## Publish to PyPI
 
