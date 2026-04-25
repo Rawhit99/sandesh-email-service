@@ -50,6 +50,14 @@ print(result)
 - Integrations and credentials.
 - Settings, SES helpers, stats, and health.
 
+
+If your code currently uses Novu-style classes, switch imports only:
+
+```python
+from sandesh.api import EventApi, SubscriberApi
+from sandesh.dto import SubscriberDto
+```
+
 ## Publish to PyPI
 
 1. Build distribution files:
