@@ -5,12 +5,12 @@ import logging
 
 from models.models import Notification, SessionLocal
 
-from services.email_service import EmailService
-
 logger = logging.getLogger(__name__)
 
 
 def process_email_notification(notification_id: int) -> None:
+    from services.email_service import EmailService
+
     db = SessionLocal()
     try:
         row = (
