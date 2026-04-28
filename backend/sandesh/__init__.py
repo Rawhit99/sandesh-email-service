@@ -1,3 +1,5 @@
+# License: MIT
+# See LICENSE.
 """Sandesh enterprise notification primitives."""
 
 from sandesh.api import EventApi, SubscriberApi

@@ -196,11 +196,43 @@ npm start
 
 ## License
 
-MIT License
+Licensed under the **MIT License**.
+
+See **[LICENSE](./LICENSE)**.
+
+## Repository Governance
+
+- Contribution guidelines: **[CONTRIBUTING.md](./CONTRIBUTING.md)**
+- Security reporting: **[SECURITY.md](./SECURITY.md)**
+- Branch protection baseline:
+  **[BRANCH_PROTECTION.md](./BRANCH_PROTECTION.md)**
+- Code of conduct: **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)**
+- Support guide: **[SUPPORT.md](./SUPPORT.md)**
 
 ## Open source and PyPI publishing
 
 Maintainers: see **[OPEN_SOURCE.md](./OPEN_SOURCE.md)** for a step-by-step plan to open source the project and publish the Python client/SDK to PyPI.
+
+## Prebuilt Docker images (GHCR)
+
+This repository publishes prebuilt images to GitHub Container Registry
+using `.github/workflows/publish-images.yml`.
+
+- Backend image:
+  `ghcr.io/<owner>/<repo>-backend:<tag>`
+- Frontend image:
+  `ghcr.io/<owner>/<repo>-frontend:<tag>`
+
+Published tags include:
+
+- `latest` (latest main branch build)
+- short commit SHA
+- git tag (for example `v0.3.1`)
+
+For your external compose repo, set:
+
+- `SANDESH_BACKEND_IMAGE=ghcr.io/<owner>/<repo>-backend:latest`
+- `SANDESH_FRONTEND_IMAGE=ghcr.io/<owner>/<repo>-frontend:latest`
 
 ## Support
 

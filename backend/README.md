@@ -2,6 +2,12 @@
 
 Official Python SDK for the Sandesh notification API.
 
+## License
+
+This SDK is licensed under the **MIT License**.
+
+See `../LICENSE`.
+
 ## Install
 
 ```bash

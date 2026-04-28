@@ -18,6 +18,16 @@ class Settings(BaseSettings):
         os.getenv("REDIS_CONNECT_TIMEOUT_SECONDS", "5")
     )
     queue_name: str = os.getenv("QUEUE_NAME", "sandesh-email")
+    queue_worker_concurrency: int = int(
+        os.getenv("QUEUE_WORKER_CONCURRENCY", "8")
+    )
+    queue_poll_timeout_seconds: int = int(
+        os.getenv("QUEUE_POLL_TIMEOUT_SECONDS", "5")
+    )
+    queue_max_retries: int = int(os.getenv("QUEUE_MAX_RETRIES", "5"))
+    queue_retry_backoff_seconds: int = int(
+        os.getenv("QUEUE_RETRY_BACKOFF_SECONDS", "10")
+    )
     queue_job_timeout: str = os.getenv("QUEUE_JOB_TIMEOUT", "10m")
     queue_result_ttl_seconds: int = int(
         os.getenv("QUEUE_RESULT_TTL_SECONDS", "3600")

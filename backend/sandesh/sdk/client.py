@@ -1,3 +1,5 @@
+# License: MIT
+# See LICENSE.
 """HTTP SDK for Sandesh API (Bearer token = JWT or API key)."""
 
 from __future__ import annotations

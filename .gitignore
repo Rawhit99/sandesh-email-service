@@ -57,6 +57,9 @@ Thumbs.db
 # Logs
 *.log
 logs/
+coverage/
+.coverage
+.coverage.*
 
 # Database
 *.db
@@ -70,6 +73,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.tsbuildinfo
+.pnpm-store/
 
 # Build outputs
 build/
@@ -80,3 +85,8 @@ dist/
 # Temporary files
 *.tmp
 *.temp
+
+# Python tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

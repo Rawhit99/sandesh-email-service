@@ -1,16 +1,12 @@
-"""RQ worker: run from repo root with `cd backend && python worker.py`."""
+# License: MIT
+# See LICENSE.
+"""Redis queue worker using ThreadPoolExecutor."""
 
-import redis
-from rq import Connection, Worker
-
-from config import settings
+from sandesh.infrastructure.queue.executor import run_worker_loop
 
 
 def main() -> None:
-    url = (settings.redis_url or "").strip() or "redis://localhost:6379/0"
-    conn = redis.from_url(url)
-    with Connection(conn):
-        Worker([settings.queue_name]).work()
+    run_worker_loop()
 
 
 if __name__ == "__main__":
