@@ -1,25 +1,26 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Box,
+  Button,
   Card,
   CardContent,
-  TextField,
-  Button,
-  Typography,
-  Alert,
   Container,
-  Link,
-  InputAdornment,
   IconButton,
+  InputAdornment,
+  Link,
+  Stack,
+  TextField,
+  Typography,
 } from '@mui/material';
 import {
+  Lock as LockIcon,
+  Person as PersonIcon,
   Visibility,
   VisibilityOff,
-  Email as EmailIcon,
-  Lock as LockIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const API_BASE_URL = 'http://localhost:8000';
 
@@ -35,18 +36,10 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, {
-        username,
-        password,
-      });
-
-      // Store token and user info
+      const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, { username, password });
       localStorage.setItem('token', response.data.access_token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-
-      // Redirect to dashboard and reload to update authentication state
       window.location.href = '/';
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Login failed. Please try again.');
@@ -56,102 +49,73 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      }}
-    >
+    <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', bgcolor: 'background.default' }}>
       <Container maxWidth="sm">
-        <Card sx={{ borderRadius: 3, boxShadow: 6 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', mb: 1 }}>
-                Welcome to Sandesh
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Email Notification System
-              </Typography>
-            </Box>
+        <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+              Sign in
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Access Sandesh console.
+            </Typography>
 
             {error && (
-              <Alert severity="error" sx={{ mb: 3 }}>
+              <Alert severity="error" sx={{ mb: 2 }}>
                 {error}
               </Alert>
             )}
 
-            <form onSubmit={handleSubmit}>
-              <TextField
-                fullWidth
-                label="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                margin="normal"
-                required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <EmailIcon color="action" />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                margin="normal"
-                required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        onClick={() => setShowPassword(!showPassword)}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                size="large"
-                disabled={loading}
-                sx={{ mt: 3, mb: 2, py: 1.5 }}
-              >
-                {loading ? 'Logging in...' : 'Sign In'}
-              </Button>
-            </form>
-
-            <Box sx={{ textAlign: 'center', mt: 3 }}>
-              <Typography variant="body2" color="text.secondary">
-                Don't have an account?{' '}
-                <Link
-                  component="button"
-                  variant="body2"
-                  onClick={() => navigate('/register')}
-                  sx={{ cursor: 'pointer', textDecoration: 'none' }}
-                >
-                  Sign up
-                </Link>
-              </Typography>
+            <Box component="form" onSubmit={handleSubmit}>
+              <Stack spacing={1.5}>
+                <TextField
+                  label="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <PersonIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  fullWidth
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LockIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton edge="end" size="small" onClick={() => setShowPassword((s) => !s)}>
+                          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <Button type="submit" variant="contained" disabled={loading}>
+                  {loading ? 'Signing in…' : 'Sign in'}
+                </Button>
+              </Stack>
             </Box>
+
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Need an account?{' '}
+              <Link component="button" underline="hover" onClick={() => navigate('/register')}>
+                Register
+              </Link>
+            </Typography>
           </CardContent>
         </Card>
       </Container>

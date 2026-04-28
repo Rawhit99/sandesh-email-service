@@ -1,14 +1,29 @@
 [project]
-name = "app"
-version = "0.1.0"
-description = "Zeron Email Service"
+name = "sandesh-sdk"
+version = "0.3.1"
+description = "Official Python SDK for the Sandesh notification API."
 authors = [
-    {name = "rohithakur0208", email = "rohit@zeron.one"},
+    {name = "Rohit Thakur", email = "rohit@zeron.one"},
 ]
-dependencies = []
-requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.25.0",
+]
+requires-python = ">=3.9"
 readme = "README.md"
 license = {text = "MIT"}
+keywords = ["sandesh", "notifications", "sdk", "api-client"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 [build-system]
 requires = ["pdm-backend"]
@@ -17,3 +32,6 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm.build]
+includes = ["sandesh/"]

@@ -9,25 +9,18 @@ import {
   CardContent,
   Alert,
   Chip,
-  Divider,
   IconButton,
-  Tooltip,
-  Paper,
-  Tabs,
-  Tab,
   FormControlLabel,
   Switch,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   List,
   ListItem,
   ListItemText,
   ListItemSecondaryAction,
+  Stack,
+  Divider,
 } from '@mui/material';
 import {
   Save as SaveIcon,
@@ -43,7 +36,7 @@ import {
   Subject as SubjectIcon,
   Edit as EditIcon,
 } from '@mui/icons-material';
-import { EmailTemplate, TemplateCreate, TemplateValidationRequest, TemplateFormData } from '../services/api';
+import { EmailTemplate, TemplateFormData } from '../services/api';
 
 interface TemplateEditorProps {
   initialData?: EmailTemplate;
@@ -64,7 +57,6 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
     variables: {},
     is_active: true,
   });
-  const [activeTab, setActiveTab] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [previewContent, setPreviewContent] = useState('');
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -183,8 +175,8 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h5" component="h2" sx={{ fontWeight: 700 }}>
           {initialData ? 'Edit Template' : 'Create New Template'}
         </Typography>
         <Box display="flex" gap={1}>
@@ -192,7 +184,6 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
             variant="outlined"
             startIcon={<PreviewIcon />}
             onClick={handlePreview}
-            sx={{ borderRadius: 2 }}
           >
             Preview
           </Button>
@@ -201,9 +192,8 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
             startIcon={<SaveIcon />}
             onClick={handleSave}
             disabled={loading}
-            sx={{ borderRadius: 2 }}
           >
-            {loading ? 'Saving...' : 'Save Template'}
+            {loading ? 'Saving…' : 'Save Template'}
           </Button>
         </Box>
       </Box>
@@ -224,10 +214,10 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
         </Alert>
       )}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         {/* Left Column - Form */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ height: 'fit-content' }}>
+          <Card variant="outlined" sx={{ height: 'fit-content' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <EditIcon />
@@ -280,7 +270,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
           </Card>
 
           {/* Variables Section */}
-          <Card sx={{ mt: 2 }}>
+          <Card variant="outlined" sx={{ mt: 2 }}>
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -343,7 +333,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
 
         {/* Right Column - Content Editor */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ height: 'fit-content' }}>
+          <Card variant="outlined" sx={{ height: 'fit-content' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <EmailIcon />
@@ -367,6 +357,11 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   },
                 }}
               />
+              <Divider sx={{ mt: 1.5, mb: 1 }} />
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Chip size="small" variant="outlined" label={`${variables.length} variables`} />
+                <Chip size="small" variant="outlined" label={formData.is_active ? 'Active template' : 'Inactive template'} />
+              </Stack>
             </CardContent>
           </Card>
         </Grid>
@@ -437,7 +432,7 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   width: previewMode === 'mobile' ? 375 : 600,
                   maxWidth: '100%',
                   bgcolor: 'white',
-                  borderRadius: 2,
+                  borderRadius: 1.5,
                   boxShadow: 3,
                   overflow: 'hidden',
                 }}
