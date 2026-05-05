@@ -5,6 +5,7 @@ import secrets
 import uuid
 from typing import Optional, Tuple
 
+from config import settings
 from exceptions import (
     ConflictError,
     ForbiddenError,
@@ -150,6 +151,50 @@ def login_user(db: Session, credentials: LoginRequest) -> LoginResponse:
         token_type="bearer",
         user=to_user_response(user),
     )
+
+
+def ensure_bootstrap_platform_admin(db: Session) -> None:
+    username = (settings.platform_admin_username or "").strip()
+    password = settings.platform_admin_password or ""
+    org_name = (settings.default_organization or "").strip()
+    if not username or not password:
+        return
+
+    org_id: Optional[int] = None
+    if org_name:
+        existing_org = (
+            db.query(Organization).filter(Organization.name == org_name).first()
+        )
+        if existing_org:
+            org_id = existing_org.id
+        else:
+            new_org = _create_org_with_service_user(db, org_name)
+            org_id = new_org.id
+
+    user = db.query(User).filter(User.username == username).first()
+    password_hash = get_password_hash(password)
+    if user:
+        user.password_hash = password_hash
+        user.is_platform_admin = True
+        user.is_active = True
+        if org_id is not None:
+            user.organization_id = org_id
+            user.organization_name = org_name
+            user.organization_role = "admin"
+        db.add(user)
+    else:
+        user = User(
+            username=username,
+            password_hash=password_hash,
+            organization_id=org_id,
+            organization_name=org_name if org_id is not None else None,
+            organization_role="admin" if org_id is not None else None,
+            is_platform_admin=True,
+            is_active=True,
+        )
+        db.add(user)
+
+    db.commit()
 
 
 def get_user_by_username(db: Session, username: str) -> UserResponse:
