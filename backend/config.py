@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     # Comma-separated usernames treated as platform admins
     # (in addition to users.is_platform_admin).
     platform_admin_usernames: str = os.getenv("PLATFORM_ADMIN_USERNAMES", "")
+    platform_admin_username: str = os.getenv("PLATFORM_ADMIN_USERNAME", "")
+    platform_admin_password: str = os.getenv("PLATFORM_ADMIN_PASSWORD", "")
+    default_organization: str = os.getenv("DEFAULT_ORGANIZATION", "")
 
     # Email Provider Configuration
     email_provider: str = os.getenv("EMAIL_PROVIDER", "ses")  # "ses" or "smtp"

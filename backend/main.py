@@ -16,7 +16,7 @@ from middleware.rate_limit import limiter
 from middleware.request_size_limit import RequestSizeLimitMiddleware
 from middleware.request_id import RequestIdMiddleware
 from middleware.security_headers import SecurityHeadersMiddleware
-from models.models import Base, engine
+from models.models import Base, SessionLocal, engine
 from routers.health import router as health_router
 from routers.auth import router as auth_router
 from routers.api_keys import router as api_keys_router
@@ -32,6 +32,7 @@ from routers.platform_organizations import (
     router as platform_organizations_router,
 )
 from routers.credentials import router as credentials_router
+from services.auth_service import ensure_bootstrap_platform_admin
 
 
 logging.basicConfig(level=logging.INFO)
@@ -47,6 +48,15 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 register_exception_handlers(app)
+
+
+@app.on_event("startup")
+def bootstrap_platform_admin() -> None:
+    db = SessionLocal()
+    try:
+        ensure_bootstrap_platform_admin(db)
+    finally:
+        db.close()
 
 allow_origins = [
     x.strip() for x in settings.cors_allow_origins.split(",") if x.strip()
