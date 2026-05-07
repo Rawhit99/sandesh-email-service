@@ -1855,14 +1855,6 @@ static CYTHON_INLINE int __Pyx_ParseKeywords(
 static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
     Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
-/* ArgTypeTestFunc.export */
-static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact);
-
-/* ArgTypeTest.proto */
-#define __Pyx_ArgTypeTest(obj, type, none_allowed, name, exact)\
-    ((likely(__Pyx_IS_TYPE(obj, type) | (none_allowed && (obj == Py_None)))) ? 1 :\
-        __Pyx__ArgTypeTest(obj, type, name, exact))
-
 /* PyObjectDelAttr.proto (used by PyObjectSetAttrStr) */
 #if CYTHON_COMPILING_IN_LIMITED_API && __PYX_LIMITED_VERSION_HEX < 0x030d0000
 #define __Pyx_PyObject_DelAttr(o, n) PyObject_SetAttr(o, n, NULL)
@@ -1877,21 +1869,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
 #else
 #define __Pyx_PyObject_DelAttrStr(o,n)   __Pyx_PyObject_DelAttr(o,n)
 #define __Pyx_PyObject_SetAttrStr(o,n,v) PyObject_SetAttr(o,n,v)
-#endif
-
-/* dict_getitem_default.proto */
-static PyObject* __Pyx_PyDict_GetItemDefault(PyObject* d, PyObject* key, PyObject* default_value);
-
-/* PyObjectCall2Args.proto (used by CallUnboundCMethod1) */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
-
-/* CallUnboundCMethod1.proto */
-CYTHON_UNUSED
-static PyObject* __Pyx__CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg);
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg);
-#else
-#define __Pyx_CallUnboundCMethod1(cfunc, self, arg)  __Pyx__CallUnboundCMethod1(cfunc, self, arg)
 #endif
 
 /* PyObjectFastCallMethod.proto */
@@ -1948,6 +1925,24 @@ static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_ve
 static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
 #endif
 
+/* PyObjectVectorCallKwBuilder.proto */
+CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
+#if CYTHON_VECTORCALL
+#if PY_VERSION_HEX >= 0x03090000
+#define __Pyx_Object_Vectorcall_CallFromBuilder PyObject_Vectorcall
+#else
+#define __Pyx_Object_Vectorcall_CallFromBuilder _PyObject_Vectorcall
+#endif
+#define __Pyx_MakeVectorcallBuilderKwds(n) PyTuple_New(n)
+static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
+static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, PyObject *builder, PyObject **args, int n);
+#else
+#define __Pyx_Object_Vectorcall_CallFromBuilder __Pyx_PyObject_FastCallDict
+#define __Pyx_MakeVectorcallBuilderKwds(n) __Pyx_PyDict_NewPresized(n)
+#define __Pyx_VectorcallBuilder_AddArg(key, value, builder, args, n) PyDict_SetItem(builder, key, value)
+#define __Pyx_VectorcallBuilder_AddArgStr(key, value, builder, args, n) PyDict_SetItemString(builder, key, value)
+#endif
+
 /* PyObject_Unicode.proto */
 #define __Pyx_PyObject_Unicode(obj)\
     (likely(PyUnicode_CheckExact(obj)) ? __Pyx_NewRef(obj) : PyObject_Str(obj))
@@ -1973,23 +1968,13 @@ static CYTHON_INLINE int __Pyx_ListComp_Append(PyObject* list, PyObject* x) {
 #define __Pyx_ListComp_Append(L,x) PyList_Append(L,x)
 #endif
 
-/* PyObjectVectorCallKwBuilder.proto */
-CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
-#if CYTHON_VECTORCALL
-#if PY_VERSION_HEX >= 0x03090000
-#define __Pyx_Object_Vectorcall_CallFromBuilder PyObject_Vectorcall
-#else
-#define __Pyx_Object_Vectorcall_CallFromBuilder _PyObject_Vectorcall
-#endif
-#define __Pyx_MakeVectorcallBuilderKwds(n) PyTuple_New(n)
-static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
-static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, PyObject *builder, PyObject **args, int n);
-#else
-#define __Pyx_Object_Vectorcall_CallFromBuilder __Pyx_PyObject_FastCallDict
-#define __Pyx_MakeVectorcallBuilderKwds(n) __Pyx_PyDict_NewPresized(n)
-#define __Pyx_VectorcallBuilder_AddArg(key, value, builder, args, n) PyDict_SetItem(builder, key, value)
-#define __Pyx_VectorcallBuilder_AddArgStr(key, value, builder, args, n) PyDict_SetItemString(builder, key, value)
-#endif
+/* ArgTypeTestFunc.export */
+static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact);
+
+/* ArgTypeTest.proto */
+#define __Pyx_ArgTypeTest(obj, type, none_allowed, name, exact)\
+    ((likely(__Pyx_IS_TYPE(obj, type) | (none_allowed && (obj == Py_None)))) ? 1 :\
+        __Pyx__ArgTypeTest(obj, type, name, exact))
 
 /* RaiseKeywordRequired.proto */
 static void __Pyx_RaiseKeywordRequired(const char* func_name, PyObject* kw_name);
@@ -1999,31 +1984,6 @@ static void __Pyx_RaiseKeywordRequired(const char* func_name, PyObject* kw_name)
 
 /* RaiseException.export */
 static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
-
-/* GetItemInt.proto */
-#define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil, unsafe_shared)\
-    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
-    __Pyx_GetItemInt_Fast(o, (Py_ssize_t)i, is_list, wraparound, boundscheck, unsafe_shared) :\
-    (is_list ? (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL) :\
-               __Pyx_GetItemInt_Generic(o, to_py_func(i))))
-#define __Pyx_GetItemInt_List(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil, unsafe_shared)\
-    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
-    __Pyx_GetItemInt_List_Fast(o, (Py_ssize_t)i, wraparound, boundscheck, unsafe_shared) :\
-    (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL))
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
-                                                              int wraparound, int boundscheck, int unsafe_shared);
-#define __Pyx_GetItemInt_Tuple(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil, unsafe_shared)\
-    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
-    __Pyx_GetItemInt_Tuple_Fast(o, (Py_ssize_t)i, wraparound, boundscheck, unsafe_shared) :\
-    (PyErr_SetString(PyExc_IndexError, "tuple index out of range"), (PyObject*)NULL))
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
-                                                              int wraparound, int boundscheck, int unsafe_shared);
-static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j);
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
-                                                     int is_list, int wraparound, int boundscheck, int unsafe_shared);
-
-/* RaiseUnexpectedTypeError.proto */
-static int __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj);
 
 /* GetTopmostException.proto (used by SaveResetException) */
 #if CYTHON_USE_EXC_INFO_STACK && CYTHON_FAST_THREAD_STATE
@@ -2118,6 +2078,42 @@ static CYTHON_INLINE int __Pyx_PySequence_ContainsTF(PyObject* item, PyObject* s
     return unlikely(result < 0) ? result : (result == (eq == Py_EQ));
 }
 
+/* RaiseUnexpectedTypeError.proto */
+static int __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj);
+
+/* GetItemInt.proto */
+#define __Pyx_GetItemInt(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil, unsafe_shared)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_Fast(o, (Py_ssize_t)i, is_list, wraparound, boundscheck, unsafe_shared) :\
+    (is_list ? (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL) :\
+               __Pyx_GetItemInt_Generic(o, to_py_func(i))))
+#define __Pyx_GetItemInt_List(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil, unsafe_shared)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_List_Fast(o, (Py_ssize_t)i, wraparound, boundscheck, unsafe_shared) :\
+    (PyErr_SetString(PyExc_IndexError, "list index out of range"), (PyObject*)NULL))
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
+                                                              int wraparound, int boundscheck, int unsafe_shared);
+#define __Pyx_GetItemInt_Tuple(o, i, type, is_signed, to_py_func, is_list, wraparound, boundscheck, has_gil, unsafe_shared)\
+    (__Pyx_fits_Py_ssize_t(i, type, is_signed) ?\
+    __Pyx_GetItemInt_Tuple_Fast(o, (Py_ssize_t)i, wraparound, boundscheck, unsafe_shared) :\
+    (PyErr_SetString(PyExc_IndexError, "tuple index out of range"), (PyObject*)NULL))
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
+                                                              int wraparound, int boundscheck, int unsafe_shared);
+static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j);
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i,
+                                                     int is_list, int wraparound, int boundscheck, int unsafe_shared);
+
+/* DictGetItem.proto */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key);
+#define __Pyx_PyObject_Dict_GetItem(obj, name)\
+    (likely(PyDict_CheckExact(obj)) ?\
+     __Pyx_PyDict_GetItem(obj, name) : PyObject_GetItem(obj, name))
+#else
+#define __Pyx_PyDict_GetItem(d, key) PyObject_GetItem(d, key)
+#define __Pyx_PyObject_Dict_GetItem(obj, name)  PyObject_GetItem(obj, name)
+#endif
+
 /* HasAttr.proto (used by ImportImpl) */
 #if __PYX_LIMITED_VERSION_HEX >= 0x030d0000
 #define __Pyx_HasAttr(o, n)  PyObject_HasAttrWithError(o, n)
@@ -2134,6 +2130,13 @@ static CYTHON_INLINE PyObject *__Pyx_Import(PyObject *name, PyObject *const *imp
 /* ImportFrom.proto */
 static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name);
 
+/* ObjectGetItem.proto */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject *key);
+#else
+#define __Pyx_PyObject_GetItem(obj, key)  PyObject_GetItem(obj, key)
+#endif
+
 /* SetNameInClass.proto */
 #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX < 0x030d0000
 #define __Pyx_SetNameInClass(ns, name, value)\
@@ -2147,6 +2150,9 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name);
 
 /* CalculateMetaclass.proto (used by Py3ClassCreate) */
 static PyObject *__Pyx_CalculateMetaclass(PyTypeObject *metaclass, PyObject *bases);
+
+/* PyObjectCall2Args.proto (used by Py3ClassCreate) */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
 
 /* PyObjectLookupSpecial.proto (used by Py3ClassCreate) */
 #if CYTHON_USE_PYTYPE_LOOKUP && CYTHON_USE_TYPE_SLOTS
@@ -2449,10 +2455,16 @@ static PyObject *__pyx_builtin_staticmethod;
 /* #### Code section: string_decls ### */
 /* #### Code section: decls ### */
 static PyObject *__pyx_pf_7sandesh_3api_19_SubscriberResource___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_raw); /* proto */
+static PyObject *__pyx_pf_7sandesh_3api_19_SubscriberResource_2_normalize_tokens(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_raw); /* proto */
 static PyObject *__pyx_pf_7sandesh_3api_8EventApi___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_url, PyObject *__pyx_v_api_key, double __pyx_v_timeout); /* proto */
 static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_recipients, PyObject *__pyx_v_payload, PyObject *__pyx_v_overrides); /* proto */
 static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_subscriber_id, PyObject *__pyx_v_payload, PyObject *__pyx_v_overrides); /* proto */
 static PyObject *__pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_payload, PyObject *__pyx_v_overrides); /* proto */
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_8_resolve_subscriber_id(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_recipients); /* proto */
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_10_first_email(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_value); /* proto */
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_12_email_overrides(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_overrides); /* proto */
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_14_apply_legacy_email_overrides(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_legacy_body, PyObject *__pyx_v_email_overrides); /* proto */
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_16_http_error_from_sdk(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_exc); /* proto */
 static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_url, PyObject *__pyx_v_api_key, double __pyx_v_timeout); /* proto */
 static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_2create(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_subscriber); /* proto */
 static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_4delete(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_subscriber_id); /* proto */
@@ -2478,13 +2490,12 @@ typedef struct {
   PyObject *__pyx_empty_tuple;
   PyObject *__pyx_empty_bytes;
   PyObject *__pyx_empty_unicode;
-  __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_get;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_items;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_pop;
   __Pyx_CachedCFunction __pyx_umethod_PyDict_Type_values;
-  PyObject *__pyx_tuple[1];
-  PyObject *__pyx_codeobj_tab[10];
-  PyObject *__pyx_string_tab[160];
+  PyObject *__pyx_tuple[2];
+  PyObject *__pyx_codeobj_tab[16];
+  PyObject *__pyx_string_tab[182];
   PyObject *__pyx_number_tab[2];
 /* #### Code section: module_state_contents ### */
 /* CommonTypesMetaclass.module_state_decls */
@@ -2527,165 +2538,187 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #endif
 /* #### Code section: constant_name_defines ### */
 #define __pyx_kp_u_ __pyx_string_tab[0]
-#define __pyx_kp_u_Dict_str_Any __pyx_string_tab[1]
-#define __pyx_kp_u_Legacy_trigger_fallback_requires __pyx_string_tab[2]
-#define __pyx_kp_u_Legacy_trigger_fallback_requires_2 __pyx_string_tab[3]
-#define __pyx_kp_u_List_str __pyx_string_tab[4]
-#define __pyx_kp_u_Note_that_Cython_is_deliberately __pyx_string_tab[5]
-#define __pyx_kp_u_Only_provider_id_fcm_is_supporte __pyx_string_tab[6]
-#define __pyx_kp_u_Optional_Dict_str_Any __pyx_string_tab[7]
-#define __pyx_kp_u_Optional_str __pyx_string_tab[8]
-#define __pyx_kp_u_Union_str_List_str __pyx_string_tab[9]
-#define __pyx_kp_u__2 __pyx_string_tab[10]
-#define __pyx_kp_u__3 __pyx_string_tab[11]
-#define __pyx_kp_u__4 __pyx_string_tab[12]
-#define __pyx_kp_u_add_note __pyx_string_tab[13]
-#define __pyx_kp_u_api_v1_subscribers __pyx_string_tab[14]
-#define __pyx_kp_u_has_no_email __pyx_string_tab[15]
-#define __pyx_kp_u_recipients_cannot_be_empty __pyx_string_tab[16]
-#define __pyx_kp_u_recipients_must_contain_a_subscr __pyx_string_tab[17]
-#define __pyx_kp_u_sandesh_api_py __pyx_string_tab[18]
-#define __pyx_kp_u_was_not_found_at_api_v1_subscri __pyx_string_tab[19]
-#define __pyx_n_u_Any __pyx_string_tab[20]
-#define __pyx_n_u_ChannelCredentials __pyx_string_tab[21]
-#define __pyx_n_u_Dict __pyx_string_tab[22]
-#define __pyx_n_u_EventApi __pyx_string_tab[23]
-#define __pyx_n_u_EventApi___init __pyx_string_tab[24]
-#define __pyx_n_u_EventApi__infer_email_for_legacy __pyx_string_tab[25]
-#define __pyx_n_u_EventApi__trigger_legacy_from_v1 __pyx_string_tab[26]
-#define __pyx_n_u_EventApi_trigger __pyx_string_tab[27]
-#define __pyx_n_u_GET __pyx_string_tab[28]
-#define __pyx_n_u_HTTPError __pyx_string_tab[29]
-#define __pyx_n_u_List __pyx_string_tab[30]
-#define __pyx_n_u_None __pyx_string_tab[31]
-#define __pyx_n_u_Optional __pyx_string_tab[32]
-#define __pyx_n_u_Pyx_PyDict_NextRef __pyx_string_tab[33]
-#define __pyx_n_u_Request __pyx_string_tab[34]
-#define __pyx_n_u_Response __pyx_string_tab[35]
-#define __pyx_n_u_Sandesh __pyx_string_tab[36]
-#define __pyx_n_u_SandeshAPIError __pyx_string_tab[37]
-#define __pyx_n_u_SubscriberApi __pyx_string_tab[38]
-#define __pyx_n_u_SubscriberApi___init __pyx_string_tab[39]
-#define __pyx_n_u_SubscriberApi_create __pyx_string_tab[40]
-#define __pyx_n_u_SubscriberApi_credentials __pyx_string_tab[41]
-#define __pyx_n_u_SubscriberApi_delete __pyx_string_tab[42]
-#define __pyx_n_u_SubscriberApi_get __pyx_string_tab[43]
-#define __pyx_n_u_SubscriberChannel __pyx_string_tab[44]
-#define __pyx_n_u_SubscriberDto __pyx_string_tab[45]
-#define __pyx_n_u_SubscriberResource __pyx_string_tab[46]
-#define __pyx_n_u_SubscriberResource___init __pyx_string_tab[47]
-#define __pyx_n_u_Union __pyx_string_tab[48]
-#define __pyx_n_u_annotations __pyx_string_tab[49]
-#define __pyx_n_u_api_key __pyx_string_tab[50]
-#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[51]
-#define __pyx_n_u_base __pyx_string_tab[52]
-#define __pyx_n_u_base_url __pyx_string_tab[53]
-#define __pyx_n_u_bearer_token __pyx_string_tab[54]
-#define __pyx_n_u_body __pyx_string_tab[55]
-#define __pyx_n_u_candidate_keys __pyx_string_tab[56]
-#define __pyx_n_u_cc __pyx_string_tab[57]
-#define __pyx_n_u_cc_emails __pyx_string_tab[58]
-#define __pyx_n_u_cc_value __pyx_string_tab[59]
-#define __pyx_n_u_channels __pyx_string_tab[60]
-#define __pyx_n_u_cline_in_traceback __pyx_string_tab[61]
-#define __pyx_n_u_create __pyx_string_tab[62]
-#define __pyx_n_u_create_subscriber __pyx_string_tab[63]
-#define __pyx_n_u_credentials __pyx_string_tab[64]
-#define __pyx_n_u_current __pyx_string_tab[65]
-#define __pyx_n_u_current_data __pyx_string_tab[66]
-#define __pyx_n_u_data __pyx_string_tab[67]
-#define __pyx_n_u_dataclass __pyx_string_tab[68]
-#define __pyx_n_u_dataclasses __pyx_string_tab[69]
-#define __pyx_n_u_deactivate_subscriber __pyx_string_tab[70]
-#define __pyx_n_u_delete __pyx_string_tab[71]
-#define __pyx_n_u_device_tokens __pyx_string_tab[72]
-#define __pyx_n_u_doc __pyx_string_tab[73]
-#define __pyx_n_u_email __pyx_string_tab[74]
-#define __pyx_n_u_email_overrides __pyx_string_tab[75]
-#define __pyx_n_u_events_trigger __pyx_string_tab[76]
-#define __pyx_n_u_events_trigger_legacy __pyx_string_tab[77]
-#define __pyx_n_u_exc __pyx_string_tab[78]
-#define __pyx_n_u_fcm __pyx_string_tab[79]
-#define __pyx_n_u_fcm_device_tokens __pyx_string_tab[80]
-#define __pyx_n_u_float __pyx_string_tab[81]
-#define __pyx_n_u_func __pyx_string_tab[82]
-#define __pyx_n_u_get __pyx_string_tab[83]
-#define __pyx_n_u_get_subscriber __pyx_string_tab[84]
-#define __pyx_n_u_httpx __pyx_string_tab[85]
-#define __pyx_n_u_infer_email_for_legacy __pyx_string_tab[86]
-#define __pyx_n_u_inferred_email __pyx_string_tab[87]
-#define __pyx_n_u_init __pyx_string_tab[88]
-#define __pyx_n_u_is_coroutine __pyx_string_tab[89]
-#define __pyx_n_u_item __pyx_string_tab[90]
-#define __pyx_n_u_items __pyx_string_tab[91]
-#define __pyx_n_u_key __pyx_string_tab[92]
-#define __pyx_n_u_legacy_body __pyx_string_tab[93]
-#define __pyx_n_u_main __pyx_string_tab[94]
-#define __pyx_n_u_maybe_email __pyx_string_tab[95]
-#define __pyx_n_u_metaclass __pyx_string_tab[96]
-#define __pyx_n_u_module __pyx_string_tab[97]
-#define __pyx_n_u_name __pyx_string_tab[98]
-#define __pyx_n_u_name_2 __pyx_string_tab[99]
-#define __pyx_n_u_new_data __pyx_string_tab[100]
-#define __pyx_n_u_overrides __pyx_string_tab[101]
-#define __pyx_n_u_payload __pyx_string_tab[102]
-#define __pyx_n_u_pop __pyx_string_tab[103]
-#define __pyx_n_u_prepare __pyx_string_tab[104]
-#define __pyx_n_u_provider_id __pyx_string_tab[105]
-#define __pyx_n_u_qualname __pyx_string_tab[106]
-#define __pyx_n_u_raw __pyx_string_tab[107]
-#define __pyx_n_u_recipient_email __pyx_string_tab[108]
-#define __pyx_n_u_recipients __pyx_string_tab[109]
-#define __pyx_n_u_request __pyx_string_tab[110]
-#define __pyx_n_u_request_method __pyx_string_tab[111]
-#define __pyx_n_u_request_url __pyx_string_tab[112]
-#define __pyx_n_u_requests_models __pyx_string_tab[113]
-#define __pyx_n_u_response __pyx_string_tab[114]
-#define __pyx_n_u_return __pyx_string_tab[115]
-#define __pyx_n_u_sandesh_api __pyx_string_tab[116]
-#define __pyx_n_u_sandesh_dto __pyx_string_tab[117]
-#define __pyx_n_u_sandesh_sdk_client __pyx_string_tab[118]
-#define __pyx_n_u_sandesh_sdk_exceptions __pyx_string_tab[119]
-#define __pyx_n_u_sdk __pyx_string_tab[120]
-#define __pyx_n_u_self __pyx_string_tab[121]
-#define __pyx_n_u_senderName __pyx_string_tab[122]
-#define __pyx_n_u_sender_name __pyx_string_tab[123]
-#define __pyx_n_u_set_name __pyx_string_tab[124]
-#define __pyx_n_u_setdefault __pyx_string_tab[125]
-#define __pyx_n_u_staticmethod __pyx_string_tab[126]
-#define __pyx_n_u_status_code __pyx_string_tab[127]
-#define __pyx_n_u_str __pyx_string_tab[128]
-#define __pyx_n_u_strip __pyx_string_tab[129]
-#define __pyx_n_u_subject __pyx_string_tab[130]
-#define __pyx_n_u_subscriber __pyx_string_tab[131]
-#define __pyx_n_u_subscriberId __pyx_string_tab[132]
-#define __pyx_n_u_subscriber_id __pyx_string_tab[133]
-#define __pyx_n_u_template_id __pyx_string_tab[134]
-#define __pyx_n_u_test __pyx_string_tab[135]
-#define __pyx_n_u_timeout __pyx_string_tab[136]
-#define __pyx_n_u_to __pyx_string_tab[137]
-#define __pyx_n_u_to_email __pyx_string_tab[138]
-#define __pyx_n_u_to_payload __pyx_string_tab[139]
-#define __pyx_n_u_to_value __pyx_string_tab[140]
-#define __pyx_n_u_token __pyx_string_tab[141]
-#define __pyx_n_u_tokens __pyx_string_tab[142]
-#define __pyx_n_u_trigger __pyx_string_tab[143]
-#define __pyx_n_u_trigger_legacy_from_v1 __pyx_string_tab[144]
-#define __pyx_n_u_typing __pyx_string_tab[145]
-#define __pyx_n_u_update_subscriber __pyx_string_tab[146]
-#define __pyx_n_u_url __pyx_string_tab[147]
-#define __pyx_n_u_user_email __pyx_string_tab[148]
-#define __pyx_n_u_values __pyx_string_tab[149]
-#define __pyx_n_u_vendor_email __pyx_string_tab[150]
-#define __pyx_kp_b_iso88591_31_t5 __pyx_string_tab[151]
-#define __pyx_kp_b_iso88591_A_1_Ql_t1_j_Cq_3fA_Cq_6_4q_AQ_A __pyx_string_tab[152]
-#define __pyx_kp_b_iso88591_A_5Qiq_s_4q_T_oQa_a_3m3a_1_A_iq __pyx_string_tab[153]
-#define __pyx_kp_b_iso88591_A_G1_Qa_z_uD_Ct4s_s_Qk_it1A_z_1 __pyx_string_tab[154]
-#define __pyx_kp_b_iso88591_A_HG1_Q_A __pyx_string_tab[155]
-#define __pyx_kp_b_iso88591_A_s_AQ_e_1_4q_Qiq_4q_q_fA_s_6_q __pyx_string_tab[156]
-#define __pyx_kp_b_iso88591_HA_t5_aq __pyx_string_tab[157]
-#define __pyx_kp_b_iso88591_d_aq_1 __pyx_string_tab[158]
-#define __pyx_kp_b_iso88591_q_G1_s_a_AS_AYk_T_q_4z_Q_M_a_A __pyx_string_tab[159]
+#define __pyx_kp_u_Legacy_trigger_fallback_requires __pyx_string_tab[1]
+#define __pyx_kp_u_Legacy_trigger_fallback_requires_2 __pyx_string_tab[2]
+#define __pyx_kp_u_List_str __pyx_string_tab[3]
+#define __pyx_kp_u_Note_that_Cython_is_deliberately __pyx_string_tab[4]
+#define __pyx_kp_u_Only_provider_id_fcm_is_supporte __pyx_string_tab[5]
+#define __pyx_kp_u_Optional_JsonDict __pyx_string_tab[6]
+#define __pyx_kp_u_Optional_str __pyx_string_tab[7]
+#define __pyx_kp_u_Union_str_List_str __pyx_string_tab[8]
+#define __pyx_kp_u__2 __pyx_string_tab[9]
+#define __pyx_kp_u__3 __pyx_string_tab[10]
+#define __pyx_kp_u__4 __pyx_string_tab[11]
+#define __pyx_kp_u_add_note __pyx_string_tab[12]
+#define __pyx_kp_u_api_v1_subscribers __pyx_string_tab[13]
+#define __pyx_kp_u_has_no_email __pyx_string_tab[14]
+#define __pyx_kp_u_recipients_cannot_be_empty __pyx_string_tab[15]
+#define __pyx_kp_u_recipients_must_contain_a_subscr __pyx_string_tab[16]
+#define __pyx_kp_u_sandesh_api_py __pyx_string_tab[17]
+#define __pyx_kp_u_was_not_found_at_api_v1_subscri __pyx_string_tab[18]
+#define __pyx_n_u_Any __pyx_string_tab[19]
+#define __pyx_n_u_ChannelCredentials __pyx_string_tab[20]
+#define __pyx_n_u_Dict __pyx_string_tab[21]
+#define __pyx_n_u_EventApi __pyx_string_tab[22]
+#define __pyx_n_u_EventApi___init __pyx_string_tab[23]
+#define __pyx_n_u_EventApi__apply_legacy_email_ove __pyx_string_tab[24]
+#define __pyx_n_u_EventApi__email_overrides __pyx_string_tab[25]
+#define __pyx_n_u_EventApi__first_email __pyx_string_tab[26]
+#define __pyx_n_u_EventApi__http_error_from_sdk __pyx_string_tab[27]
+#define __pyx_n_u_EventApi__infer_email_for_legacy __pyx_string_tab[28]
+#define __pyx_n_u_EventApi__resolve_subscriber_id __pyx_string_tab[29]
+#define __pyx_n_u_EventApi__trigger_legacy_from_v1 __pyx_string_tab[30]
+#define __pyx_n_u_EventApi_trigger __pyx_string_tab[31]
+#define __pyx_n_u_GET __pyx_string_tab[32]
+#define __pyx_n_u_HTTPError __pyx_string_tab[33]
+#define __pyx_n_u_JsonDict __pyx_string_tab[34]
+#define __pyx_n_u_List __pyx_string_tab[35]
+#define __pyx_n_u_None __pyx_string_tab[36]
+#define __pyx_n_u_Optional __pyx_string_tab[37]
+#define __pyx_n_u_Pyx_PyDict_NextRef __pyx_string_tab[38]
+#define __pyx_n_u_Request __pyx_string_tab[39]
+#define __pyx_n_u_Response __pyx_string_tab[40]
+#define __pyx_n_u_Sandesh __pyx_string_tab[41]
+#define __pyx_n_u_SandeshAPIError __pyx_string_tab[42]
+#define __pyx_n_u_SubscriberApi __pyx_string_tab[43]
+#define __pyx_n_u_SubscriberApi___init __pyx_string_tab[44]
+#define __pyx_n_u_SubscriberApi_create __pyx_string_tab[45]
+#define __pyx_n_u_SubscriberApi_credentials __pyx_string_tab[46]
+#define __pyx_n_u_SubscriberApi_delete __pyx_string_tab[47]
+#define __pyx_n_u_SubscriberApi_get __pyx_string_tab[48]
+#define __pyx_n_u_SubscriberChannel __pyx_string_tab[49]
+#define __pyx_n_u_SubscriberDto __pyx_string_tab[50]
+#define __pyx_n_u_SubscriberResource __pyx_string_tab[51]
+#define __pyx_n_u_SubscriberResource___init __pyx_string_tab[52]
+#define __pyx_n_u_SubscriberResource__normalize_t __pyx_string_tab[53]
+#define __pyx_n_u_Union __pyx_string_tab[54]
+#define __pyx_n_u_annotations __pyx_string_tab[55]
+#define __pyx_n_u_api_key __pyx_string_tab[56]
+#define __pyx_n_u_apply_legacy_email_overrides __pyx_string_tab[57]
+#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[58]
+#define __pyx_n_u_base __pyx_string_tab[59]
+#define __pyx_n_u_base_url __pyx_string_tab[60]
+#define __pyx_n_u_bearer_token __pyx_string_tab[61]
+#define __pyx_n_u_body __pyx_string_tab[62]
+#define __pyx_n_u_candidate_keys __pyx_string_tab[63]
+#define __pyx_n_u_cc __pyx_string_tab[64]
+#define __pyx_n_u_cc_emails __pyx_string_tab[65]
+#define __pyx_n_u_channels __pyx_string_tab[66]
+#define __pyx_n_u_class_getitem __pyx_string_tab[67]
+#define __pyx_n_u_cleaned __pyx_string_tab[68]
+#define __pyx_n_u_cline_in_traceback __pyx_string_tab[69]
+#define __pyx_n_u_create __pyx_string_tab[70]
+#define __pyx_n_u_create_subscriber __pyx_string_tab[71]
+#define __pyx_n_u_credentials __pyx_string_tab[72]
+#define __pyx_n_u_current __pyx_string_tab[73]
+#define __pyx_n_u_current_data __pyx_string_tab[74]
+#define __pyx_n_u_data __pyx_string_tab[75]
+#define __pyx_n_u_dataclass __pyx_string_tab[76]
+#define __pyx_n_u_dataclasses __pyx_string_tab[77]
+#define __pyx_n_u_deactivate_subscriber __pyx_string_tab[78]
+#define __pyx_n_u_delete __pyx_string_tab[79]
+#define __pyx_n_u_device_tokens __pyx_string_tab[80]
+#define __pyx_n_u_doc __pyx_string_tab[81]
+#define __pyx_n_u_email __pyx_string_tab[82]
+#define __pyx_n_u_email_overrides __pyx_string_tab[83]
+#define __pyx_n_u_email_overrides_2 __pyx_string_tab[84]
+#define __pyx_n_u_events_trigger __pyx_string_tab[85]
+#define __pyx_n_u_events_trigger_legacy __pyx_string_tab[86]
+#define __pyx_n_u_exc __pyx_string_tab[87]
+#define __pyx_n_u_fcm __pyx_string_tab[88]
+#define __pyx_n_u_fcm_device_tokens __pyx_string_tab[89]
+#define __pyx_n_u_first_email __pyx_string_tab[90]
+#define __pyx_n_u_float __pyx_string_tab[91]
+#define __pyx_n_u_func __pyx_string_tab[92]
+#define __pyx_n_u_get __pyx_string_tab[93]
+#define __pyx_n_u_get_subscriber __pyx_string_tab[94]
+#define __pyx_n_u_http_error_from_sdk __pyx_string_tab[95]
+#define __pyx_n_u_httpx __pyx_string_tab[96]
+#define __pyx_n_u_infer_email_for_legacy __pyx_string_tab[97]
+#define __pyx_n_u_inferred __pyx_string_tab[98]
+#define __pyx_n_u_inferred_email __pyx_string_tab[99]
+#define __pyx_n_u_init __pyx_string_tab[100]
+#define __pyx_n_u_integrationIdentifier __pyx_string_tab[101]
+#define __pyx_n_u_integration_identifier __pyx_string_tab[102]
+#define __pyx_n_u_integration_identifier_2 __pyx_string_tab[103]
+#define __pyx_n_u_is_coroutine __pyx_string_tab[104]
+#define __pyx_n_u_item __pyx_string_tab[105]
+#define __pyx_n_u_items __pyx_string_tab[106]
+#define __pyx_n_u_key __pyx_string_tab[107]
+#define __pyx_n_u_legacy_body __pyx_string_tab[108]
+#define __pyx_n_u_main __pyx_string_tab[109]
+#define __pyx_n_u_metaclass __pyx_string_tab[110]
+#define __pyx_n_u_module __pyx_string_tab[111]
+#define __pyx_n_u_name __pyx_string_tab[112]
+#define __pyx_n_u_name_2 __pyx_string_tab[113]
+#define __pyx_n_u_new_data __pyx_string_tab[114]
+#define __pyx_n_u_normalize_tokens __pyx_string_tab[115]
+#define __pyx_n_u_overrides __pyx_string_tab[116]
+#define __pyx_n_u_payload __pyx_string_tab[117]
+#define __pyx_n_u_pop __pyx_string_tab[118]
+#define __pyx_n_u_prepare __pyx_string_tab[119]
+#define __pyx_n_u_provider_id __pyx_string_tab[120]
+#define __pyx_n_u_qualname __pyx_string_tab[121]
+#define __pyx_n_u_raw __pyx_string_tab[122]
+#define __pyx_n_u_recipient_email __pyx_string_tab[123]
+#define __pyx_n_u_recipients __pyx_string_tab[124]
+#define __pyx_n_u_request __pyx_string_tab[125]
+#define __pyx_n_u_request_method __pyx_string_tab[126]
+#define __pyx_n_u_request_url __pyx_string_tab[127]
+#define __pyx_n_u_requests_models __pyx_string_tab[128]
+#define __pyx_n_u_resolve_subscriber_id __pyx_string_tab[129]
+#define __pyx_n_u_response __pyx_string_tab[130]
+#define __pyx_n_u_return __pyx_string_tab[131]
+#define __pyx_n_u_sandesh_api __pyx_string_tab[132]
+#define __pyx_n_u_sandesh_dto __pyx_string_tab[133]
+#define __pyx_n_u_sandesh_sdk_client __pyx_string_tab[134]
+#define __pyx_n_u_sandesh_sdk_exceptions __pyx_string_tab[135]
+#define __pyx_n_u_sdk __pyx_string_tab[136]
+#define __pyx_n_u_self __pyx_string_tab[137]
+#define __pyx_n_u_senderName __pyx_string_tab[138]
+#define __pyx_n_u_sender_name __pyx_string_tab[139]
+#define __pyx_n_u_set_name __pyx_string_tab[140]
+#define __pyx_n_u_setdefault __pyx_string_tab[141]
+#define __pyx_n_u_staticmethod __pyx_string_tab[142]
+#define __pyx_n_u_status_code __pyx_string_tab[143]
+#define __pyx_n_u_str __pyx_string_tab[144]
+#define __pyx_n_u_strip __pyx_string_tab[145]
+#define __pyx_n_u_subject __pyx_string_tab[146]
+#define __pyx_n_u_subscriber __pyx_string_tab[147]
+#define __pyx_n_u_subscriberId __pyx_string_tab[148]
+#define __pyx_n_u_subscriber_id __pyx_string_tab[149]
+#define __pyx_n_u_template_id __pyx_string_tab[150]
+#define __pyx_n_u_test __pyx_string_tab[151]
+#define __pyx_n_u_timeout __pyx_string_tab[152]
+#define __pyx_n_u_to __pyx_string_tab[153]
+#define __pyx_n_u_to_email __pyx_string_tab[154]
+#define __pyx_n_u_to_payload __pyx_string_tab[155]
+#define __pyx_n_u_token __pyx_string_tab[156]
+#define __pyx_n_u_tokens __pyx_string_tab[157]
+#define __pyx_n_u_trigger __pyx_string_tab[158]
+#define __pyx_n_u_trigger_legacy_from_v1 __pyx_string_tab[159]
+#define __pyx_n_u_typing __pyx_string_tab[160]
+#define __pyx_n_u_update_subscriber __pyx_string_tab[161]
+#define __pyx_n_u_url __pyx_string_tab[162]
+#define __pyx_n_u_user_email __pyx_string_tab[163]
+#define __pyx_n_u_value __pyx_string_tab[164]
+#define __pyx_n_u_values __pyx_string_tab[165]
+#define __pyx_n_u_vendor_email __pyx_string_tab[166]
+#define __pyx_kp_b_iso88591_31_t5 __pyx_string_tab[167]
+#define __pyx_kp_b_iso88591_A_0__D_Qd_A_q_q_oT_Qm5_KvQ_q_F_Q __pyx_string_tab[168]
+#define __pyx_kp_b_iso88591_A_1_31A_4q_AQ_A_1_xs_WA_4uO1A_s __pyx_string_tab[169]
+#define __pyx_kp_b_iso88591_A_4z_Q_1_4q_A_k __pyx_string_tab[170]
+#define __pyx_kp_b_iso88591_A_5Qiq_s_4q_T_oQa_a_3m3a_1_A_iq __pyx_string_tab[171]
+#define __pyx_kp_b_iso88591_A_6a_5_1_E_6c_y_AV9A __pyx_string_tab[172]
+#define __pyx_kp_b_iso88591_A_A_QgQ_e6_d_QgQ_QfA_d_t3a_q_q __pyx_string_tab[173]
+#define __pyx_kp_b_iso88591_A_EQ_Ql_t1_j_3az_V1_s_fA __pyx_string_tab[174]
+#define __pyx_kp_b_iso88591_A_G1_Qa_z_uD_Ct4s_s_31A_G1F_x_A __pyx_string_tab[175]
+#define __pyx_kp_b_iso88591_A_HG1_Q_A __pyx_string_tab[176]
+#define __pyx_kp_b_iso88591_A_q_4z_q_1_q_1F_4y_Cs_6_q __pyx_string_tab[177]
+#define __pyx_kp_b_iso88591_A_s_AQ_e_1_4q_Qiq_4q_MQ_t5_Q __pyx_string_tab[178]
+#define __pyx_kp_b_iso88591_HA_t5_aq __pyx_string_tab[179]
+#define __pyx_kp_b_iso88591_M_G1_s_a_AS_AYk_q_D_M_a_A_q_a __pyx_string_tab[180]
+#define __pyx_kp_b_iso88591_d_aq_1 __pyx_string_tab[181]
 #define __pyx_int_404 __pyx_number_tab[0]
 #define __pyx_int_422 __pyx_number_tab[1]
 /* #### Code section: module_state_clear ### */
@@ -2702,9 +2735,9 @@ static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
   #if CYTHON_PEP489_MULTI_PHASE_INIT
   __Pyx_State_RemoveModule(NULL);
   #endif
-  for (int i=0; i<1; ++i) { Py_CLEAR(clear_module_state->__pyx_tuple[i]); }
-  for (int i=0; i<10; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<160; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<2; ++i) { Py_CLEAR(clear_module_state->__pyx_tuple[i]); }
+  for (int i=0; i<16; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
+  for (int i=0; i<182; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
   for (int i=0; i<2; ++i) { Py_CLEAR(clear_module_state->__pyx_number_tab[i]); }
 /* #### Code section: module_state_clear_contents ### */
 /* CommonTypesMetaclass.module_state_clear */
@@ -2728,9 +2761,9 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
   __Pyx_VISIT_CONST(traverse_module_state->__pyx_empty_tuple);
   __Pyx_VISIT_CONST(traverse_module_state->__pyx_empty_bytes);
   __Pyx_VISIT_CONST(traverse_module_state->__pyx_empty_unicode);
-  for (int i=0; i<1; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_tuple[i]); }
-  for (int i=0; i<10; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<160; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<2; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_tuple[i]); }
+  for (int i=0; i<16; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
+  for (int i=0; i<182; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
   for (int i=0; i<2; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_number_tab[i]); }
 /* #### Code section: module_state_traverse_contents ### */
 /* CommonTypesMetaclass.module_state_traverse */
@@ -2745,10 +2778,10 @@ return 0;
 #endif
 /* #### Code section: module_code ### */
 
-/* "sandesh/api.py":29
+/* "sandesh/api.py":31
  * class _SubscriberResource:
  * 
- *     def __init__(self, raw: Dict[str, Any]) -> None:             # <<<<<<<<<<<<<<
+ *     def __init__(self, raw: JsonDict) -> None:             # <<<<<<<<<<<<<<
  *         self.raw = raw
  *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
 */
@@ -2761,7 +2794,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_7sandesh_3api_19_SubscriberResource___init__, "_SubscriberResource.__init__(self, dict raw: Dict[str, Any]) -> None");
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_19_SubscriberResource___init__, "_SubscriberResource.__init__(self, raw: JsonDict) -> None");
 static PyMethodDef __pyx_mdef_7sandesh_3api_19_SubscriberResource_1__init__ = {"__init__", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_19_SubscriberResource_1__init__, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_19_SubscriberResource___init__};
 static PyObject *__pyx_pw_7sandesh_3api_19_SubscriberResource_1__init__(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -2794,39 +2827,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_raw,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 29, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 31, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 29, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 31, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 29, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 31, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__init__", 0) < (0)) __PYX_ERR(0, 29, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__init__", 0) < (0)) __PYX_ERR(0, 31, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, i); __PYX_ERR(0, 29, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, i); __PYX_ERR(0, 31, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 29, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 31, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 29, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 31, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
-    __pyx_v_raw = ((PyObject*)values[1]);
+    __pyx_v_raw = values[1];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 29, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 31, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -2837,22 +2870,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_raw), (&PyDict_Type), 0, "raw", 2))) __PYX_ERR(0, 29, __pyx_L1_error)
   __pyx_r = __pyx_pf_7sandesh_3api_19_SubscriberResource___init__(__pyx_self, __pyx_v_self, __pyx_v_raw);
 
   /* function exit code */
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __pyx_r = NULL;
   for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
     Py_XDECREF(values[__pyx_temp]);
   }
-  goto __pyx_L7_cleaned_up;
-  __pyx_L0:;
-  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
-    Py_XDECREF(values[__pyx_temp]);
-  }
-  __pyx_L7_cleaned_up:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -2860,57 +2883,65 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 static PyObject *__pyx_pf_7sandesh_3api_19_SubscriberResource___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_raw) {
   PyObject *__pyx_v_data = NULL;
   PyObject *__pyx_v_tokens = NULL;
-  PyObject *__pyx_7genexpr__pyx_v_token = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   PyObject *__pyx_t_2 = NULL;
-  int __pyx_t_3;
-  PyObject *__pyx_t_4 = NULL;
-  size_t __pyx_t_5;
-  int __pyx_t_6;
+  PyObject *__pyx_t_3 = NULL;
+  size_t __pyx_t_4;
+  int __pyx_t_5;
+  PyObject *__pyx_t_6 = NULL;
   PyObject *__pyx_t_7 = NULL;
   PyObject *__pyx_t_8 = NULL;
   PyObject *__pyx_t_9 = NULL;
-  PyObject *__pyx_t_10 = NULL;
-  PyObject *__pyx_t_11 = NULL;
-  Py_ssize_t __pyx_t_12;
-  PyObject *(*__pyx_t_13)(PyObject *);
-  PyObject *__pyx_t_14 = NULL;
-  PyObject *__pyx_t_15 = NULL;
-  PyObject *__pyx_t_16 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "sandesh/api.py":30
+  /* "sandesh/api.py":32
  * 
- *     def __init__(self, raw: Dict[str, Any]) -> None:
+ *     def __init__(self, raw: JsonDict) -> None:
  *         self.raw = raw             # <<<<<<<<<<<<<<
  *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
- *         tokens = data.get("fcm_device_tokens", [])
+ *         tokens = self._normalize_tokens(data.get("fcm_device_tokens"))
 */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_raw, __pyx_v_raw) < (0)) __PYX_ERR(0, 30, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_raw, __pyx_v_raw) < (0)) __PYX_ERR(0, 32, __pyx_L1_error)
 
-  /* "sandesh/api.py":31
- *     def __init__(self, raw: Dict[str, Any]) -> None:
+  /* "sandesh/api.py":33
+ *     def __init__(self, raw: JsonDict) -> None:
  *         self.raw = raw
  *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}             # <<<<<<<<<<<<<<
- *         tokens = data.get("fcm_device_tokens", [])
- *         if not isinstance(tokens, list):
+ *         tokens = self._normalize_tokens(data.get("fcm_device_tokens"))
+ *         self._channels = [
 */
-  __pyx_t_2 = __Pyx_PyDict_GetItemDefault(__pyx_v_raw, __pyx_mstate_global->__pyx_n_u_data, Py_None); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyDict_Check(__pyx_t_2); 
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__pyx_t_3) {
-    __pyx_t_2 = __Pyx_PyDict_GetItemDefault(__pyx_v_raw, __pyx_mstate_global->__pyx_n_u_data, Py_None); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_t_3 = __pyx_v_raw;
+  __Pyx_INCREF(__pyx_t_3);
+  __pyx_t_4 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_n_u_data};
+    __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
+  }
+  __pyx_t_5 = PyDict_Check(__pyx_t_2); 
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__pyx_t_5) {
+    __pyx_t_3 = __pyx_v_raw;
+    __Pyx_INCREF(__pyx_t_3);
+    __pyx_t_4 = 0;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_n_u_data};
+      __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 33, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+    }
     __pyx_t_1 = __pyx_t_2;
     __pyx_t_2 = 0;
   } else {
-    __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 31, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 33, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_1 = __pyx_t_2;
     __pyx_t_2 = 0;
@@ -2918,287 +2949,112 @@ static PyObject *__pyx_pf_7sandesh_3api_19_SubscriberResource___init__(CYTHON_UN
   __pyx_v_data = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":32
+  /* "sandesh/api.py":34
  *         self.raw = raw
  *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
- *         tokens = data.get("fcm_device_tokens", [])             # <<<<<<<<<<<<<<
- *         if not isinstance(tokens, list):
- *             tokens = []
+ *         tokens = self._normalize_tokens(data.get("fcm_device_tokens"))             # <<<<<<<<<<<<<<
+ *         self._channels = [
+ *             _SubscriberChannel(
 */
-  __pyx_t_2 = __pyx_v_data;
+  __pyx_t_2 = __pyx_v_self;
   __Pyx_INCREF(__pyx_t_2);
-  __pyx_t_4 = PyList_New(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 32, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = 0;
+  __pyx_t_6 = __pyx_v_data;
+  __Pyx_INCREF(__pyx_t_6);
+  __pyx_t_4 = 0;
   {
-    PyObject *__pyx_callargs[3] = {__pyx_t_2, __pyx_mstate_global->__pyx_n_u_fcm_device_tokens, __pyx_t_4};
-    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_mstate_global->__pyx_n_u_fcm_device_tokens};
+    __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 34, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+  }
+  __pyx_t_4 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_t_3};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_normalize_tokens, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __pyx_v_tokens = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":33
- *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
- *         tokens = data.get("fcm_device_tokens", [])
- *         if not isinstance(tokens, list):             # <<<<<<<<<<<<<<
- *             tokens = []
- *         self._channels = [
-*/
-  __pyx_t_3 = PyList_Check(__pyx_v_tokens); 
-  __pyx_t_6 = (!__pyx_t_3);
-  if (__pyx_t_6) {
-
-    /* "sandesh/api.py":34
- *         tokens = data.get("fcm_device_tokens", [])
- *         if not isinstance(tokens, list):
- *             tokens = []             # <<<<<<<<<<<<<<
- *         self._channels = [
- *             _SubscriberChannel(
-*/
-    __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __Pyx_DECREF_SET(__pyx_v_tokens, __pyx_t_1);
-    __pyx_t_1 = 0;
-
-    /* "sandesh/api.py":33
- *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
- *         tokens = data.get("fcm_device_tokens", [])
- *         if not isinstance(tokens, list):             # <<<<<<<<<<<<<<
- *             tokens = []
- *         self._channels = [
-*/
-  }
-
   /* "sandesh/api.py":36
- *             tokens = []
+ *         tokens = self._normalize_tokens(data.get("fcm_device_tokens"))
  *         self._channels = [
  *             _SubscriberChannel(             # <<<<<<<<<<<<<<
  *                 provider_id="fcm",
- *                 credentials=_ChannelCredentials(
+ *                 credentials=_ChannelCredentials(device_tokens=tokens),
 */
-  __pyx_t_4 = NULL;
+  __pyx_t_3 = NULL;
   __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_SubscriberChannel); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 36, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
   /* "sandesh/api.py":38
  *             _SubscriberChannel(
  *                 provider_id="fcm",
- *                 credentials=_ChannelCredentials(             # <<<<<<<<<<<<<<
- *                     device_tokens=[
- *                         str(token).strip()
+ *                 credentials=_ChannelCredentials(device_tokens=tokens),             # <<<<<<<<<<<<<<
+ *             )
+ *         ]
 */
-  __pyx_t_8 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_mstate_global->__pyx_n_u_ChannelCredentials); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 38, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_9);
-  { /* enter inner scope */
-
-    /* "sandesh/api.py":39
- *                 provider_id="fcm",
- *                 credentials=_ChannelCredentials(
- *                     device_tokens=[             # <<<<<<<<<<<<<<
- *                         str(token).strip()
- *                         for token in tokens
-*/
-    __pyx_t_10 = PyList_New(0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 39, __pyx_L6_error)
-    __Pyx_GOTREF(__pyx_t_10);
-
-    /* "sandesh/api.py":41
- *                     device_tokens=[
- *                         str(token).strip()
- *                         for token in tokens             # <<<<<<<<<<<<<<
- *                         if str(token).strip()
- *                     ]
-*/
-    if (likely(PyList_CheckExact(__pyx_v_tokens)) || PyTuple_CheckExact(__pyx_v_tokens)) {
-      __pyx_t_11 = __pyx_v_tokens; __Pyx_INCREF(__pyx_t_11);
-      __pyx_t_12 = 0;
-      __pyx_t_13 = NULL;
-    } else {
-      __pyx_t_12 = -1; __pyx_t_11 = PyObject_GetIter(__pyx_v_tokens); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 41, __pyx_L6_error)
-      __Pyx_GOTREF(__pyx_t_11);
-      __pyx_t_13 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_11); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 41, __pyx_L6_error)
-    }
-    for (;;) {
-      if (likely(!__pyx_t_13)) {
-        if (likely(PyList_CheckExact(__pyx_t_11))) {
-          {
-            Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_11);
-            #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 41, __pyx_L6_error)
-            #endif
-            if (__pyx_t_12 >= __pyx_temp) break;
-          }
-          __pyx_t_14 = __Pyx_PyList_GetItemRefFast(__pyx_t_11, __pyx_t_12, __Pyx_ReferenceSharing_OwnStrongReference);
-          ++__pyx_t_12;
-        } else {
-          {
-            Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_11);
-            #if !CYTHON_ASSUME_SAFE_SIZE
-            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 41, __pyx_L6_error)
-            #endif
-            if (__pyx_t_12 >= __pyx_temp) break;
-          }
-          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_14 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_11, __pyx_t_12));
-          #else
-          __pyx_t_14 = __Pyx_PySequence_ITEM(__pyx_t_11, __pyx_t_12);
-          #endif
-          ++__pyx_t_12;
-        }
-        if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 41, __pyx_L6_error)
-      } else {
-        __pyx_t_14 = __pyx_t_13(__pyx_t_11);
-        if (unlikely(!__pyx_t_14)) {
-          PyObject* exc_type = PyErr_Occurred();
-          if (exc_type) {
-            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 41, __pyx_L6_error)
-            PyErr_Clear();
-          }
-          break;
-        }
-      }
-      __Pyx_GOTREF(__pyx_t_14);
-      __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_token, __pyx_t_14);
-      __pyx_t_14 = 0;
-
-      /* "sandesh/api.py":42
- *                         str(token).strip()
- *                         for token in tokens
- *                         if str(token).strip()             # <<<<<<<<<<<<<<
- *                     ]
- *                 ),
-*/
-      __pyx_t_16 = __Pyx_PyObject_Unicode(__pyx_7genexpr__pyx_v_token); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 42, __pyx_L6_error)
-      __Pyx_GOTREF(__pyx_t_16);
-      __pyx_t_15 = __pyx_t_16;
-      __Pyx_INCREF(__pyx_t_15);
-      __pyx_t_5 = 0;
-      {
-        PyObject *__pyx_callargs[2] = {__pyx_t_15, NULL};
-        __pyx_t_14 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
-        __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-        if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 42, __pyx_L6_error)
-        __Pyx_GOTREF(__pyx_t_14);
-      }
-      if (__pyx_t_14 == Py_None) __pyx_t_6 = 0;
-      else
-      {
-        Py_ssize_t __pyx_temp = __Pyx_PyUnicode_IS_TRUE(__pyx_t_14);
-        if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 42, __pyx_L6_error)
-        __pyx_t_6 = (__pyx_temp != 0);
-      }
-
-      __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-      if (__pyx_t_6) {
-
-        /* "sandesh/api.py":40
- *                 credentials=_ChannelCredentials(
- *                     device_tokens=[
- *                         str(token).strip()             # <<<<<<<<<<<<<<
- *                         for token in tokens
- *                         if str(token).strip()
-*/
-        __pyx_t_15 = __Pyx_PyObject_Unicode(__pyx_7genexpr__pyx_v_token); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 40, __pyx_L6_error)
-        __Pyx_GOTREF(__pyx_t_15);
-        __pyx_t_16 = __pyx_t_15;
-        __Pyx_INCREF(__pyx_t_16);
-        __pyx_t_5 = 0;
-        {
-          PyObject *__pyx_callargs[2] = {__pyx_t_16, NULL};
-          __pyx_t_14 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
-          __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-          if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 40, __pyx_L6_error)
-          __Pyx_GOTREF(__pyx_t_14);
-        }
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_10, (PyObject*)__pyx_t_14))) __PYX_ERR(0, 39, __pyx_L6_error)
-        __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-
-        /* "sandesh/api.py":42
- *                         str(token).strip()
- *                         for token in tokens
- *                         if str(token).strip()             # <<<<<<<<<<<<<<
- *                     ]
- *                 ),
-*/
-      }
-
-      /* "sandesh/api.py":41
- *                     device_tokens=[
- *                         str(token).strip()
- *                         for token in tokens             # <<<<<<<<<<<<<<
- *                         if str(token).strip()
- *                     ]
-*/
-    }
-    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-    __Pyx_XDECREF(__pyx_7genexpr__pyx_v_token); __pyx_7genexpr__pyx_v_token = 0;
-    goto __pyx_L11_exit_scope;
-    __pyx_L6_error:;
-    __Pyx_XDECREF(__pyx_7genexpr__pyx_v_token); __pyx_7genexpr__pyx_v_token = 0;
-    goto __pyx_L1_error;
-    __pyx_L11_exit_scope:;
-  } /* exit inner scope */
-  __pyx_t_5 = 1;
+  __pyx_t_7 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_ChannelCredentials); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __pyx_t_4 = 1;
   #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_9))) {
-    __pyx_t_8 = PyMethod_GET_SELF(__pyx_t_9);
-    assert(__pyx_t_8);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_9);
-    __Pyx_INCREF(__pyx_t_8);
+  if (unlikely(PyMethod_Check(__pyx_t_8))) {
+    __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_8);
+    assert(__pyx_t_7);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_8);
+    __Pyx_INCREF(__pyx_t_7);
     __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_9, __pyx__function);
-    __pyx_t_5 = 0;
+    __Pyx_DECREF_SET(__pyx_t_8, __pyx__function);
+    __pyx_t_4 = 0;
   }
   #endif
   {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_8, NULL};
-    __pyx_t_11 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 38, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_11);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_device_tokens, __pyx_t_10, __pyx_t_11, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 38, __pyx_L1_error)
-    __pyx_t_7 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_9, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_11);
-    __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-    __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_7, NULL};
+    __pyx_t_9 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_9);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_device_tokens, __pyx_v_tokens, __pyx_t_9, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_8, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_9);
+    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 38, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
   }
-  __pyx_t_5 = 1;
+  __pyx_t_4 = 1;
   #if CYTHON_UNPACK_METHODS
   if (unlikely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_2);
-    assert(__pyx_t_4);
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
+    assert(__pyx_t_3);
     PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_2);
-    __Pyx_INCREF(__pyx_t_4);
+    __Pyx_INCREF(__pyx_t_3);
     __Pyx_INCREF(__pyx__function);
     __Pyx_DECREF_SET(__pyx_t_2, __pyx__function);
-    __pyx_t_5 = 0;
+    __pyx_t_4 = 0;
   }
   #endif
   {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_4, NULL};
-    __pyx_t_9 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 36, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_9);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_provider_id, __pyx_mstate_global->__pyx_n_u_fcm, __pyx_t_9, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 36, __pyx_L1_error)
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_credentials, __pyx_t_7, __pyx_t_9, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 36, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_9);
-    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_3, NULL};
+    __pyx_t_8 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_8);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_provider_id, __pyx_mstate_global->__pyx_n_u_fcm, __pyx_t_8, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 36, __pyx_L1_error)
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_credentials, __pyx_t_6, __pyx_t_8, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_8);
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
 
   /* "sandesh/api.py":35
- *         if not isinstance(tokens, list):
- *             tokens = []
+ *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
+ *         tokens = self._normalize_tokens(data.get("fcm_device_tokens"))
  *         self._channels = [             # <<<<<<<<<<<<<<
  *             _SubscriberChannel(
  *                 provider_id="fcm",
@@ -3211,10 +3067,10 @@ static PyObject *__pyx_pf_7sandesh_3api_19_SubscriberResource___init__(CYTHON_UN
   if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_channels, __pyx_t_2) < (0)) __PYX_ERR(0, 35, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":29
+  /* "sandesh/api.py":31
  * class _SubscriberResource:
  * 
- *     def __init__(self, raw: Dict[str, Any]) -> None:             # <<<<<<<<<<<<<<
+ *     def __init__(self, raw: JsonDict) -> None:             # <<<<<<<<<<<<<<
  *         self.raw = raw
  *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
 */
@@ -3225,20 +3081,300 @@ static PyObject *__pyx_pf_7sandesh_3api_19_SubscriberResource___init__(CYTHON_UN
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_9);
-  __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_XDECREF(__pyx_t_11);
-  __Pyx_XDECREF(__pyx_t_14);
-  __Pyx_XDECREF(__pyx_t_15);
-  __Pyx_XDECREF(__pyx_t_16);
   __Pyx_AddTraceback("sandesh.api._SubscriberResource.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_data);
   __Pyx_XDECREF(__pyx_v_tokens);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "sandesh/api.py":42
+ *         ]
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _normalize_tokens(raw: Any) -> List[str]:
+ *         if not isinstance(raw, list):
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7sandesh_3api_19_SubscriberResource_3_normalize_tokens(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_19_SubscriberResource_2_normalize_tokens, "_SubscriberResource._normalize_tokens(raw: Any) -> List[str]");
+static PyMethodDef __pyx_mdef_7sandesh_3api_19_SubscriberResource_3_normalize_tokens = {"_normalize_tokens", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_19_SubscriberResource_3_normalize_tokens, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_19_SubscriberResource_2_normalize_tokens};
+static PyObject *__pyx_pw_7sandesh_3api_19_SubscriberResource_3_normalize_tokens(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_raw = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("_normalize_tokens (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_raw,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 42, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 42, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_normalize_tokens", 0) < (0)) __PYX_ERR(0, 42, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_normalize_tokens", 1, 1, 1, i); __PYX_ERR(0, 42, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 42, __pyx_L3_error)
+    }
+    __pyx_v_raw = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("_normalize_tokens", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 42, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("sandesh.api._SubscriberResource._normalize_tokens", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_7sandesh_3api_19_SubscriberResource_2_normalize_tokens(__pyx_self, __pyx_v_raw);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7sandesh_3api_19_SubscriberResource_2_normalize_tokens(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_raw) {
+  PyObject *__pyx_7genexpr__pyx_v_token = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  Py_ssize_t __pyx_t_5;
+  PyObject *(*__pyx_t_6)(PyObject *);
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  size_t __pyx_t_10;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_normalize_tokens", 0);
+
+  /* "sandesh/api.py":44
+ *     @staticmethod
+ *     def _normalize_tokens(raw: Any) -> List[str]:
+ *         if not isinstance(raw, list):             # <<<<<<<<<<<<<<
+ *             return []
+ *         return [str(token).strip() for token in raw if str(token).strip()]
+*/
+  __pyx_t_1 = PyList_Check(__pyx_v_raw); 
+  __pyx_t_2 = (!__pyx_t_1);
+  if (__pyx_t_2) {
+
+    /* "sandesh/api.py":45
+ *     def _normalize_tokens(raw: Any) -> List[str]:
+ *         if not isinstance(raw, list):
+ *             return []             # <<<<<<<<<<<<<<
+ *         return [str(token).strip() for token in raw if str(token).strip()]
+ * 
+*/
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 45, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_r = ((PyObject*)__pyx_t_3);
+    __pyx_t_3 = 0;
+    goto __pyx_L0;
+
+    /* "sandesh/api.py":44
+ *     @staticmethod
+ *     def _normalize_tokens(raw: Any) -> List[str]:
+ *         if not isinstance(raw, list):             # <<<<<<<<<<<<<<
+ *             return []
+ *         return [str(token).strip() for token in raw if str(token).strip()]
+*/
+  }
+
+  /* "sandesh/api.py":46
+ *         if not isinstance(raw, list):
+ *             return []
+ *         return [str(token).strip() for token in raw if str(token).strip()]             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __Pyx_XDECREF(__pyx_r);
+  { /* enter inner scope */
+    __pyx_t_3 = PyList_New(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 46, __pyx_L6_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (likely(PyList_CheckExact(__pyx_v_raw)) || PyTuple_CheckExact(__pyx_v_raw)) {
+      __pyx_t_4 = __pyx_v_raw; __Pyx_INCREF(__pyx_t_4);
+      __pyx_t_5 = 0;
+      __pyx_t_6 = NULL;
+    } else {
+      __pyx_t_5 = -1; __pyx_t_4 = PyObject_GetIter(__pyx_v_raw); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 46, __pyx_L6_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 46, __pyx_L6_error)
+    }
+    for (;;) {
+      if (likely(!__pyx_t_6)) {
+        if (likely(PyList_CheckExact(__pyx_t_4))) {
+          {
+            Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_4);
+            #if !CYTHON_ASSUME_SAFE_SIZE
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 46, __pyx_L6_error)
+            #endif
+            if (__pyx_t_5 >= __pyx_temp) break;
+          }
+          __pyx_t_7 = __Pyx_PyList_GetItemRefFast(__pyx_t_4, __pyx_t_5, __Pyx_ReferenceSharing_OwnStrongReference);
+          ++__pyx_t_5;
+        } else {
+          {
+            Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_4);
+            #if !CYTHON_ASSUME_SAFE_SIZE
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 46, __pyx_L6_error)
+            #endif
+            if (__pyx_t_5 >= __pyx_temp) break;
+          }
+          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+          __pyx_t_7 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_4, __pyx_t_5));
+          #else
+          __pyx_t_7 = __Pyx_PySequence_ITEM(__pyx_t_4, __pyx_t_5);
+          #endif
+          ++__pyx_t_5;
+        }
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 46, __pyx_L6_error)
+      } else {
+        __pyx_t_7 = __pyx_t_6(__pyx_t_4);
+        if (unlikely(!__pyx_t_7)) {
+          PyObject* exc_type = PyErr_Occurred();
+          if (exc_type) {
+            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 46, __pyx_L6_error)
+            PyErr_Clear();
+          }
+          break;
+        }
+      }
+      __Pyx_GOTREF(__pyx_t_7);
+      __Pyx_XDECREF_SET(__pyx_7genexpr__pyx_v_token, __pyx_t_7);
+      __pyx_t_7 = 0;
+      __pyx_t_9 = __Pyx_PyObject_Unicode(__pyx_7genexpr__pyx_v_token); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 46, __pyx_L6_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_8 = __pyx_t_9;
+      __Pyx_INCREF(__pyx_t_8);
+      __pyx_t_10 = 0;
+      {
+        PyObject *__pyx_callargs[2] = {__pyx_t_8, NULL};
+        __pyx_t_7 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_10, (1-__pyx_t_10) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
+        __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 46, __pyx_L6_error)
+        __Pyx_GOTREF(__pyx_t_7);
+      }
+      if (__pyx_t_7 == Py_None) __pyx_t_2 = 0;
+      else
+      {
+        Py_ssize_t __pyx_temp = __Pyx_PyUnicode_IS_TRUE(__pyx_t_7);
+        if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 46, __pyx_L6_error)
+        __pyx_t_2 = (__pyx_temp != 0);
+      }
+
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      if (__pyx_t_2) {
+        __pyx_t_8 = __Pyx_PyObject_Unicode(__pyx_7genexpr__pyx_v_token); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 46, __pyx_L6_error)
+        __Pyx_GOTREF(__pyx_t_8);
+        __pyx_t_9 = __pyx_t_8;
+        __Pyx_INCREF(__pyx_t_9);
+        __pyx_t_10 = 0;
+        {
+          PyObject *__pyx_callargs[2] = {__pyx_t_9, NULL};
+          __pyx_t_7 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_10, (1-__pyx_t_10) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+          __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
+          __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 46, __pyx_L6_error)
+          __Pyx_GOTREF(__pyx_t_7);
+        }
+        if (unlikely(__Pyx_ListComp_Append(__pyx_t_3, (PyObject*)__pyx_t_7))) __PYX_ERR(0, 46, __pyx_L6_error)
+        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      }
+    }
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_XDECREF(__pyx_7genexpr__pyx_v_token); __pyx_7genexpr__pyx_v_token = 0;
+    goto __pyx_L11_exit_scope;
+    __pyx_L6_error:;
+    __Pyx_XDECREF(__pyx_7genexpr__pyx_v_token); __pyx_7genexpr__pyx_v_token = 0;
+    goto __pyx_L1_error;
+    __pyx_L11_exit_scope:;
+  } /* exit inner scope */
+  __pyx_r = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+  goto __pyx_L0;
+
+  /* "sandesh/api.py":42
+ *         ]
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _normalize_tokens(raw: Any) -> List[str]:
+ *         if not isinstance(raw, list):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_AddTraceback("sandesh.api._SubscriberResource._normalize_tokens", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
   __Pyx_XDECREF(__pyx_7genexpr__pyx_v_token);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
@@ -3485,7 +3621,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_2trigger, "EventApi.trigger(self, *, str name: str, recipients: Union[str, List[str]], dict payload: Dict[str, Any], dict overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]");
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_2trigger, "EventApi.trigger(self, *, str name: str, recipients: Union[str, List[str]], payload: JsonDict, overrides: Optional[JsonDict] = None) -> JsonDict");
 static PyMethodDef __pyx_mdef_7sandesh_3api_8EventApi_3trigger = {"trigger", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_8EventApi_3trigger, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_8EventApi_2trigger};
 static PyObject *__pyx_pw_7sandesh_3api_8EventApi_3trigger(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -3536,12 +3672,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
       /* "sandesh/api.py":70
  *         recipients: Union[str, List[str]],
- *         payload: Dict[str, Any],
- *         overrides: Optional[Dict[str, Any]] = None,             # <<<<<<<<<<<<<<
- *     ) -> Dict[str, Any]:
- *         if isinstance(recipients, list):
+ *         payload: JsonDict,
+ *         overrides: Optional[JsonDict] = None,             # <<<<<<<<<<<<<<
+ *     ) -> JsonDict:
+ *         subscriber_id = self._resolve_subscriber_id(recipients)
 */
-      if (!values[4]) values[4] = __Pyx_NewRef(((PyObject*)Py_None));
+      if (!values[4]) values[4] = __Pyx_NewRef(((PyObject *)Py_None));
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
         if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("trigger", 1, 1, 1, i); __PYX_ERR(0, 64, __pyx_L3_error) }
       }
@@ -3556,8 +3692,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
     __pyx_v_self = values[0];
     __pyx_v_name = ((PyObject*)values[1]);
     __pyx_v_recipients = values[2];
-    __pyx_v_payload = ((PyObject*)values[3]);
-    __pyx_v_overrides = ((PyObject*)values[4]);
+    __pyx_v_payload = values[3];
+    __pyx_v_overrides = values[4];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
@@ -3573,8 +3709,6 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 0, "name", 2))) __PYX_ERR(0, 67, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_payload), (&PyDict_Type), 0, "payload", 2))) __PYX_ERR(0, 69, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_overrides), (&PyDict_Type), 1, "overrides", 2))) __PYX_ERR(0, 70, __pyx_L1_error)
   __pyx_r = __pyx_pf_7sandesh_3api_8EventApi_2trigger(__pyx_self, __pyx_v_self, __pyx_v_name, __pyx_v_recipients, __pyx_v_payload, __pyx_v_overrides);
 
   /* "sandesh/api.py":64
@@ -3604,16 +3738,15 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 
 static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_name, PyObject *__pyx_v_recipients, PyObject *__pyx_v_payload, PyObject *__pyx_v_overrides) {
   PyObject *__pyx_v_subscriber_id = NULL;
-  PyObject *__pyx_v_body = 0;
+  PyObject *__pyx_v_body = NULL;
   PyObject *__pyx_v_exc = NULL;
-  PyObject *__pyx_v_response = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  int __pyx_t_1;
-  int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
-  size_t __pyx_t_5;
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  size_t __pyx_t_3;
+  int __pyx_t_4;
+  int __pyx_t_5;
   PyObject *__pyx_t_6 = NULL;
   PyObject *__pyx_t_7 = NULL;
   PyObject *__pyx_t_8 = NULL;
@@ -3623,251 +3756,148 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
   PyObject *__pyx_t_12 = NULL;
   PyObject *__pyx_t_13 = NULL;
   PyObject *__pyx_t_14 = NULL;
-  PyObject *__pyx_t_15 = NULL;
-  PyObject *__pyx_t_16 = NULL;
+  int __pyx_t_15;
+  char const *__pyx_t_16;
   PyObject *__pyx_t_17 = NULL;
   PyObject *__pyx_t_18 = NULL;
   PyObject *__pyx_t_19 = NULL;
-  int __pyx_t_20;
-  char const *__pyx_t_21;
+  PyObject *__pyx_t_20 = NULL;
+  PyObject *__pyx_t_21 = NULL;
   PyObject *__pyx_t_22 = NULL;
-  PyObject *__pyx_t_23 = NULL;
-  PyObject *__pyx_t_24 = NULL;
-  PyObject *__pyx_t_25 = NULL;
-  PyObject *__pyx_t_26 = NULL;
-  PyObject *__pyx_t_27 = NULL;
-  PyObject *__pyx_t_28 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("trigger", 0);
 
   /* "sandesh/api.py":72
- *         overrides: Optional[Dict[str, Any]] = None,
- *     ) -> Dict[str, Any]:
- *         if isinstance(recipients, list):             # <<<<<<<<<<<<<<
- *             if not recipients:
- *                 raise ValueError("recipients cannot be empty")
-*/
-  __pyx_t_1 = PyList_Check(__pyx_v_recipients); 
-  if (__pyx_t_1) {
-
-    /* "sandesh/api.py":73
- *     ) -> Dict[str, Any]:
- *         if isinstance(recipients, list):
- *             if not recipients:             # <<<<<<<<<<<<<<
- *                 raise ValueError("recipients cannot be empty")
- *             subscriber_id = str(recipients[0]).strip()
-*/
-    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_recipients); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 73, __pyx_L1_error)
-    __pyx_t_2 = (!__pyx_t_1);
-    if (unlikely(__pyx_t_2)) {
-
-      /* "sandesh/api.py":74
- *         if isinstance(recipients, list):
- *             if not recipients:
- *                 raise ValueError("recipients cannot be empty")             # <<<<<<<<<<<<<<
- *             subscriber_id = str(recipients[0]).strip()
- *         else:
-*/
-      __pyx_t_4 = NULL;
-      __pyx_t_5 = 1;
-      {
-        PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_recipients_cannot_be_empty};
-        __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 74, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_3);
-      }
-      __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __PYX_ERR(0, 74, __pyx_L1_error)
-
-      /* "sandesh/api.py":73
- *     ) -> Dict[str, Any]:
- *         if isinstance(recipients, list):
- *             if not recipients:             # <<<<<<<<<<<<<<
- *                 raise ValueError("recipients cannot be empty")
- *             subscriber_id = str(recipients[0]).strip()
-*/
-    }
-
-    /* "sandesh/api.py":75
- *             if not recipients:
- *                 raise ValueError("recipients cannot be empty")
- *             subscriber_id = str(recipients[0]).strip()             # <<<<<<<<<<<<<<
- *         else:
- *             subscriber_id = str(recipients).strip()
-*/
-    __pyx_t_6 = __Pyx_GetItemInt(__pyx_v_recipients, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 75, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyObject_Unicode(__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 75, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_4 = __pyx_t_7;
-    __Pyx_INCREF(__pyx_t_4);
-    __pyx_t_5 = 0;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
-      __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-    }
-    __pyx_v_subscriber_id = ((PyObject*)__pyx_t_3);
-    __pyx_t_3 = 0;
-
-    /* "sandesh/api.py":72
- *         overrides: Optional[Dict[str, Any]] = None,
- *     ) -> Dict[str, Any]:
- *         if isinstance(recipients, list):             # <<<<<<<<<<<<<<
- *             if not recipients:
- *                 raise ValueError("recipients cannot be empty")
-*/
-    goto __pyx_L3;
-  }
-
-  /* "sandesh/api.py":77
- *             subscriber_id = str(recipients[0]).strip()
- *         else:
- *             subscriber_id = str(recipients).strip()             # <<<<<<<<<<<<<<
+ *         overrides: Optional[JsonDict] = None,
+ *     ) -> JsonDict:
+ *         subscriber_id = self._resolve_subscriber_id(recipients)             # <<<<<<<<<<<<<<
  *         if not subscriber_id:
  *             raise ValueError("recipients must contain a subscriber id")
 */
-  /*else*/ {
-    __pyx_t_4 = __Pyx_PyObject_Unicode(__pyx_v_recipients); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 77, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_7 = __pyx_t_4;
-    __Pyx_INCREF(__pyx_t_7);
-    __pyx_t_5 = 0;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_7, NULL};
-      __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 77, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-    }
-    __pyx_v_subscriber_id = ((PyObject*)__pyx_t_3);
-    __pyx_t_3 = 0;
+  __pyx_t_2 = __pyx_v_self;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_v_recipients};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_resolve_subscriber_id, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_L3:;
+  __pyx_v_subscriber_id = __pyx_t_1;
+  __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":78
- *         else:
- *             subscriber_id = str(recipients).strip()
+  /* "sandesh/api.py":73
+ *     ) -> JsonDict:
+ *         subscriber_id = self._resolve_subscriber_id(recipients)
  *         if not subscriber_id:             # <<<<<<<<<<<<<<
  *             raise ValueError("recipients must contain a subscriber id")
  * 
 */
-  {
-    Py_ssize_t __pyx_temp = __Pyx_PyUnicode_IS_TRUE(__pyx_v_subscriber_id);
-    if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 78, __pyx_L1_error)
-    __pyx_t_2 = (__pyx_temp != 0);
-  }
+  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_v_subscriber_id); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_t_5 = (!__pyx_t_4);
+  if (unlikely(__pyx_t_5)) {
 
-  __pyx_t_1 = (!__pyx_t_2);
-  if (unlikely(__pyx_t_1)) {
-
-    /* "sandesh/api.py":79
- *             subscriber_id = str(recipients).strip()
+    /* "sandesh/api.py":74
+ *         subscriber_id = self._resolve_subscriber_id(recipients)
  *         if not subscriber_id:
  *             raise ValueError("recipients must contain a subscriber id")             # <<<<<<<<<<<<<<
  * 
- *         body: Dict[str, Any] = {
+ *         body: JsonDict = {
 */
-    __pyx_t_4 = NULL;
-    __pyx_t_5 = 1;
+    __pyx_t_2 = NULL;
+    __pyx_t_3 = 1;
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_recipients_must_contain_a_subscr};
-      __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
+      PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_mstate_global->__pyx_kp_u_recipients_must_contain_a_subscr};
+      __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 74, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
     }
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 79, __pyx_L1_error)
+    __Pyx_Raise(__pyx_t_1, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __PYX_ERR(0, 74, __pyx_L1_error)
 
-    /* "sandesh/api.py":78
- *         else:
- *             subscriber_id = str(recipients).strip()
+    /* "sandesh/api.py":73
+ *     ) -> JsonDict:
+ *         subscriber_id = self._resolve_subscriber_id(recipients)
  *         if not subscriber_id:             # <<<<<<<<<<<<<<
  *             raise ValueError("recipients must contain a subscriber id")
  * 
 */
   }
 
-  /* "sandesh/api.py":82
+  /* "sandesh/api.py":77
  * 
- *         body: Dict[str, Any] = {
+ *         body: JsonDict = {
  *             "name": name,             # <<<<<<<<<<<<<<
  *             "to": {"subscriberId": subscriber_id},
  *             "payload": payload or {},
 */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 82, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_name, __pyx_v_name) < (0)) __PYX_ERR(0, 82, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_name, __pyx_v_name) < (0)) __PYX_ERR(0, 77, __pyx_L1_error)
 
-  /* "sandesh/api.py":83
- *         body: Dict[str, Any] = {
+  /* "sandesh/api.py":78
+ *         body: JsonDict = {
  *             "name": name,
  *             "to": {"subscriberId": subscriber_id},             # <<<<<<<<<<<<<<
  *             "payload": payload or {},
  *         }
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 83, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_subscriberId, __pyx_v_subscriber_id) < (0)) __PYX_ERR(0, 83, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_to, __pyx_t_4) < (0)) __PYX_ERR(0, 82, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 78, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_subscriberId, __pyx_v_subscriber_id) < (0)) __PYX_ERR(0, 78, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_to, __pyx_t_2) < (0)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":84
+  /* "sandesh/api.py":79
  *             "name": name,
  *             "to": {"subscriberId": subscriber_id},
  *             "payload": payload or {},             # <<<<<<<<<<<<<<
  *         }
  *         if overrides is not None:
 */
-  __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_payload); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 84, __pyx_L1_error)
-  if (!__pyx_t_1) {
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_payload); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 79, __pyx_L1_error)
+  if (!__pyx_t_5) {
   } else {
     __Pyx_INCREF(__pyx_v_payload);
-    __pyx_t_4 = __pyx_v_payload;
-    goto __pyx_L6_bool_binop_done;
+    __pyx_t_2 = __pyx_v_payload;
+    goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_7 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __Pyx_INCREF(__pyx_t_7);
-  __pyx_t_4 = __pyx_t_7;
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_L6_bool_binop_done:;
-  if (PyDict_SetItem(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_payload, __pyx_t_4) < (0)) __PYX_ERR(0, 82, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_v_body = ((PyObject*)__pyx_t_3);
-  __pyx_t_3 = 0;
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_INCREF(__pyx_t_6);
+  __pyx_t_2 = __pyx_t_6;
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __pyx_L4_bool_binop_done:;
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_payload, __pyx_t_2) < (0)) __PYX_ERR(0, 77, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_v_body = ((PyObject*)__pyx_t_1);
+  __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":86
+  /* "sandesh/api.py":81
  *             "payload": payload or {},
  *         }
  *         if overrides is not None:             # <<<<<<<<<<<<<<
  *             body["overrides"] = overrides
  *         try:
 */
-  __pyx_t_1 = (__pyx_v_overrides != ((PyObject*)Py_None));
-  if (__pyx_t_1) {
+  __pyx_t_5 = (__pyx_v_overrides != Py_None);
+  if (__pyx_t_5) {
 
-    /* "sandesh/api.py":87
+    /* "sandesh/api.py":82
  *         }
  *         if overrides is not None:
  *             body["overrides"] = overrides             # <<<<<<<<<<<<<<
  *         try:
  *             return self._sdk.events_trigger(body)
 */
-    if (unlikely((PyDict_SetItem(__pyx_v_body, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_v_overrides) < 0))) __PYX_ERR(0, 87, __pyx_L1_error)
+    if (unlikely((PyDict_SetItem(__pyx_v_body, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_v_overrides) < 0))) __PYX_ERR(0, 82, __pyx_L1_error)
 
-    /* "sandesh/api.py":86
+    /* "sandesh/api.py":81
  *             "payload": payload or {},
  *         }
  *         if overrides is not None:             # <<<<<<<<<<<<<<
@@ -3876,7 +3906,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
 */
   }
 
-  /* "sandesh/api.py":88
+  /* "sandesh/api.py":83
  *         if overrides is not None:
  *             body["overrides"] = overrides
  *         try:             # <<<<<<<<<<<<<<
@@ -3886,13 +3916,13 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
   {
     __Pyx_PyThreadState_declare
     __Pyx_PyThreadState_assign
-    __Pyx_ExceptionSave(&__pyx_t_8, &__pyx_t_9, &__pyx_t_10);
+    __Pyx_ExceptionSave(&__pyx_t_7, &__pyx_t_8, &__pyx_t_9);
+    __Pyx_XGOTREF(__pyx_t_7);
     __Pyx_XGOTREF(__pyx_t_8);
     __Pyx_XGOTREF(__pyx_t_9);
-    __Pyx_XGOTREF(__pyx_t_10);
     /*try:*/ {
 
-      /* "sandesh/api.py":89
+      /* "sandesh/api.py":84
  *             body["overrides"] = overrides
  *         try:
  *             return self._sdk.events_trigger(body)             # <<<<<<<<<<<<<<
@@ -3900,25 +3930,24 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
  *             if exc.status_code in {404, 422}:
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 89, __pyx_L9_error)
-      __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_4 = __pyx_t_7;
-      __Pyx_INCREF(__pyx_t_4);
-      __pyx_t_5 = 0;
-      {
-        PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_body};
-        __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_events_trigger, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L9_error)
-        __Pyx_GOTREF(__pyx_t_3);
-      }
-      if (!(likely(PyDict_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_3))) __PYX_ERR(0, 89, __pyx_L9_error)
-      __pyx_r = ((PyObject*)__pyx_t_3);
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 84, __pyx_L7_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_t_2 = __pyx_t_6;
+      __Pyx_INCREF(__pyx_t_2);
       __pyx_t_3 = 0;
-      goto __pyx_L13_try_return;
+      {
+        PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_v_body};
+        __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_events_trigger, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 84, __pyx_L7_error)
+        __Pyx_GOTREF(__pyx_t_1);
+      }
+      __pyx_r = __pyx_t_1;
+      __pyx_t_1 = 0;
+      goto __pyx_L11_try_return;
 
-      /* "sandesh/api.py":88
+      /* "sandesh/api.py":83
  *         if overrides is not None:
  *             body["overrides"] = overrides
  *         try:             # <<<<<<<<<<<<<<
@@ -3926,59 +3955,58 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
  *         except SandeshAPIError as exc:
 */
     }
-    __pyx_L9_error:;
-    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_L7_error:;
+    __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-    /* "sandesh/api.py":90
+    /* "sandesh/api.py":85
  *         try:
  *             return self._sdk.events_trigger(body)
  *         except SandeshAPIError as exc:             # <<<<<<<<<<<<<<
  *             if exc.status_code in {404, 422}:
  *                 return self._trigger_legacy_from_v1(
 */
-    __Pyx_ErrFetch(&__pyx_t_3, &__pyx_t_7, &__pyx_t_4);
-    __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_SandeshAPIError); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 90, __pyx_L11_except_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_11 = __Pyx_PyErr_GivenExceptionMatches(__pyx_t_3, __pyx_t_6);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_ErrRestore(__pyx_t_3, __pyx_t_7, __pyx_t_4);
-    __pyx_t_3 = 0; __pyx_t_7 = 0; __pyx_t_4 = 0;
+    __Pyx_ErrFetch(&__pyx_t_1, &__pyx_t_6, &__pyx_t_2);
+    __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_SandeshAPIError); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 85, __pyx_L9_except_error)
+    __Pyx_GOTREF(__pyx_t_10);
+    __pyx_t_11 = __Pyx_PyErr_GivenExceptionMatches(__pyx_t_1, __pyx_t_10);
+    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __Pyx_ErrRestore(__pyx_t_1, __pyx_t_6, __pyx_t_2);
+    __pyx_t_1 = 0; __pyx_t_6 = 0; __pyx_t_2 = 0;
     if (__pyx_t_11) {
       __Pyx_AddTraceback("sandesh.api.EventApi.trigger", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_4, &__pyx_t_7, &__pyx_t_3) < 0) __PYX_ERR(0, 90, __pyx_L11_except_error)
-      __Pyx_XGOTREF(__pyx_t_4);
-      __Pyx_XGOTREF(__pyx_t_7);
-      __Pyx_XGOTREF(__pyx_t_3);
-      __Pyx_INCREF(__pyx_t_7);
-      __pyx_v_exc = __pyx_t_7;
+      if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_6, &__pyx_t_1) < 0) __PYX_ERR(0, 85, __pyx_L9_except_error)
+      __Pyx_XGOTREF(__pyx_t_2);
+      __Pyx_XGOTREF(__pyx_t_6);
+      __Pyx_XGOTREF(__pyx_t_1);
+      __Pyx_INCREF(__pyx_t_6);
+      __pyx_v_exc = __pyx_t_6;
       /*try:*/ {
 
-        /* "sandesh/api.py":91
+        /* "sandesh/api.py":86
  *             return self._sdk.events_trigger(body)
  *         except SandeshAPIError as exc:
  *             if exc.status_code in {404, 422}:             # <<<<<<<<<<<<<<
  *                 return self._trigger_legacy_from_v1(
  *                     name=name,
 */
-        __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_status_code); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 91, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_2 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_6, __pyx_mstate_global->__pyx_int_404, 0x194, 0)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 91, __pyx_L20_error)
-        if (!__pyx_t_2) {
+        __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_status_code); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 86, __pyx_L18_error)
+        __Pyx_GOTREF(__pyx_t_10);
+        __pyx_t_4 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_10, __pyx_mstate_global->__pyx_int_404, 0x194, 0)); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 86, __pyx_L18_error)
+        if (!__pyx_t_4) {
         } else {
-          __pyx_t_1 = __pyx_t_2;
-          goto __pyx_L23_bool_binop_done;
+          __pyx_t_5 = __pyx_t_4;
+          goto __pyx_L21_bool_binop_done;
         }
-        __pyx_t_2 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_6, __pyx_mstate_global->__pyx_int_422, 0x1A6, 0)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 91, __pyx_L20_error)
-        __pyx_t_1 = __pyx_t_2;
-        __pyx_L23_bool_binop_done:;
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_t_2 = __pyx_t_1;
-        if (__pyx_t_2) {
+        __pyx_t_4 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_10, __pyx_mstate_global->__pyx_int_422, 0x1A6, 0)); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 86, __pyx_L18_error)
+        __pyx_t_5 = __pyx_t_4;
+        __pyx_L21_bool_binop_done:;
+        __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+        __pyx_t_4 = __pyx_t_5;
+        if (__pyx_t_4) {
 
-          /* "sandesh/api.py":92
+          /* "sandesh/api.py":87
  *         except SandeshAPIError as exc:
  *             if exc.status_code in {404, 422}:
  *                 return self._trigger_legacy_from_v1(             # <<<<<<<<<<<<<<
@@ -3989,67 +4017,58 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
           __pyx_t_12 = __pyx_v_self;
           __Pyx_INCREF(__pyx_t_12);
 
-          /* "sandesh/api.py":95
+          /* "sandesh/api.py":90
  *                     name=name,
  *                     subscriber_id=subscriber_id,
  *                     payload=payload or {},             # <<<<<<<<<<<<<<
  *                     overrides=overrides,
  *                 )
 */
-          __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_payload); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 95, __pyx_L20_error)
-          if (!__pyx_t_2) {
+          __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_v_payload); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 90, __pyx_L18_error)
+          if (!__pyx_t_4) {
           } else {
             __Pyx_INCREF(__pyx_v_payload);
             __pyx_t_13 = __pyx_v_payload;
-            goto __pyx_L25_bool_binop_done;
+            goto __pyx_L23_bool_binop_done;
           }
-          __pyx_t_14 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 95, __pyx_L20_error)
+          __pyx_t_14 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 90, __pyx_L18_error)
           __Pyx_GOTREF(__pyx_t_14);
           __Pyx_INCREF(__pyx_t_14);
           __pyx_t_13 = __pyx_t_14;
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-          __pyx_L25_bool_binop_done:;
+          __pyx_L23_bool_binop_done:;
 
-          /* "sandesh/api.py":96
+          /* "sandesh/api.py":91
  *                     subscriber_id=subscriber_id,
  *                     payload=payload or {},
  *                     overrides=overrides,             # <<<<<<<<<<<<<<
  *                 )
- *             response = httpx.Response(
+ *             raise self._http_error_from_sdk(exc) from exc
 */
-          __pyx_t_5 = 0;
+          __pyx_t_3 = 0;
           {
             PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 4 : 0)] = {__pyx_t_12, NULL};
-            __pyx_t_14 = __Pyx_MakeVectorcallBuilderKwds(4); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 92, __pyx_L20_error)
+            __pyx_t_14 = __Pyx_MakeVectorcallBuilderKwds(4); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 87, __pyx_L18_error)
             __Pyx_GOTREF(__pyx_t_14);
-            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_name, __pyx_v_name, __pyx_t_14, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 92, __pyx_L20_error)
-            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_v_subscriber_id, __pyx_t_14, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 92, __pyx_L20_error)
-            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_payload, __pyx_t_13, __pyx_t_14, __pyx_callargs+1, 2) < (0)) __PYX_ERR(0, 92, __pyx_L20_error)
-            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_overrides, __pyx_v_overrides, __pyx_t_14, __pyx_callargs+1, 3) < (0)) __PYX_ERR(0, 92, __pyx_L20_error)
-            __pyx_t_6 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_trigger_legacy_from_v1, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_14);
+            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_name, __pyx_v_name, __pyx_t_14, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 87, __pyx_L18_error)
+            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_v_subscriber_id, __pyx_t_14, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 87, __pyx_L18_error)
+            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_payload, __pyx_t_13, __pyx_t_14, __pyx_callargs+1, 2) < (0)) __PYX_ERR(0, 87, __pyx_L18_error)
+            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_overrides, __pyx_v_overrides, __pyx_t_14, __pyx_callargs+1, 3) < (0)) __PYX_ERR(0, 87, __pyx_L18_error)
+            __pyx_t_10 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_trigger_legacy_from_v1, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_14);
             __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
             __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
             __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-            if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 92, __pyx_L20_error)
-            __Pyx_GOTREF(__pyx_t_6);
+            if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 87, __pyx_L18_error)
+            __Pyx_GOTREF(__pyx_t_10);
           }
+          __pyx_r = __pyx_t_10;
+          __pyx_t_10 = 0;
+          __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+          __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+          __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+          goto __pyx_L17_return;
 
-          /* "sandesh/api.py":92
- *         except SandeshAPIError as exc:
- *             if exc.status_code in {404, 422}:
- *                 return self._trigger_legacy_from_v1(             # <<<<<<<<<<<<<<
- *                     name=name,
- *                     subscriber_id=subscriber_id,
-*/
-          if (!(likely(PyDict_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_6))) __PYX_ERR(0, 92, __pyx_L20_error)
-          __pyx_r = ((PyObject*)__pyx_t_6);
-          __pyx_t_6 = 0;
-          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-          goto __pyx_L19_return;
-
-          /* "sandesh/api.py":91
+          /* "sandesh/api.py":86
  *             return self._sdk.events_trigger(body)
  *         except SandeshAPIError as exc:
  *             if exc.status_code in {404, 422}:             # <<<<<<<<<<<<<<
@@ -4058,142 +4077,29 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
 */
         }
 
-        /* "sandesh/api.py":98
+        /* "sandesh/api.py":93
  *                     overrides=overrides,
  *                 )
- *             response = httpx.Response(             # <<<<<<<<<<<<<<
- *                 status_code=exc.status_code,
- *                 request=httpx.Request(exc.request_method, exc.request_url),
-*/
-        __pyx_t_14 = NULL;
-        __Pyx_GetModuleGlobalName(__pyx_t_13, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 98, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_13);
-        __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_13, __pyx_mstate_global->__pyx_n_u_Response); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 98, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_12);
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-
-        /* "sandesh/api.py":99
- *                 )
- *             response = httpx.Response(
- *                 status_code=exc.status_code,             # <<<<<<<<<<<<<<
- *                 request=httpx.Request(exc.request_method, exc.request_url),
- *             )
-*/
-        __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_status_code); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 99, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_13);
-
-        /* "sandesh/api.py":100
- *             response = httpx.Response(
- *                 status_code=exc.status_code,
- *                 request=httpx.Request(exc.request_method, exc.request_url),             # <<<<<<<<<<<<<<
- *             )
- *             raise HTTPError(str(exc), response=response) from exc
-*/
-        __pyx_t_16 = NULL;
-        __Pyx_GetModuleGlobalName(__pyx_t_17, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 100, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_17);
-        __pyx_t_18 = __Pyx_PyObject_GetAttrStr(__pyx_t_17, __pyx_mstate_global->__pyx_n_u_Request); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 100, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_18);
-        __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-        __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_request_method); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 100, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_17);
-        __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_request_url); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 100, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_19);
-        __pyx_t_5 = 1;
-        #if CYTHON_UNPACK_METHODS
-        if (unlikely(PyMethod_Check(__pyx_t_18))) {
-          __pyx_t_16 = PyMethod_GET_SELF(__pyx_t_18);
-          assert(__pyx_t_16);
-          PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_18);
-          __Pyx_INCREF(__pyx_t_16);
-          __Pyx_INCREF(__pyx__function);
-          __Pyx_DECREF_SET(__pyx_t_18, __pyx__function);
-          __pyx_t_5 = 0;
-        }
-        #endif
-        {
-          PyObject *__pyx_callargs[3] = {__pyx_t_16, __pyx_t_17, __pyx_t_19};
-          __pyx_t_15 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_18, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
-          __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-          __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-          __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-          if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 100, __pyx_L20_error)
-          __Pyx_GOTREF(__pyx_t_15);
-        }
-        __pyx_t_5 = 1;
-        #if CYTHON_UNPACK_METHODS
-        if (unlikely(PyMethod_Check(__pyx_t_12))) {
-          __pyx_t_14 = PyMethod_GET_SELF(__pyx_t_12);
-          assert(__pyx_t_14);
-          PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_12);
-          __Pyx_INCREF(__pyx_t_14);
-          __Pyx_INCREF(__pyx__function);
-          __Pyx_DECREF_SET(__pyx_t_12, __pyx__function);
-          __pyx_t_5 = 0;
-        }
-        #endif
-        {
-          PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_14, NULL};
-          __pyx_t_18 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 98, __pyx_L20_error)
-          __Pyx_GOTREF(__pyx_t_18);
-          if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_status_code, __pyx_t_13, __pyx_t_18, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 98, __pyx_L20_error)
-          if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_request, __pyx_t_15, __pyx_t_18, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 98, __pyx_L20_error)
-          __pyx_t_6 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_12, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_18);
-          __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
-          __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-          __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-          __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 98, __pyx_L20_error)
-          __Pyx_GOTREF(__pyx_t_6);
-        }
-        __pyx_v_response = __pyx_t_6;
-        __pyx_t_6 = 0;
-
-        /* "sandesh/api.py":102
- *                 request=httpx.Request(exc.request_method, exc.request_url),
- *             )
- *             raise HTTPError(str(exc), response=response) from exc             # <<<<<<<<<<<<<<
+ *             raise self._http_error_from_sdk(exc) from exc             # <<<<<<<<<<<<<<
  * 
  *     def _trigger_legacy_from_v1(
 */
-        __pyx_t_12 = NULL;
-        __Pyx_GetModuleGlobalName(__pyx_t_18, __pyx_mstate_global->__pyx_n_u_HTTPError); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 102, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_18);
-        __pyx_t_15 = __Pyx_PyObject_Unicode(__pyx_v_exc); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 102, __pyx_L20_error)
-        __Pyx_GOTREF(__pyx_t_15);
-        __pyx_t_5 = 1;
-        #if CYTHON_UNPACK_METHODS
-        if (unlikely(PyMethod_Check(__pyx_t_18))) {
-          __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_18);
-          assert(__pyx_t_12);
-          PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_18);
-          __Pyx_INCREF(__pyx_t_12);
-          __Pyx_INCREF(__pyx__function);
-          __Pyx_DECREF_SET(__pyx_t_18, __pyx__function);
-          __pyx_t_5 = 0;
-        }
-        #endif
+        __pyx_t_14 = __pyx_v_self;
+        __Pyx_INCREF(__pyx_t_14);
+        __pyx_t_3 = 0;
         {
-          PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_12, __pyx_t_15};
-          __pyx_t_13 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 102, __pyx_L20_error)
-          __Pyx_GOTREF(__pyx_t_13);
-          if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_response, __pyx_v_response, __pyx_t_13, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 102, __pyx_L20_error)
-          __pyx_t_6 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_18, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_13);
-          __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-          __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-          __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-          __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-          if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 102, __pyx_L20_error)
-          __Pyx_GOTREF(__pyx_t_6);
+          PyObject *__pyx_callargs[2] = {__pyx_t_14, __pyx_v_exc};
+          __pyx_t_10 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_http_error_from_sdk, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+          __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
+          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 93, __pyx_L18_error)
+          __Pyx_GOTREF(__pyx_t_10);
         }
-        __Pyx_Raise(__pyx_t_6, 0, 0, __pyx_v_exc);
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __PYX_ERR(0, 102, __pyx_L20_error)
+        __Pyx_Raise(__pyx_t_10, 0, 0, __pyx_v_exc);
+        __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+        __PYX_ERR(0, 93, __pyx_L18_error)
       }
 
-      /* "sandesh/api.py":90
+      /* "sandesh/api.py":85
  *         try:
  *             return self._sdk.events_trigger(body)
  *         except SandeshAPIError as exc:             # <<<<<<<<<<<<<<
@@ -4201,80 +4107,75 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
  *                 return self._trigger_legacy_from_v1(
 */
       /*finally:*/ {
-        __pyx_L20_error:;
+        __pyx_L18_error:;
         /*exception exit:*/{
           __Pyx_PyThreadState_declare
           __Pyx_PyThreadState_assign
-          __pyx_t_22 = 0; __pyx_t_23 = 0; __pyx_t_24 = 0; __pyx_t_25 = 0; __pyx_t_26 = 0; __pyx_t_27 = 0;
+          __pyx_t_17 = 0; __pyx_t_18 = 0; __pyx_t_19 = 0; __pyx_t_20 = 0; __pyx_t_21 = 0; __pyx_t_22 = 0;
+          __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
           __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
           __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
-          __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
-          __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
-          __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
-          __Pyx_XDECREF(__pyx_t_18); __pyx_t_18 = 0;
-          __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
-          __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-           __Pyx_ExceptionSwap(&__pyx_t_25, &__pyx_t_26, &__pyx_t_27);
-          if ( unlikely(__Pyx_GetException(&__pyx_t_22, &__pyx_t_23, &__pyx_t_24) < 0)) __Pyx_ErrFetch(&__pyx_t_22, &__pyx_t_23, &__pyx_t_24);
+           __Pyx_ExceptionSwap(&__pyx_t_20, &__pyx_t_21, &__pyx_t_22);
+          if ( unlikely(__Pyx_GetException(&__pyx_t_17, &__pyx_t_18, &__pyx_t_19) < 0)) __Pyx_ErrFetch(&__pyx_t_17, &__pyx_t_18, &__pyx_t_19);
+          __Pyx_XGOTREF(__pyx_t_17);
+          __Pyx_XGOTREF(__pyx_t_18);
+          __Pyx_XGOTREF(__pyx_t_19);
+          __Pyx_XGOTREF(__pyx_t_20);
+          __Pyx_XGOTREF(__pyx_t_21);
           __Pyx_XGOTREF(__pyx_t_22);
-          __Pyx_XGOTREF(__pyx_t_23);
-          __Pyx_XGOTREF(__pyx_t_24);
-          __Pyx_XGOTREF(__pyx_t_25);
-          __Pyx_XGOTREF(__pyx_t_26);
-          __Pyx_XGOTREF(__pyx_t_27);
-          __pyx_t_11 = __pyx_lineno; __pyx_t_20 = __pyx_clineno; __pyx_t_21 = __pyx_filename;
+          __pyx_t_11 = __pyx_lineno; __pyx_t_15 = __pyx_clineno; __pyx_t_16 = __pyx_filename;
           {
             __Pyx_DECREF(__pyx_v_exc); __pyx_v_exc = 0;
           }
-          __Pyx_XGIVEREF(__pyx_t_25);
-          __Pyx_XGIVEREF(__pyx_t_26);
-          __Pyx_XGIVEREF(__pyx_t_27);
-          __Pyx_ExceptionReset(__pyx_t_25, __pyx_t_26, __pyx_t_27);
+          __Pyx_XGIVEREF(__pyx_t_20);
+          __Pyx_XGIVEREF(__pyx_t_21);
           __Pyx_XGIVEREF(__pyx_t_22);
-          __Pyx_XGIVEREF(__pyx_t_23);
-          __Pyx_XGIVEREF(__pyx_t_24);
-          __Pyx_ErrRestore(__pyx_t_22, __pyx_t_23, __pyx_t_24);
-          __pyx_t_22 = 0; __pyx_t_23 = 0; __pyx_t_24 = 0; __pyx_t_25 = 0; __pyx_t_26 = 0; __pyx_t_27 = 0;
-          __pyx_lineno = __pyx_t_11; __pyx_clineno = __pyx_t_20; __pyx_filename = __pyx_t_21;
-          goto __pyx_L11_except_error;
+          __Pyx_ExceptionReset(__pyx_t_20, __pyx_t_21, __pyx_t_22);
+          __Pyx_XGIVEREF(__pyx_t_17);
+          __Pyx_XGIVEREF(__pyx_t_18);
+          __Pyx_XGIVEREF(__pyx_t_19);
+          __Pyx_ErrRestore(__pyx_t_17, __pyx_t_18, __pyx_t_19);
+          __pyx_t_17 = 0; __pyx_t_18 = 0; __pyx_t_19 = 0; __pyx_t_20 = 0; __pyx_t_21 = 0; __pyx_t_22 = 0;
+          __pyx_lineno = __pyx_t_11; __pyx_clineno = __pyx_t_15; __pyx_filename = __pyx_t_16;
+          goto __pyx_L9_except_error;
         }
-        __pyx_L19_return: {
-          __pyx_t_28 = __pyx_r;
+        __pyx_L17_return: {
+          __pyx_t_22 = __pyx_r;
           __pyx_r = 0;
           __Pyx_DECREF(__pyx_v_exc); __pyx_v_exc = 0;
-          __pyx_r = __pyx_t_28;
-          __pyx_t_28 = 0;
-          goto __pyx_L12_except_return;
+          __pyx_r = __pyx_t_22;
+          __pyx_t_22 = 0;
+          goto __pyx_L10_except_return;
         }
       }
     }
-    goto __pyx_L11_except_error;
+    goto __pyx_L9_except_error;
 
-    /* "sandesh/api.py":88
+    /* "sandesh/api.py":83
  *         if overrides is not None:
  *             body["overrides"] = overrides
  *         try:             # <<<<<<<<<<<<<<
  *             return self._sdk.events_trigger(body)
  *         except SandeshAPIError as exc:
 */
-    __pyx_L11_except_error:;
+    __pyx_L9_except_error:;
+    __Pyx_XGIVEREF(__pyx_t_7);
     __Pyx_XGIVEREF(__pyx_t_8);
     __Pyx_XGIVEREF(__pyx_t_9);
-    __Pyx_XGIVEREF(__pyx_t_10);
-    __Pyx_ExceptionReset(__pyx_t_8, __pyx_t_9, __pyx_t_10);
+    __Pyx_ExceptionReset(__pyx_t_7, __pyx_t_8, __pyx_t_9);
     goto __pyx_L1_error;
-    __pyx_L13_try_return:;
+    __pyx_L11_try_return:;
+    __Pyx_XGIVEREF(__pyx_t_7);
     __Pyx_XGIVEREF(__pyx_t_8);
     __Pyx_XGIVEREF(__pyx_t_9);
-    __Pyx_XGIVEREF(__pyx_t_10);
-    __Pyx_ExceptionReset(__pyx_t_8, __pyx_t_9, __pyx_t_10);
+    __Pyx_ExceptionReset(__pyx_t_7, __pyx_t_8, __pyx_t_9);
     goto __pyx_L0;
-    __pyx_L12_except_return:;
+    __pyx_L10_except_return:;
+    __Pyx_XGIVEREF(__pyx_t_7);
     __Pyx_XGIVEREF(__pyx_t_8);
     __Pyx_XGIVEREF(__pyx_t_9);
-    __Pyx_XGIVEREF(__pyx_t_10);
-    __Pyx_ExceptionReset(__pyx_t_8, __pyx_t_9, __pyx_t_10);
+    __Pyx_ExceptionReset(__pyx_t_7, __pyx_t_8, __pyx_t_9);
     goto __pyx_L0;
   }
 
@@ -4288,32 +4189,26 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_2trigger(CYTHON_UNUSED PyObjec
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_10);
   __Pyx_XDECREF(__pyx_t_12);
   __Pyx_XDECREF(__pyx_t_13);
   __Pyx_XDECREF(__pyx_t_14);
-  __Pyx_XDECREF(__pyx_t_15);
-  __Pyx_XDECREF(__pyx_t_16);
-  __Pyx_XDECREF(__pyx_t_17);
-  __Pyx_XDECREF(__pyx_t_18);
-  __Pyx_XDECREF(__pyx_t_19);
   __Pyx_AddTraceback("sandesh.api.EventApi.trigger", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_subscriber_id);
   __Pyx_XDECREF(__pyx_v_body);
   __Pyx_XDECREF(__pyx_v_exc);
-  __Pyx_XDECREF(__pyx_v_response);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "sandesh/api.py":104
- *             raise HTTPError(str(exc), response=response) from exc
+/* "sandesh/api.py":95
+ *             raise self._http_error_from_sdk(exc) from exc
  * 
  *     def _trigger_legacy_from_v1(             # <<<<<<<<<<<<<<
  *         self,
@@ -4328,7 +4223,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1, "EventApi._trigger_legacy_from_v1(self, *, str name: str, str subscriber_id: str, dict payload: Dict[str, Any], dict overrides: Optional[Dict[str, Any]]) -> Dict[str, Any]");
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1, "EventApi._trigger_legacy_from_v1(self, *, str name: str, str subscriber_id: str, payload: JsonDict, overrides: Optional[JsonDict]) -> JsonDict");
 static PyMethodDef __pyx_mdef_7sandesh_3api_8EventApi_5_trigger_legacy_from_v1 = {"_trigger_legacy_from_v1", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_8EventApi_5_trigger_legacy_from_v1, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1};
 static PyObject *__pyx_pw_7sandesh_3api_8EventApi_5_trigger_legacy_from_v1(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -4364,38 +4259,38 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_name,&__pyx_mstate_global->__pyx_n_u_subscriber_id,&__pyx_mstate_global->__pyx_n_u_payload,&__pyx_mstate_global->__pyx_n_u_overrides,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 104, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 95, __pyx_L3_error)
     if (likely(__pyx_kwds_len > 0)) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 104, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 95, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_trigger_legacy_from_v1", 0) < (0)) __PYX_ERR(0, 104, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_trigger_legacy_from_v1", 0) < (0)) __PYX_ERR(0, 95, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_trigger_legacy_from_v1", 1, 1, 1, i); __PYX_ERR(0, 104, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_trigger_legacy_from_v1", 1, 1, 1, i); __PYX_ERR(0, 95, __pyx_L3_error) }
       }
       for (Py_ssize_t i = 1; i < 5; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseKeywordRequired("_trigger_legacy_from_v1", *(__pyx_pyargnames[i - 0])); __PYX_ERR(0, 104, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseKeywordRequired("_trigger_legacy_from_v1", *(__pyx_pyargnames[i - 0])); __PYX_ERR(0, 95, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
-      __Pyx_RaiseKeywordRequired("_trigger_legacy_from_v1", __pyx_mstate_global->__pyx_n_u_name); __PYX_ERR(0, 104, __pyx_L3_error)
+      __Pyx_RaiseKeywordRequired("_trigger_legacy_from_v1", __pyx_mstate_global->__pyx_n_u_name); __PYX_ERR(0, 95, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
     __pyx_v_name = ((PyObject*)values[1]);
     __pyx_v_subscriber_id = ((PyObject*)values[2]);
-    __pyx_v_payload = ((PyObject*)values[3]);
-    __pyx_v_overrides = ((PyObject*)values[4]);
+    __pyx_v_payload = values[3];
+    __pyx_v_overrides = values[4];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_trigger_legacy_from_v1", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 104, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("_trigger_legacy_from_v1", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 95, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -4406,10 +4301,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 0, "name", 2))) __PYX_ERR(0, 107, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_subscriber_id), (&PyUnicode_Type), 0, "subscriber_id", 2))) __PYX_ERR(0, 108, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_payload), (&PyDict_Type), 0, "payload", 2))) __PYX_ERR(0, 109, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_overrides), (&PyDict_Type), 1, "overrides", 2))) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyUnicode_Type), 0, "name", 2))) __PYX_ERR(0, 98, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_subscriber_id), (&PyUnicode_Type), 0, "subscriber_id", 2))) __PYX_ERR(0, 99, __pyx_L1_error)
   __pyx_r = __pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(__pyx_self, __pyx_v_self, __pyx_v_name, __pyx_v_subscriber_id, __pyx_v_payload, __pyx_v_overrides);
 
   /* function exit code */
@@ -4434,13 +4327,8 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
   PyObject *__pyx_v_email = NULL;
   PyObject *__pyx_v_subscriber = NULL;
   PyObject *__pyx_v_exc = NULL;
-  PyObject *__pyx_v_response = NULL;
-  PyObject *__pyx_v_email_overrides = 0;
-  PyObject *__pyx_v_maybe_email = NULL;
-  PyObject *__pyx_v_legacy_body = 0;
-  PyObject *__pyx_v_cc = NULL;
-  PyObject *__pyx_v_sender_name = NULL;
-  PyObject *__pyx_v_subject = NULL;
+  PyObject *__pyx_v_email_overrides = NULL;
+  PyObject *__pyx_v_legacy_body = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -4480,12 +4368,12 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_trigger_legacy_from_v1", 0);
 
-  /* "sandesh/api.py":112
- *         overrides: Optional[Dict[str, Any]],
- *     ) -> Dict[str, Any]:
+  /* "sandesh/api.py":103
+ *         overrides: Optional[JsonDict],
+ *     ) -> JsonDict:
  *         inferred_email = self._infer_email_for_legacy(payload, overrides)             # <<<<<<<<<<<<<<
- *         # Optimized fallback: if we can infer an email directly from v1-style
- *         # payload/overrides, avoid subscriber lookup entirely.
+ *         email = inferred_email or ""
+ *         if not email:
 */
   __pyx_t_2 = __pyx_v_self;
   __Pyx_INCREF(__pyx_t_2);
@@ -4494,20 +4382,20 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
     PyObject *__pyx_callargs[3] = {__pyx_t_2, __pyx_v_payload, __pyx_v_overrides};
     __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_infer_email_for_legacy, __pyx_callargs+__pyx_t_3, (3-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 112, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 103, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __pyx_v_inferred_email = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":115
- *         # Optimized fallback: if we can infer an email directly from v1-style
- *         # payload/overrides, avoid subscriber lookup entirely.
+  /* "sandesh/api.py":104
+ *     ) -> JsonDict:
+ *         inferred_email = self._infer_email_for_legacy(payload, overrides)
  *         email = inferred_email or ""             # <<<<<<<<<<<<<<
  *         if not email:
  *             try:
 */
-  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_v_inferred_email); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_v_inferred_email); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 104, __pyx_L1_error)
   if (!__pyx_t_4) {
   } else {
     __Pyx_INCREF(__pyx_v_inferred_email);
@@ -4520,18 +4408,18 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
   __pyx_v_email = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":116
- *         # payload/overrides, avoid subscriber lookup entirely.
+  /* "sandesh/api.py":105
+ *         inferred_email = self._infer_email_for_legacy(payload, overrides)
  *         email = inferred_email or ""
  *         if not email:             # <<<<<<<<<<<<<<
  *             try:
  *                 subscriber = self._sdk.get_subscriber(subscriber_id)
 */
-  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_v_email); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 116, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_v_email); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 105, __pyx_L1_error)
   __pyx_t_5 = (!__pyx_t_4);
   if (__pyx_t_5) {
 
-    /* "sandesh/api.py":117
+    /* "sandesh/api.py":106
  *         email = inferred_email or ""
  *         if not email:
  *             try:             # <<<<<<<<<<<<<<
@@ -4547,14 +4435,14 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
       __Pyx_XGOTREF(__pyx_t_8);
       /*try:*/ {
 
-        /* "sandesh/api.py":118
+        /* "sandesh/api.py":107
  *         if not email:
  *             try:
  *                 subscriber = self._sdk.get_subscriber(subscriber_id)             # <<<<<<<<<<<<<<
  *             except SandeshAPIError as exc:
  *                 if exc.status_code == 404:
 */
-        __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 118, __pyx_L6_error)
+        __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 107, __pyx_L6_error)
         __Pyx_GOTREF(__pyx_t_9);
         __pyx_t_2 = __pyx_t_9;
         __Pyx_INCREF(__pyx_t_2);
@@ -4564,13 +4452,13 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
           __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_subscriber, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L6_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L6_error)
           __Pyx_GOTREF(__pyx_t_1);
         }
         __pyx_v_subscriber = __pyx_t_1;
         __pyx_t_1 = 0;
 
-        /* "sandesh/api.py":117
+        /* "sandesh/api.py":106
  *         email = inferred_email or ""
  *         if not email:
  *             try:             # <<<<<<<<<<<<<<
@@ -4587,7 +4475,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "sandesh/api.py":119
+      /* "sandesh/api.py":108
  *             try:
  *                 subscriber = self._sdk.get_subscriber(subscriber_id)
  *             except SandeshAPIError as exc:             # <<<<<<<<<<<<<<
@@ -4595,7 +4483,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
  *                     raise HTTPError(
 */
       __Pyx_ErrFetch(&__pyx_t_1, &__pyx_t_9, &__pyx_t_2);
-      __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_SandeshAPIError); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 119, __pyx_L8_except_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_SandeshAPIError); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 108, __pyx_L8_except_error)
       __Pyx_GOTREF(__pyx_t_10);
       __pyx_t_11 = __Pyx_PyErr_GivenExceptionMatches(__pyx_t_1, __pyx_t_10);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -4603,7 +4491,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
       __pyx_t_1 = 0; __pyx_t_9 = 0; __pyx_t_2 = 0;
       if (__pyx_t_11) {
         __Pyx_AddTraceback("sandesh.api.EventApi._trigger_legacy_from_v1", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_9, &__pyx_t_1) < 0) __PYX_ERR(0, 119, __pyx_L8_except_error)
+        if (__Pyx_GetException(&__pyx_t_2, &__pyx_t_9, &__pyx_t_1) < 0) __PYX_ERR(0, 108, __pyx_L8_except_error)
         __Pyx_XGOTREF(__pyx_t_2);
         __Pyx_XGOTREF(__pyx_t_9);
         __Pyx_XGOTREF(__pyx_t_1);
@@ -4611,20 +4499,20 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
         __pyx_v_exc = __pyx_t_9;
         /*try:*/ {
 
-          /* "sandesh/api.py":120
+          /* "sandesh/api.py":109
  *                 subscriber = self._sdk.get_subscriber(subscriber_id)
  *             except SandeshAPIError as exc:
  *                 if exc.status_code == 404:             # <<<<<<<<<<<<<<
  *                     raise HTTPError(
  *                         (
 */
-          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_status_code); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 120, __pyx_L17_error)
+          __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_status_code); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 109, __pyx_L17_error)
           __Pyx_GOTREF(__pyx_t_10);
-          __pyx_t_5 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_10, __pyx_mstate_global->__pyx_int_404, 0x194, 0)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 120, __pyx_L17_error)
+          __pyx_t_5 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_10, __pyx_mstate_global->__pyx_int_404, 0x194, 0)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 109, __pyx_L17_error)
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
           if (unlikely(__pyx_t_5)) {
 
-            /* "sandesh/api.py":121
+            /* "sandesh/api.py":110
  *             except SandeshAPIError as exc:
  *                 if exc.status_code == 404:
  *                     raise HTTPError(             # <<<<<<<<<<<<<<
@@ -4632,10 +4520,10 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
  *                             "Legacy trigger fallback requires an existing subscriber, "
 */
             __pyx_t_12 = NULL;
-            __Pyx_GetModuleGlobalName(__pyx_t_13, __pyx_mstate_global->__pyx_n_u_HTTPError); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 121, __pyx_L17_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_13, __pyx_mstate_global->__pyx_n_u_HTTPError); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 110, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_13);
 
-            /* "sandesh/api.py":124
+            /* "sandesh/api.py":113
  *                         (
  *                             "Legacy trigger fallback requires an existing subscriber, "
  *                             f"but `{subscriber_id}` was not found at "             # <<<<<<<<<<<<<<
@@ -4646,7 +4534,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
             __pyx_t_14[1] = __pyx_v_subscriber_id;
             __pyx_t_14[2] = __pyx_mstate_global->__pyx_kp_u_was_not_found_at_api_v1_subscri;
 
-            /* "sandesh/api.py":123
+            /* "sandesh/api.py":112
  *                     raise HTTPError(
  *                         (
  *                             "Legacy trigger fallback requires an existing subscriber, "             # <<<<<<<<<<<<<<
@@ -4654,10 +4542,10 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
  *                             "`/api/v1/subscribers/{subscriber_id}`, and no recipient "
 */
             __pyx_t_15 = __Pyx_PyUnicode_Join(__pyx_t_14, 3, 62 + __Pyx_PyUnicode_GET_LENGTH(__pyx_v_subscriber_id) + 281, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_v_subscriber_id));
-            if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 123, __pyx_L17_error)
+            if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 112, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_15);
 
-            /* "sandesh/api.py":132
+            /* "sandesh/api.py":121
  *                             "or overrides.email.cc."
  *                         ),
  *                         response=httpx.Response(             # <<<<<<<<<<<<<<
@@ -4665,13 +4553,13 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
  *                             request=httpx.Request(
 */
             __pyx_t_17 = NULL;
-            __Pyx_GetModuleGlobalName(__pyx_t_18, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 132, __pyx_L17_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_18, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 121, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_18);
-            __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_t_18, __pyx_mstate_global->__pyx_n_u_Response); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 132, __pyx_L17_error)
+            __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_t_18, __pyx_mstate_global->__pyx_n_u_Response); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 121, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_19);
             __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
 
-            /* "sandesh/api.py":134
+            /* "sandesh/api.py":123
  *                         response=httpx.Response(
  *                             status_code=404,
  *                             request=httpx.Request(             # <<<<<<<<<<<<<<
@@ -4679,32 +4567,32 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
  *                                 f"{self._sdk._base}/api/v1/subscribers/{subscriber_id}",
 */
             __pyx_t_20 = NULL;
-            __Pyx_GetModuleGlobalName(__pyx_t_21, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 134, __pyx_L17_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_21, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 123, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_21);
-            __pyx_t_22 = __Pyx_PyObject_GetAttrStr(__pyx_t_21, __pyx_mstate_global->__pyx_n_u_Request); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 134, __pyx_L17_error)
+            __pyx_t_22 = __Pyx_PyObject_GetAttrStr(__pyx_t_21, __pyx_mstate_global->__pyx_n_u_Request); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 123, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_22);
             __Pyx_DECREF(__pyx_t_21); __pyx_t_21 = 0;
 
-            /* "sandesh/api.py":136
+            /* "sandesh/api.py":125
  *                             request=httpx.Request(
  *                                 "GET",
  *                                 f"{self._sdk._base}/api/v1/subscribers/{subscriber_id}",             # <<<<<<<<<<<<<<
  *                             ),
  *                         ),
 */
-            __pyx_t_21 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 136, __pyx_L17_error)
+            __pyx_t_21 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 125, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_21);
-            __pyx_t_23 = __Pyx_PyObject_GetAttrStr(__pyx_t_21, __pyx_mstate_global->__pyx_n_u_base); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 136, __pyx_L17_error)
+            __pyx_t_23 = __Pyx_PyObject_GetAttrStr(__pyx_t_21, __pyx_mstate_global->__pyx_n_u_base); if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 125, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_23);
             __Pyx_DECREF(__pyx_t_21); __pyx_t_21 = 0;
-            __pyx_t_21 = __Pyx_PyObject_FormatSimple(__pyx_t_23, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 136, __pyx_L17_error)
+            __pyx_t_21 = __Pyx_PyObject_FormatSimple(__pyx_t_23, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 125, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_21);
             __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
             __pyx_t_14[0] = __pyx_t_21;
             __pyx_t_14[1] = __pyx_mstate_global->__pyx_kp_u_api_v1_subscribers;
             __pyx_t_14[2] = __pyx_v_subscriber_id;
             __pyx_t_23 = __Pyx_PyUnicode_Join(__pyx_t_14, 3, __Pyx_PyUnicode_GET_LENGTH(__pyx_t_21) + 20 + __Pyx_PyUnicode_GET_LENGTH(__pyx_v_subscriber_id), 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_21) | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_v_subscriber_id));
-            if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 136, __pyx_L17_error)
+            if (unlikely(!__pyx_t_23)) __PYX_ERR(0, 125, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_23);
             __Pyx_DECREF(__pyx_t_21); __pyx_t_21 = 0;
             __pyx_t_3 = 1;
@@ -4725,7 +4613,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
               __Pyx_XDECREF(__pyx_t_20); __pyx_t_20 = 0;
               __Pyx_DECREF(__pyx_t_23); __pyx_t_23 = 0;
               __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
-              if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 134, __pyx_L17_error)
+              if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 123, __pyx_L17_error)
               __Pyx_GOTREF(__pyx_t_18);
             }
             __pyx_t_3 = 1;
@@ -4742,16 +4630,16 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
             #endif
             {
               PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_17, NULL};
-              __pyx_t_22 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 132, __pyx_L17_error)
+              __pyx_t_22 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 121, __pyx_L17_error)
               __Pyx_GOTREF(__pyx_t_22);
-              if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_status_code, __pyx_mstate_global->__pyx_int_404, __pyx_t_22, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 132, __pyx_L17_error)
-              if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_request, __pyx_t_18, __pyx_t_22, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 132, __pyx_L17_error)
+              if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_status_code, __pyx_mstate_global->__pyx_int_404, __pyx_t_22, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 121, __pyx_L17_error)
+              if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_request, __pyx_t_18, __pyx_t_22, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 121, __pyx_L17_error)
               __pyx_t_16 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_19, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_22);
               __Pyx_XDECREF(__pyx_t_17); __pyx_t_17 = 0;
               __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
               __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
               __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-              if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 132, __pyx_L17_error)
+              if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 121, __pyx_L17_error)
               __Pyx_GOTREF(__pyx_t_16);
             }
             __pyx_t_3 = 1;
@@ -4768,31 +4656,31 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
             #endif
             {
               PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_12, __pyx_t_15};
-              __pyx_t_19 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 121, __pyx_L17_error)
+              __pyx_t_19 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 110, __pyx_L17_error)
               __Pyx_GOTREF(__pyx_t_19);
-              if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_response, __pyx_t_16, __pyx_t_19, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 121, __pyx_L17_error)
+              if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_response, __pyx_t_16, __pyx_t_19, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 110, __pyx_L17_error)
               __pyx_t_10 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_13, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_19);
               __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
               __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
               __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
               __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
               __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-              if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 121, __pyx_L17_error)
+              if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 110, __pyx_L17_error)
               __Pyx_GOTREF(__pyx_t_10);
             }
 
-            /* "sandesh/api.py":139
+            /* "sandesh/api.py":128
  *                             ),
  *                         ),
  *                     ) from exc             # <<<<<<<<<<<<<<
- *                 response = httpx.Response(
- *                     status_code=exc.status_code,
+ *                 raise self._http_error_from_sdk(exc) from exc
+ *             email = str(subscriber.get("email") or "").strip()
 */
             __Pyx_Raise(__pyx_t_10, 0, 0, __pyx_v_exc);
             __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-            __PYX_ERR(0, 121, __pyx_L17_error)
+            __PYX_ERR(0, 110, __pyx_L17_error)
 
-            /* "sandesh/api.py":120
+            /* "sandesh/api.py":109
  *                 subscriber = self._sdk.get_subscriber(subscriber_id)
  *             except SandeshAPIError as exc:
  *                 if exc.status_code == 404:             # <<<<<<<<<<<<<<
@@ -4801,142 +4689,29 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
 */
           }
 
-          /* "sandesh/api.py":140
+          /* "sandesh/api.py":129
  *                         ),
  *                     ) from exc
- *                 response = httpx.Response(             # <<<<<<<<<<<<<<
- *                     status_code=exc.status_code,
- *                     request=httpx.Request(exc.request_method, exc.request_url),
-*/
-          __pyx_t_13 = NULL;
-          __Pyx_GetModuleGlobalName(__pyx_t_19, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 140, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_19);
-          __pyx_t_16 = __Pyx_PyObject_GetAttrStr(__pyx_t_19, __pyx_mstate_global->__pyx_n_u_Response); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 140, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_16);
-          __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-
-          /* "sandesh/api.py":141
- *                     ) from exc
- *                 response = httpx.Response(
- *                     status_code=exc.status_code,             # <<<<<<<<<<<<<<
- *                     request=httpx.Request(exc.request_method, exc.request_url),
- *                 )
-*/
-          __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_status_code); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 141, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_19);
-
-          /* "sandesh/api.py":142
- *                 response = httpx.Response(
- *                     status_code=exc.status_code,
- *                     request=httpx.Request(exc.request_method, exc.request_url),             # <<<<<<<<<<<<<<
- *                 )
- *                 raise HTTPError(str(exc), response=response) from exc
-*/
-          __pyx_t_12 = NULL;
-          __Pyx_GetModuleGlobalName(__pyx_t_22, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 142, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_22);
-          __pyx_t_18 = __Pyx_PyObject_GetAttrStr(__pyx_t_22, __pyx_mstate_global->__pyx_n_u_Request); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 142, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_18);
-          __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
-          __pyx_t_22 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_request_method); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 142, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_22);
-          __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_request_url); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 142, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_17);
-          __pyx_t_3 = 1;
-          #if CYTHON_UNPACK_METHODS
-          if (unlikely(PyMethod_Check(__pyx_t_18))) {
-            __pyx_t_12 = PyMethod_GET_SELF(__pyx_t_18);
-            assert(__pyx_t_12);
-            PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_18);
-            __Pyx_INCREF(__pyx_t_12);
-            __Pyx_INCREF(__pyx__function);
-            __Pyx_DECREF_SET(__pyx_t_18, __pyx__function);
-            __pyx_t_3 = 0;
-          }
-          #endif
-          {
-            PyObject *__pyx_callargs[3] = {__pyx_t_12, __pyx_t_22, __pyx_t_17};
-            __pyx_t_15 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_18, __pyx_callargs+__pyx_t_3, (3-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-            __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
-            __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
-            __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-            __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-            if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 142, __pyx_L17_error)
-            __Pyx_GOTREF(__pyx_t_15);
-          }
-          __pyx_t_3 = 1;
-          #if CYTHON_UNPACK_METHODS
-          if (unlikely(PyMethod_Check(__pyx_t_16))) {
-            __pyx_t_13 = PyMethod_GET_SELF(__pyx_t_16);
-            assert(__pyx_t_13);
-            PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_16);
-            __Pyx_INCREF(__pyx_t_13);
-            __Pyx_INCREF(__pyx__function);
-            __Pyx_DECREF_SET(__pyx_t_16, __pyx__function);
-            __pyx_t_3 = 0;
-          }
-          #endif
-          {
-            PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_13, NULL};
-            __pyx_t_18 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 140, __pyx_L17_error)
-            __Pyx_GOTREF(__pyx_t_18);
-            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_status_code, __pyx_t_19, __pyx_t_18, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 140, __pyx_L17_error)
-            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_request, __pyx_t_15, __pyx_t_18, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 140, __pyx_L17_error)
-            __pyx_t_10 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_16, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_18);
-            __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-            __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-            __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-            __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-            __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-            if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 140, __pyx_L17_error)
-            __Pyx_GOTREF(__pyx_t_10);
-          }
-          __pyx_v_response = __pyx_t_10;
-          __pyx_t_10 = 0;
-
-          /* "sandesh/api.py":144
- *                     request=httpx.Request(exc.request_method, exc.request_url),
- *                 )
- *                 raise HTTPError(str(exc), response=response) from exc             # <<<<<<<<<<<<<<
+ *                 raise self._http_error_from_sdk(exc) from exc             # <<<<<<<<<<<<<<
  *             email = str(subscriber.get("email") or "").strip()
  *         if not email:
 */
-          __pyx_t_16 = NULL;
-          __Pyx_GetModuleGlobalName(__pyx_t_18, __pyx_mstate_global->__pyx_n_u_HTTPError); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 144, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_18);
-          __pyx_t_15 = __Pyx_PyObject_Unicode(__pyx_v_exc); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 144, __pyx_L17_error)
-          __Pyx_GOTREF(__pyx_t_15);
-          __pyx_t_3 = 1;
-          #if CYTHON_UNPACK_METHODS
-          if (unlikely(PyMethod_Check(__pyx_t_18))) {
-            __pyx_t_16 = PyMethod_GET_SELF(__pyx_t_18);
-            assert(__pyx_t_16);
-            PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_18);
-            __Pyx_INCREF(__pyx_t_16);
-            __Pyx_INCREF(__pyx__function);
-            __Pyx_DECREF_SET(__pyx_t_18, __pyx__function);
-            __pyx_t_3 = 0;
-          }
-          #endif
+          __pyx_t_13 = __pyx_v_self;
+          __Pyx_INCREF(__pyx_t_13);
+          __pyx_t_3 = 0;
           {
-            PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_16, __pyx_t_15};
-            __pyx_t_19 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 144, __pyx_L17_error)
-            __Pyx_GOTREF(__pyx_t_19);
-            if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_response, __pyx_v_response, __pyx_t_19, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 144, __pyx_L17_error)
-            __pyx_t_10 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_18, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_19);
-            __Pyx_XDECREF(__pyx_t_16); __pyx_t_16 = 0;
-            __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-            __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-            __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-            if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 144, __pyx_L17_error)
+            PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_v_exc};
+            __pyx_t_10 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_http_error_from_sdk, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+            __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
+            if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 129, __pyx_L17_error)
             __Pyx_GOTREF(__pyx_t_10);
           }
           __Pyx_Raise(__pyx_t_10, 0, 0, __pyx_v_exc);
           __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-          __PYX_ERR(0, 144, __pyx_L17_error)
+          __PYX_ERR(0, 129, __pyx_L17_error)
         }
 
-        /* "sandesh/api.py":119
+        /* "sandesh/api.py":108
  *             try:
  *                 subscriber = self._sdk.get_subscriber(subscriber_id)
  *             except SandeshAPIError as exc:             # <<<<<<<<<<<<<<
@@ -4989,7 +4764,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
       }
       goto __pyx_L8_except_error;
 
-      /* "sandesh/api.py":117
+      /* "sandesh/api.py":106
  *         email = inferred_email or ""
  *         if not email:
  *             try:             # <<<<<<<<<<<<<<
@@ -5005,24 +4780,24 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
       __pyx_L11_try_end:;
     }
 
-    /* "sandesh/api.py":145
- *                 )
- *                 raise HTTPError(str(exc), response=response) from exc
+    /* "sandesh/api.py":130
+ *                     ) from exc
+ *                 raise self._http_error_from_sdk(exc) from exc
  *             email = str(subscriber.get("email") or "").strip()             # <<<<<<<<<<<<<<
  *         if not email:
  *             raise HTTPError(
 */
-    __pyx_t_18 = __pyx_v_subscriber;
-    __Pyx_INCREF(__pyx_t_18);
+    __pyx_t_13 = __pyx_v_subscriber;
+    __Pyx_INCREF(__pyx_t_13);
     __pyx_t_3 = 0;
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_18, __pyx_mstate_global->__pyx_n_u_email};
+      PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_mstate_global->__pyx_n_u_email};
       __pyx_t_10 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_18); __pyx_t_18 = 0;
-      if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 145, __pyx_L1_error)
+      __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
+      if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
     }
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 145, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 130, __pyx_L1_error)
     if (!__pyx_t_5) {
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     } else {
@@ -5034,7 +4809,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
     __Pyx_INCREF(__pyx_mstate_global->__pyx_kp_u_);
     __pyx_t_2 = __pyx_mstate_global->__pyx_kp_u_;
     __pyx_L24_bool_binop_done:;
-    __pyx_t_10 = __Pyx_PyObject_Unicode(__pyx_t_2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 145, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_Unicode(__pyx_t_2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 130, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_9 = __pyx_t_10;
@@ -5045,14 +4820,14 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_DECREF_SET(__pyx_v_email, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "sandesh/api.py":116
- *         # payload/overrides, avoid subscriber lookup entirely.
+    /* "sandesh/api.py":105
+ *         inferred_email = self._infer_email_for_legacy(payload, overrides)
  *         email = inferred_email or ""
  *         if not email:             # <<<<<<<<<<<<<<
  *             try:
@@ -5060,18 +4835,18 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
 */
   }
 
-  /* "sandesh/api.py":146
- *                 raise HTTPError(str(exc), response=response) from exc
+  /* "sandesh/api.py":131
+ *                 raise self._http_error_from_sdk(exc) from exc
  *             email = str(subscriber.get("email") or "").strip()
  *         if not email:             # <<<<<<<<<<<<<<
  *             raise HTTPError(
  *                 (
 */
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_email); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_email); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 131, __pyx_L1_error)
   __pyx_t_4 = (!__pyx_t_5);
   if (unlikely(__pyx_t_4)) {
 
-    /* "sandesh/api.py":147
+    /* "sandesh/api.py":132
  *             email = str(subscriber.get("email") or "").strip()
  *         if not email:
  *             raise HTTPError(             # <<<<<<<<<<<<<<
@@ -5079,10 +4854,10 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
  *                     "Legacy trigger fallback requires subscriber email, "
 */
     __pyx_t_10 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_mstate_global->__pyx_n_u_HTTPError); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_9, __pyx_mstate_global->__pyx_n_u_HTTPError); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 132, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
 
-    /* "sandesh/api.py":150
+    /* "sandesh/api.py":135
  *                 (
  *                     "Legacy trigger fallback requires subscriber email, "
  *                     f"but subscriber `{subscriber_id}` has no email."             # <<<<<<<<<<<<<<
@@ -5093,7 +4868,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
     __pyx_t_14[1] = __pyx_v_subscriber_id;
     __pyx_t_14[2] = __pyx_mstate_global->__pyx_kp_u_has_no_email;
 
-    /* "sandesh/api.py":149
+    /* "sandesh/api.py":134
  *             raise HTTPError(
  *                 (
  *                     "Legacy trigger fallback requires subscriber email, "             # <<<<<<<<<<<<<<
@@ -5101,7 +4876,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
  *                 )
 */
     __pyx_t_2 = __Pyx_PyUnicode_Join(__pyx_t_14, 3, 67 + __Pyx_PyUnicode_GET_LENGTH(__pyx_v_subscriber_id) + 15, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_v_subscriber_id));
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 149, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 134, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_3 = 1;
     #if CYTHON_UNPACK_METHODS
@@ -5121,15 +4896,15 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
       __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 147, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 132, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 147, __pyx_L1_error)
+    __PYX_ERR(0, 132, __pyx_L1_error)
 
-    /* "sandesh/api.py":146
- *                 raise HTTPError(str(exc), response=response) from exc
+    /* "sandesh/api.py":131
+ *                 raise self._http_error_from_sdk(exc) from exc
  *             email = str(subscriber.get("email") or "").strip()
  *         if not email:             # <<<<<<<<<<<<<<
  *             raise HTTPError(
@@ -5137,318 +4912,78 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
 */
   }
 
-  /* "sandesh/api.py":154
+  /* "sandesh/api.py":139
  *             )
  * 
- *         email_overrides: Dict[str, Any] = {}             # <<<<<<<<<<<<<<
- *         if isinstance(overrides, dict):
- *             maybe_email = overrides.get("email")
+ *         email_overrides = self._email_overrides(overrides)             # <<<<<<<<<<<<<<
+ *         legacy_body: JsonDict = {
+ *             "template_id": name,
 */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_v_email_overrides = ((PyObject*)__pyx_t_1);
+  __pyx_t_9 = __pyx_v_self;
+  __Pyx_INCREF(__pyx_t_9);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_9, __pyx_v_overrides};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_email_overrides, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_v_email_overrides = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":155
- * 
- *         email_overrides: Dict[str, Any] = {}
- *         if isinstance(overrides, dict):             # <<<<<<<<<<<<<<
- *             maybe_email = overrides.get("email")
- *             if isinstance(maybe_email, dict):
-*/
-  __pyx_t_4 = PyDict_Check(__pyx_v_overrides); 
-  if (__pyx_t_4) {
-
-    /* "sandesh/api.py":156
- *         email_overrides: Dict[str, Any] = {}
- *         if isinstance(overrides, dict):
- *             maybe_email = overrides.get("email")             # <<<<<<<<<<<<<<
- *             if isinstance(maybe_email, dict):
- *                 email_overrides = maybe_email
-*/
-    if (unlikely(__pyx_v_overrides == Py_None)) {
-      PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-      __PYX_ERR(0, 156, __pyx_L1_error)
-    }
-    __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_overrides, __pyx_mstate_global->__pyx_n_u_email, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_maybe_email = __pyx_t_1;
-    __pyx_t_1 = 0;
-
-    /* "sandesh/api.py":157
- *         if isinstance(overrides, dict):
- *             maybe_email = overrides.get("email")
- *             if isinstance(maybe_email, dict):             # <<<<<<<<<<<<<<
- *                 email_overrides = maybe_email
- * 
-*/
-    __pyx_t_4 = PyDict_Check(__pyx_v_maybe_email); 
-    if (__pyx_t_4) {
-
-      /* "sandesh/api.py":158
- *             maybe_email = overrides.get("email")
- *             if isinstance(maybe_email, dict):
- *                 email_overrides = maybe_email             # <<<<<<<<<<<<<<
- * 
- *         legacy_body: Dict[str, Any] = {
-*/
-      __pyx_t_1 = __pyx_v_maybe_email;
-      __Pyx_INCREF(__pyx_t_1);
-      if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_1))) __PYX_ERR(0, 158, __pyx_L1_error)
-      __Pyx_DECREF_SET(__pyx_v_email_overrides, ((PyObject*)__pyx_t_1));
-      __pyx_t_1 = 0;
-
-      /* "sandesh/api.py":157
- *         if isinstance(overrides, dict):
- *             maybe_email = overrides.get("email")
- *             if isinstance(maybe_email, dict):             # <<<<<<<<<<<<<<
- *                 email_overrides = maybe_email
- * 
-*/
-    }
-
-    /* "sandesh/api.py":155
- * 
- *         email_overrides: Dict[str, Any] = {}
- *         if isinstance(overrides, dict):             # <<<<<<<<<<<<<<
- *             maybe_email = overrides.get("email")
- *             if isinstance(maybe_email, dict):
-*/
-  }
-
-  /* "sandesh/api.py":161
- * 
- *         legacy_body: Dict[str, Any] = {
+  /* "sandesh/api.py":141
+ *         email_overrides = self._email_overrides(overrides)
+ *         legacy_body: JsonDict = {
  *             "template_id": name,             # <<<<<<<<<<<<<<
  *             "email": email,
  *             "payload": payload,
 */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_template_id, __pyx_v_name) < (0)) __PYX_ERR(0, 161, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_template_id, __pyx_v_name) < (0)) __PYX_ERR(0, 141, __pyx_L1_error)
 
-  /* "sandesh/api.py":162
- *         legacy_body: Dict[str, Any] = {
+  /* "sandesh/api.py":142
+ *         legacy_body: JsonDict = {
  *             "template_id": name,
  *             "email": email,             # <<<<<<<<<<<<<<
  *             "payload": payload,
  *         }
 */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_email, __pyx_v_email) < (0)) __PYX_ERR(0, 161, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_email, __pyx_v_email) < (0)) __PYX_ERR(0, 141, __pyx_L1_error)
 
-  /* "sandesh/api.py":163
+  /* "sandesh/api.py":143
  *             "template_id": name,
  *             "email": email,
  *             "payload": payload,             # <<<<<<<<<<<<<<
  *         }
- *         cc = email_overrides.get("cc")
+ *         self._apply_legacy_email_overrides(legacy_body, email_overrides)
 */
-  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_payload, __pyx_v_payload) < (0)) __PYX_ERR(0, 161, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_payload, __pyx_v_payload) < (0)) __PYX_ERR(0, 141, __pyx_L1_error)
   __pyx_v_legacy_body = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":165
+  /* "sandesh/api.py":145
  *             "payload": payload,
  *         }
- *         cc = email_overrides.get("cc")             # <<<<<<<<<<<<<<
- *         if isinstance(cc, list) and cc:
- *             legacy_body["cc_emails"] = cc
-*/
-  if (unlikely(__pyx_v_email_overrides == Py_None)) {
-    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-    __PYX_ERR(0, 165, __pyx_L1_error)
-  }
-  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_email_overrides, __pyx_mstate_global->__pyx_n_u_cc, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_v_cc = __pyx_t_1;
-  __pyx_t_1 = 0;
-
-  /* "sandesh/api.py":166
- *         }
- *         cc = email_overrides.get("cc")
- *         if isinstance(cc, list) and cc:             # <<<<<<<<<<<<<<
- *             legacy_body["cc_emails"] = cc
- *         sender_name = email_overrides.get("senderName")
-*/
-  __pyx_t_5 = PyList_Check(__pyx_v_cc); 
-  if (__pyx_t_5) {
-  } else {
-    __pyx_t_4 = __pyx_t_5;
-    goto __pyx_L30_bool_binop_done;
-  }
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_cc); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 166, __pyx_L1_error)
-  __pyx_t_4 = __pyx_t_5;
-  __pyx_L30_bool_binop_done:;
-  if (__pyx_t_4) {
-
-    /* "sandesh/api.py":167
- *         cc = email_overrides.get("cc")
- *         if isinstance(cc, list) and cc:
- *             legacy_body["cc_emails"] = cc             # <<<<<<<<<<<<<<
- *         sender_name = email_overrides.get("senderName")
- *         if isinstance(sender_name, str) and sender_name.strip():
-*/
-    if (unlikely((PyDict_SetItem(__pyx_v_legacy_body, __pyx_mstate_global->__pyx_n_u_cc_emails, __pyx_v_cc) < 0))) __PYX_ERR(0, 167, __pyx_L1_error)
-
-    /* "sandesh/api.py":166
- *         }
- *         cc = email_overrides.get("cc")
- *         if isinstance(cc, list) and cc:             # <<<<<<<<<<<<<<
- *             legacy_body["cc_emails"] = cc
- *         sender_name = email_overrides.get("senderName")
-*/
-  }
-
-  /* "sandesh/api.py":168
- *         if isinstance(cc, list) and cc:
- *             legacy_body["cc_emails"] = cc
- *         sender_name = email_overrides.get("senderName")             # <<<<<<<<<<<<<<
- *         if isinstance(sender_name, str) and sender_name.strip():
- *             legacy_body["sender_name"] = sender_name.strip()
-*/
-  if (unlikely(__pyx_v_email_overrides == Py_None)) {
-    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-    __PYX_ERR(0, 168, __pyx_L1_error)
-  }
-  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_email_overrides, __pyx_mstate_global->__pyx_n_u_senderName, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_v_sender_name = __pyx_t_1;
-  __pyx_t_1 = 0;
-
-  /* "sandesh/api.py":169
- *             legacy_body["cc_emails"] = cc
- *         sender_name = email_overrides.get("senderName")
- *         if isinstance(sender_name, str) and sender_name.strip():             # <<<<<<<<<<<<<<
- *             legacy_body["sender_name"] = sender_name.strip()
- *         subject = email_overrides.get("subject")
-*/
-  __pyx_t_5 = PyUnicode_Check(__pyx_v_sender_name); 
-  if (__pyx_t_5) {
-  } else {
-    __pyx_t_4 = __pyx_t_5;
-    goto __pyx_L33_bool_binop_done;
-  }
-  __pyx_t_9 = __pyx_v_sender_name;
-  __Pyx_INCREF(__pyx_t_9);
-  __pyx_t_3 = 0;
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_9, NULL};
-    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 169, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_4 = __pyx_t_5;
-  __pyx_L33_bool_binop_done:;
-  if (__pyx_t_4) {
-
-    /* "sandesh/api.py":170
- *         sender_name = email_overrides.get("senderName")
- *         if isinstance(sender_name, str) and sender_name.strip():
- *             legacy_body["sender_name"] = sender_name.strip()             # <<<<<<<<<<<<<<
- *         subject = email_overrides.get("subject")
- *         if isinstance(subject, str) and subject.strip():
-*/
-    __pyx_t_9 = __pyx_v_sender_name;
-    __Pyx_INCREF(__pyx_t_9);
-    __pyx_t_3 = 0;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_9, NULL};
-      __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-    }
-    if (unlikely((PyDict_SetItem(__pyx_v_legacy_body, __pyx_mstate_global->__pyx_n_u_sender_name, __pyx_t_1) < 0))) __PYX_ERR(0, 170, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-    /* "sandesh/api.py":169
- *             legacy_body["cc_emails"] = cc
- *         sender_name = email_overrides.get("senderName")
- *         if isinstance(sender_name, str) and sender_name.strip():             # <<<<<<<<<<<<<<
- *             legacy_body["sender_name"] = sender_name.strip()
- *         subject = email_overrides.get("subject")
-*/
-  }
-
-  /* "sandesh/api.py":171
- *         if isinstance(sender_name, str) and sender_name.strip():
- *             legacy_body["sender_name"] = sender_name.strip()
- *         subject = email_overrides.get("subject")             # <<<<<<<<<<<<<<
- *         if isinstance(subject, str) and subject.strip():
- *             legacy_body["subject"] = subject.strip()
-*/
-  if (unlikely(__pyx_v_email_overrides == Py_None)) {
-    PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-    __PYX_ERR(0, 171, __pyx_L1_error)
-  }
-  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_email_overrides, __pyx_mstate_global->__pyx_n_u_subject, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_v_subject = __pyx_t_1;
-  __pyx_t_1 = 0;
-
-  /* "sandesh/api.py":172
- *             legacy_body["sender_name"] = sender_name.strip()
- *         subject = email_overrides.get("subject")
- *         if isinstance(subject, str) and subject.strip():             # <<<<<<<<<<<<<<
- *             legacy_body["subject"] = subject.strip()
- * 
-*/
-  __pyx_t_5 = PyUnicode_Check(__pyx_v_subject); 
-  if (__pyx_t_5) {
-  } else {
-    __pyx_t_4 = __pyx_t_5;
-    goto __pyx_L36_bool_binop_done;
-  }
-  __pyx_t_9 = __pyx_v_subject;
-  __Pyx_INCREF(__pyx_t_9);
-  __pyx_t_3 = 0;
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_9, NULL};
-    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 172, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 172, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_4 = __pyx_t_5;
-  __pyx_L36_bool_binop_done:;
-  if (__pyx_t_4) {
-
-    /* "sandesh/api.py":173
- *         subject = email_overrides.get("subject")
- *         if isinstance(subject, str) and subject.strip():
- *             legacy_body["subject"] = subject.strip()             # <<<<<<<<<<<<<<
+ *         self._apply_legacy_email_overrides(legacy_body, email_overrides)             # <<<<<<<<<<<<<<
  * 
  *         try:
 */
-    __pyx_t_9 = __pyx_v_subject;
-    __Pyx_INCREF(__pyx_t_9);
-    __pyx_t_3 = 0;
-    {
-      PyObject *__pyx_callargs[2] = {__pyx_t_9, NULL};
-      __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_1);
-    }
-    if (unlikely((PyDict_SetItem(__pyx_v_legacy_body, __pyx_mstate_global->__pyx_n_u_subject, __pyx_t_1) < 0))) __PYX_ERR(0, 173, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-    /* "sandesh/api.py":172
- *             legacy_body["sender_name"] = sender_name.strip()
- *         subject = email_overrides.get("subject")
- *         if isinstance(subject, str) and subject.strip():             # <<<<<<<<<<<<<<
- *             legacy_body["subject"] = subject.strip()
- * 
-*/
+  __pyx_t_9 = __pyx_v_self;
+  __Pyx_INCREF(__pyx_t_9);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[3] = {__pyx_t_9, __pyx_v_legacy_body, __pyx_v_email_overrides};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_apply_legacy_email_overrides, __pyx_callargs+__pyx_t_3, (3-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
   }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":175
- *             legacy_body["subject"] = subject.strip()
+  /* "sandesh/api.py":147
+ *         self._apply_legacy_email_overrides(legacy_body, email_overrides)
  * 
  *         try:             # <<<<<<<<<<<<<<
  *             return self._sdk.events_trigger_legacy(legacy_body)
@@ -5463,15 +4998,15 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
     __Pyx_XGOTREF(__pyx_t_6);
     /*try:*/ {
 
-      /* "sandesh/api.py":176
+      /* "sandesh/api.py":148
  * 
  *         try:
  *             return self._sdk.events_trigger_legacy(legacy_body)             # <<<<<<<<<<<<<<
  *         except SandeshAPIError as exc:
- *             response = httpx.Response(
+ *             raise self._http_error_from_sdk(exc) from exc
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 176, __pyx_L38_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 148, __pyx_L27_error)
       __Pyx_GOTREF(__pyx_t_2);
       __pyx_t_9 = __pyx_t_2;
       __Pyx_INCREF(__pyx_t_9);
@@ -5481,23 +5016,22 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_events_trigger_legacy, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L38_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L27_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
-      if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_1))) __PYX_ERR(0, 176, __pyx_L38_error)
-      __pyx_r = ((PyObject*)__pyx_t_1);
+      __pyx_r = __pyx_t_1;
       __pyx_t_1 = 0;
-      goto __pyx_L42_try_return;
+      goto __pyx_L31_try_return;
 
-      /* "sandesh/api.py":175
- *             legacy_body["subject"] = subject.strip()
+      /* "sandesh/api.py":147
+ *         self._apply_legacy_email_overrides(legacy_body, email_overrides)
  * 
  *         try:             # <<<<<<<<<<<<<<
  *             return self._sdk.events_trigger_legacy(legacy_body)
  *         except SandeshAPIError as exc:
 */
     }
-    __pyx_L38_error:;
+    __pyx_L27_error:;
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
     __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
@@ -5514,15 +5048,15 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
     __Pyx_XDECREF(__pyx_t_23); __pyx_t_23 = 0;
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-    /* "sandesh/api.py":177
+    /* "sandesh/api.py":149
  *         try:
  *             return self._sdk.events_trigger_legacy(legacy_body)
  *         except SandeshAPIError as exc:             # <<<<<<<<<<<<<<
- *             response = httpx.Response(
- *                 status_code=exc.status_code,
+ *             raise self._http_error_from_sdk(exc) from exc
+ * 
 */
     __Pyx_ErrFetch(&__pyx_t_1, &__pyx_t_2, &__pyx_t_9);
-    __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_SandeshAPIError); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 177, __pyx_L40_except_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_SandeshAPIError); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 149, __pyx_L29_except_error)
     __Pyx_GOTREF(__pyx_t_10);
     __pyx_t_24 = __Pyx_PyErr_GivenExceptionMatches(__pyx_t_1, __pyx_t_10);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -5530,7 +5064,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
     __pyx_t_1 = 0; __pyx_t_2 = 0; __pyx_t_9 = 0;
     if (__pyx_t_24) {
       __Pyx_AddTraceback("sandesh.api.EventApi._trigger_legacy_from_v1", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_9, &__pyx_t_2, &__pyx_t_1) < 0) __PYX_ERR(0, 177, __pyx_L40_except_error)
+      if (__Pyx_GetException(&__pyx_t_9, &__pyx_t_2, &__pyx_t_1) < 0) __PYX_ERR(0, 149, __pyx_L29_except_error)
       __Pyx_XGOTREF(__pyx_t_9);
       __Pyx_XGOTREF(__pyx_t_2);
       __Pyx_XGOTREF(__pyx_t_1);
@@ -5538,150 +5072,37 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
       __pyx_v_exc = __pyx_t_2;
       /*try:*/ {
 
-        /* "sandesh/api.py":178
+        /* "sandesh/api.py":150
  *             return self._sdk.events_trigger_legacy(legacy_body)
  *         except SandeshAPIError as exc:
- *             response = httpx.Response(             # <<<<<<<<<<<<<<
- *                 status_code=exc.status_code,
- *                 request=httpx.Request(exc.request_method, exc.request_url),
-*/
-        __pyx_t_18 = NULL;
-        __Pyx_GetModuleGlobalName(__pyx_t_19, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 178, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_19);
-        __pyx_t_15 = __Pyx_PyObject_GetAttrStr(__pyx_t_19, __pyx_mstate_global->__pyx_n_u_Response); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 178, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_15);
-        __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-
-        /* "sandesh/api.py":179
- *         except SandeshAPIError as exc:
- *             response = httpx.Response(
- *                 status_code=exc.status_code,             # <<<<<<<<<<<<<<
- *                 request=httpx.Request(exc.request_method, exc.request_url),
- *             )
-*/
-        __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_status_code); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 179, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_19);
-
-        /* "sandesh/api.py":180
- *             response = httpx.Response(
- *                 status_code=exc.status_code,
- *                 request=httpx.Request(exc.request_method, exc.request_url),             # <<<<<<<<<<<<<<
- *             )
- *             raise HTTPError(str(exc), response=response) from exc
-*/
-        __pyx_t_13 = NULL;
-        __Pyx_GetModuleGlobalName(__pyx_t_17, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 180, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_17);
-        __pyx_t_22 = __Pyx_PyObject_GetAttrStr(__pyx_t_17, __pyx_mstate_global->__pyx_n_u_Request); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 180, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_22);
-        __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-        __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_request_method); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 180, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_17);
-        __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_request_url); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 180, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_12);
-        __pyx_t_3 = 1;
-        #if CYTHON_UNPACK_METHODS
-        if (unlikely(PyMethod_Check(__pyx_t_22))) {
-          __pyx_t_13 = PyMethod_GET_SELF(__pyx_t_22);
-          assert(__pyx_t_13);
-          PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_22);
-          __Pyx_INCREF(__pyx_t_13);
-          __Pyx_INCREF(__pyx__function);
-          __Pyx_DECREF_SET(__pyx_t_22, __pyx__function);
-          __pyx_t_3 = 0;
-        }
-        #endif
-        {
-          PyObject *__pyx_callargs[3] = {__pyx_t_13, __pyx_t_17, __pyx_t_12};
-          __pyx_t_16 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_22, __pyx_callargs+__pyx_t_3, (3-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-          __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-          __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
-          if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 180, __pyx_L49_error)
-          __Pyx_GOTREF(__pyx_t_16);
-        }
-        __pyx_t_3 = 1;
-        #if CYTHON_UNPACK_METHODS
-        if (unlikely(PyMethod_Check(__pyx_t_15))) {
-          __pyx_t_18 = PyMethod_GET_SELF(__pyx_t_15);
-          assert(__pyx_t_18);
-          PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_15);
-          __Pyx_INCREF(__pyx_t_18);
-          __Pyx_INCREF(__pyx__function);
-          __Pyx_DECREF_SET(__pyx_t_15, __pyx__function);
-          __pyx_t_3 = 0;
-        }
-        #endif
-        {
-          PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_18, NULL};
-          __pyx_t_22 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 178, __pyx_L49_error)
-          __Pyx_GOTREF(__pyx_t_22);
-          if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_status_code, __pyx_t_19, __pyx_t_22, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 178, __pyx_L49_error)
-          if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_request, __pyx_t_16, __pyx_t_22, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 178, __pyx_L49_error)
-          __pyx_t_10 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_15, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_22);
-          __Pyx_XDECREF(__pyx_t_18); __pyx_t_18 = 0;
-          __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-          __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-          __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
-          __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 178, __pyx_L49_error)
-          __Pyx_GOTREF(__pyx_t_10);
-        }
-        __pyx_v_response = __pyx_t_10;
-        __pyx_t_10 = 0;
-
-        /* "sandesh/api.py":182
- *                 request=httpx.Request(exc.request_method, exc.request_url),
- *             )
- *             raise HTTPError(str(exc), response=response) from exc             # <<<<<<<<<<<<<<
+ *             raise self._http_error_from_sdk(exc) from exc             # <<<<<<<<<<<<<<
  * 
  *     @staticmethod
 */
-        __pyx_t_15 = NULL;
-        __Pyx_GetModuleGlobalName(__pyx_t_22, __pyx_mstate_global->__pyx_n_u_HTTPError); if (unlikely(!__pyx_t_22)) __PYX_ERR(0, 182, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_22);
-        __pyx_t_16 = __Pyx_PyObject_Unicode(__pyx_v_exc); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 182, __pyx_L49_error)
-        __Pyx_GOTREF(__pyx_t_16);
-        __pyx_t_3 = 1;
-        #if CYTHON_UNPACK_METHODS
-        if (unlikely(PyMethod_Check(__pyx_t_22))) {
-          __pyx_t_15 = PyMethod_GET_SELF(__pyx_t_22);
-          assert(__pyx_t_15);
-          PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_22);
-          __Pyx_INCREF(__pyx_t_15);
-          __Pyx_INCREF(__pyx__function);
-          __Pyx_DECREF_SET(__pyx_t_22, __pyx__function);
-          __pyx_t_3 = 0;
-        }
-        #endif
+        __pyx_t_13 = __pyx_v_self;
+        __Pyx_INCREF(__pyx_t_13);
+        __pyx_t_3 = 0;
         {
-          PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_15, __pyx_t_16};
-          __pyx_t_19 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 182, __pyx_L49_error)
-          __Pyx_GOTREF(__pyx_t_19);
-          if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_response, __pyx_v_response, __pyx_t_19, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 182, __pyx_L49_error)
-          __pyx_t_10 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_22, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (__pyx_t_3*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_19);
-          __Pyx_XDECREF(__pyx_t_15); __pyx_t_15 = 0;
-          __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-          __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-          __Pyx_DECREF(__pyx_t_22); __pyx_t_22 = 0;
-          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 182, __pyx_L49_error)
+          PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_v_exc};
+          __pyx_t_10 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_http_error_from_sdk, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+          __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
+          if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 150, __pyx_L38_error)
           __Pyx_GOTREF(__pyx_t_10);
         }
         __Pyx_Raise(__pyx_t_10, 0, 0, __pyx_v_exc);
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-        __PYX_ERR(0, 182, __pyx_L49_error)
+        __PYX_ERR(0, 150, __pyx_L38_error)
       }
 
-      /* "sandesh/api.py":177
+      /* "sandesh/api.py":149
  *         try:
  *             return self._sdk.events_trigger_legacy(legacy_body)
  *         except SandeshAPIError as exc:             # <<<<<<<<<<<<<<
- *             response = httpx.Response(
- *                 status_code=exc.status_code,
+ *             raise self._http_error_from_sdk(exc) from exc
+ * 
 */
       /*finally:*/ {
-        __pyx_L49_error:;
+        __pyx_L38_error:;
         /*exception exit:*/{
           __Pyx_PyThreadState_declare
           __Pyx_PyThreadState_assign
@@ -5720,26 +5141,26 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
           __Pyx_ErrRestore(__pyx_t_31, __pyx_t_30, __pyx_t_29);
           __pyx_t_31 = 0; __pyx_t_30 = 0; __pyx_t_29 = 0; __pyx_t_28 = 0; __pyx_t_27 = 0; __pyx_t_26 = 0;
           __pyx_lineno = __pyx_t_24; __pyx_clineno = __pyx_t_11; __pyx_filename = __pyx_t_32;
-          goto __pyx_L40_except_error;
+          goto __pyx_L29_except_error;
         }
       }
     }
-    goto __pyx_L40_except_error;
+    goto __pyx_L29_except_error;
 
-    /* "sandesh/api.py":175
- *             legacy_body["subject"] = subject.strip()
+    /* "sandesh/api.py":147
+ *         self._apply_legacy_email_overrides(legacy_body, email_overrides)
  * 
  *         try:             # <<<<<<<<<<<<<<
  *             return self._sdk.events_trigger_legacy(legacy_body)
  *         except SandeshAPIError as exc:
 */
-    __pyx_L40_except_error:;
+    __pyx_L29_except_error:;
     __Pyx_XGIVEREF(__pyx_t_8);
     __Pyx_XGIVEREF(__pyx_t_7);
     __Pyx_XGIVEREF(__pyx_t_6);
     __Pyx_ExceptionReset(__pyx_t_8, __pyx_t_7, __pyx_t_6);
     goto __pyx_L1_error;
-    __pyx_L42_try_return:;
+    __pyx_L31_try_return:;
     __Pyx_XGIVEREF(__pyx_t_8);
     __Pyx_XGIVEREF(__pyx_t_7);
     __Pyx_XGIVEREF(__pyx_t_6);
@@ -5747,8 +5168,8 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
     goto __pyx_L0;
   }
 
-  /* "sandesh/api.py":104
- *             raise HTTPError(str(exc), response=response) from exc
+  /* "sandesh/api.py":95
+ *             raise self._http_error_from_sdk(exc) from exc
  * 
  *     def _trigger_legacy_from_v1(             # <<<<<<<<<<<<<<
  *         self,
@@ -5779,24 +5200,19 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_4_trigger_legacy_from_v1(CYTHO
   __Pyx_XDECREF(__pyx_v_email);
   __Pyx_XDECREF(__pyx_v_subscriber);
   __Pyx_XDECREF(__pyx_v_exc);
-  __Pyx_XDECREF(__pyx_v_response);
   __Pyx_XDECREF(__pyx_v_email_overrides);
-  __Pyx_XDECREF(__pyx_v_maybe_email);
   __Pyx_XDECREF(__pyx_v_legacy_body);
-  __Pyx_XDECREF(__pyx_v_cc);
-  __Pyx_XDECREF(__pyx_v_sender_name);
-  __Pyx_XDECREF(__pyx_v_subject);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "sandesh/api.py":184
- *             raise HTTPError(str(exc), response=response) from exc
+/* "sandesh/api.py":152
+ *             raise self._http_error_from_sdk(exc) from exc
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
  *     def _infer_email_for_legacy(
- *         payload: Dict[str, Any],
+ *         payload: JsonDict,
 */
 
 /* Python wrapper */
@@ -5807,7 +5223,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_6_infer_email_for_legacy, "EventApi._infer_email_for_legacy(dict payload: Dict[str, Any], dict overrides: Optional[Dict[str, Any]]) -> Optional[str]");
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_6_infer_email_for_legacy, "EventApi._infer_email_for_legacy(payload: JsonDict, overrides: Optional[JsonDict]) -> Optional[str]");
 static PyMethodDef __pyx_mdef_7sandesh_3api_8EventApi_7_infer_email_for_legacy = {"_infer_email_for_legacy", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_8EventApi_7_infer_email_for_legacy, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_8EventApi_6_infer_email_for_legacy};
 static PyObject *__pyx_pw_7sandesh_3api_8EventApi_7_infer_email_for_legacy(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -5840,39 +5256,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_payload,&__pyx_mstate_global->__pyx_n_u_overrides,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 184, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 152, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 184, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 152, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 184, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 152, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_infer_email_for_legacy", 0) < (0)) __PYX_ERR(0, 184, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_infer_email_for_legacy", 0) < (0)) __PYX_ERR(0, 152, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_infer_email_for_legacy", 1, 2, 2, i); __PYX_ERR(0, 184, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_infer_email_for_legacy", 1, 2, 2, i); __PYX_ERR(0, 152, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 184, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 152, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 184, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 152, __pyx_L3_error)
     }
-    __pyx_v_payload = ((PyObject*)values[0]);
-    __pyx_v_overrides = ((PyObject*)values[1]);
+    __pyx_v_payload = values[0];
+    __pyx_v_overrides = values[1];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_infer_email_for_legacy", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 184, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("_infer_email_for_legacy", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 152, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -5883,23 +5299,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_payload), (&PyDict_Type), 0, "payload", 2))) __PYX_ERR(0, 186, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_overrides), (&PyDict_Type), 1, "overrides", 2))) __PYX_ERR(0, 187, __pyx_L1_error)
   __pyx_r = __pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(__pyx_self, __pyx_v_payload, __pyx_v_overrides);
 
   /* function exit code */
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __pyx_r = NULL;
   for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
     Py_XDECREF(values[__pyx_temp]);
   }
-  goto __pyx_L7_cleaned_up;
-  __pyx_L0:;
-  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
-    Py_XDECREF(values[__pyx_temp]);
-  }
-  __pyx_L7_cleaned_up:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
@@ -5909,25 +5314,25 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(CYTHO
   PyObject *__pyx_v_key = NULL;
   PyObject *__pyx_v_raw = NULL;
   PyObject *__pyx_v_email_overrides = NULL;
-  PyObject *__pyx_v_to_value = NULL;
-  PyObject *__pyx_v_item = NULL;
-  PyObject *__pyx_v_cc_value = NULL;
+  PyObject *__pyx_v_inferred = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   Py_ssize_t __pyx_t_2;
   PyObject *__pyx_t_3 = NULL;
-  int __pyx_t_4;
-  int __pyx_t_5;
-  PyObject *__pyx_t_6 = NULL;
-  size_t __pyx_t_7;
-  PyObject *(*__pyx_t_8)(PyObject *);
+  PyObject *__pyx_t_4 = NULL;
+  size_t __pyx_t_5;
+  int __pyx_t_6;
+  int __pyx_t_7;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  PyObject *__pyx_t_10 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_infer_email_for_legacy", 0);
 
-  /* "sandesh/api.py":190
+  /* "sandesh/api.py":158
  *     ) -> Optional[str]:
  *         candidate_keys = (
  *             "email",             # <<<<<<<<<<<<<<
@@ -5937,7 +5342,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(CYTHO
   __Pyx_INCREF(__pyx_mstate_global->__pyx_tuple[0]);
   __pyx_v_candidate_keys = __pyx_mstate_global->__pyx_tuple[0];
 
-  /* "sandesh/api.py":196
+  /* "sandesh/api.py":164
  *             "user_email",
  *         )
  *         for key in candidate_keys:             # <<<<<<<<<<<<<<
@@ -5950,7 +5355,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(CYTHO
     {
       Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
       #if !CYTHON_ASSUME_SAFE_SIZE
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 196, __pyx_L1_error)
+      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 164, __pyx_L1_error)
       #endif
       if (__pyx_t_2 >= __pyx_temp) break;
     }
@@ -5960,83 +5365,91 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(CYTHO
     __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_2);
     #endif
     ++__pyx_t_2;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 196, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 164, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XDECREF_SET(__pyx_v_key, ((PyObject*)__pyx_t_3));
     __pyx_t_3 = 0;
 
-    /* "sandesh/api.py":197
+    /* "sandesh/api.py":165
  *         )
  *         for key in candidate_keys:
  *             raw = payload.get(key)             # <<<<<<<<<<<<<<
  *             if isinstance(raw, str) and "@" in raw and raw.strip():
  *                 return raw.strip()
 */
-    __pyx_t_3 = __Pyx_PyDict_GetItemDefault(__pyx_v_payload, __pyx_v_key, Py_None); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 197, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = __pyx_v_payload;
+    __Pyx_INCREF(__pyx_t_4);
+    __pyx_t_5 = 0;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_key};
+      __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+    }
     __Pyx_XDECREF_SET(__pyx_v_raw, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "sandesh/api.py":198
+    /* "sandesh/api.py":166
  *         for key in candidate_keys:
  *             raw = payload.get(key)
  *             if isinstance(raw, str) and "@" in raw and raw.strip():             # <<<<<<<<<<<<<<
  *                 return raw.strip()
  * 
 */
-    __pyx_t_5 = PyUnicode_Check(__pyx_v_raw); 
-    if (__pyx_t_5) {
+    __pyx_t_7 = PyUnicode_Check(__pyx_v_raw); 
+    if (__pyx_t_7) {
     } else {
-      __pyx_t_4 = __pyx_t_5;
+      __pyx_t_6 = __pyx_t_7;
       goto __pyx_L6_bool_binop_done;
     }
-    __pyx_t_5 = (__Pyx_PySequence_ContainsTF(__pyx_mstate_global->__pyx_kp_u__2, __pyx_v_raw, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 198, __pyx_L1_error)
-    if (__pyx_t_5) {
+    __pyx_t_7 = (__Pyx_PySequence_ContainsTF(__pyx_mstate_global->__pyx_kp_u__2, __pyx_v_raw, Py_EQ)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 166, __pyx_L1_error)
+    if (__pyx_t_7) {
     } else {
-      __pyx_t_4 = __pyx_t_5;
+      __pyx_t_6 = __pyx_t_7;
       goto __pyx_L6_bool_binop_done;
     }
-    __pyx_t_6 = __pyx_v_raw;
-    __Pyx_INCREF(__pyx_t_6);
-    __pyx_t_7 = 0;
+    __pyx_t_4 = __pyx_v_raw;
+    __Pyx_INCREF(__pyx_t_4);
+    __pyx_t_5 = 0;
     {
-      PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-      __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+      PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
+      __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 166, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
     }
-    __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 198, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 166, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_4 = __pyx_t_5;
+    __pyx_t_6 = __pyx_t_7;
     __pyx_L6_bool_binop_done:;
-    if (__pyx_t_4) {
+    if (__pyx_t_6) {
 
-      /* "sandesh/api.py":199
+      /* "sandesh/api.py":167
  *             raw = payload.get(key)
  *             if isinstance(raw, str) and "@" in raw and raw.strip():
  *                 return raw.strip()             # <<<<<<<<<<<<<<
  * 
- *         if isinstance(overrides, dict):
+ *         email_overrides = EventApi._email_overrides(overrides)
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_6 = __pyx_v_raw;
-      __Pyx_INCREF(__pyx_t_6);
-      __pyx_t_7 = 0;
+      __pyx_t_4 = __pyx_v_raw;
+      __Pyx_INCREF(__pyx_t_4);
+      __pyx_t_5 = 0;
       {
-        PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-        __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 199, __pyx_L1_error)
+        PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
+        __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 167, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
       }
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_3))) __PYX_ERR(0, 199, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_3))) __PYX_ERR(0, 167, __pyx_L1_error)
       __pyx_r = ((PyObject*)__pyx_t_3);
       __pyx_t_3 = 0;
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       goto __pyx_L0;
 
-      /* "sandesh/api.py":198
+      /* "sandesh/api.py":166
  *         for key in candidate_keys:
  *             raw = payload.get(key)
  *             if isinstance(raw, str) and "@" in raw and raw.strip():             # <<<<<<<<<<<<<<
@@ -6045,7 +5458,7 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(CYTHO
 */
     }
 
-    /* "sandesh/api.py":196
+    /* "sandesh/api.py":164
  *             "user_email",
  *         )
  *         for key in candidate_keys:             # <<<<<<<<<<<<<<
@@ -6055,583 +5468,183 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(CYTHO
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":201
+  /* "sandesh/api.py":169
  *                 return raw.strip()
  * 
- *         if isinstance(overrides, dict):             # <<<<<<<<<<<<<<
- *             email_overrides = overrides.get("email")
- *             if isinstance(email_overrides, dict):
+ *         email_overrides = EventApi._email_overrides(overrides)             # <<<<<<<<<<<<<<
+ *         for key in ("to", "cc"):
+ *             inferred = EventApi._first_email(email_overrides.get(key))
 */
-  __pyx_t_4 = PyDict_Check(__pyx_v_overrides); 
-  if (__pyx_t_4) {
-
-    /* "sandesh/api.py":202
- * 
- *         if isinstance(overrides, dict):
- *             email_overrides = overrides.get("email")             # <<<<<<<<<<<<<<
- *             if isinstance(email_overrides, dict):
- *                 to_value = email_overrides.get("to")
-*/
-    if (unlikely(__pyx_v_overrides == Py_None)) {
-      PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "get");
-      __PYX_ERR(0, 202, __pyx_L1_error)
-    }
-    __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_overrides, __pyx_mstate_global->__pyx_n_u_email, Py_None); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_3 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_EventApi); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_email_overrides); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_5 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_8))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_8);
+    assert(__pyx_t_3);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_8);
+    __Pyx_INCREF(__pyx_t_3);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_8, __pyx__function);
+    __pyx_t_5 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_v_overrides};
+    __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_8, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_v_email_overrides = __pyx_t_1;
-    __pyx_t_1 = 0;
+  }
+  __pyx_v_email_overrides = __pyx_t_1;
+  __pyx_t_1 = 0;
 
-    /* "sandesh/api.py":203
- *         if isinstance(overrides, dict):
- *             email_overrides = overrides.get("email")
- *             if isinstance(email_overrides, dict):             # <<<<<<<<<<<<<<
- *                 to_value = email_overrides.get("to")
- *                 if isinstance(to_value, str) and "@" in to_value and to_value.strip():
+  /* "sandesh/api.py":170
+ * 
+ *         email_overrides = EventApi._email_overrides(overrides)
+ *         for key in ("to", "cc"):             # <<<<<<<<<<<<<<
+ *             inferred = EventApi._first_email(email_overrides.get(key))
+ *             if inferred:
 */
-    __pyx_t_4 = PyDict_Check(__pyx_v_email_overrides); 
-    if (__pyx_t_4) {
+  __pyx_t_1 = __pyx_mstate_global->__pyx_tuple[1]; __Pyx_INCREF(__pyx_t_1);
+  __pyx_t_2 = 0;
+  for (;;) {
+    if (__pyx_t_2 >= 2) break;
+    #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+    __pyx_t_8 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2));
+    #else
+    __pyx_t_8 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_2);
+    #endif
+    ++__pyx_t_2;
+    if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 170, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_8);
+    __Pyx_XDECREF_SET(__pyx_v_key, ((PyObject*)__pyx_t_8));
+    __pyx_t_8 = 0;
 
-      /* "sandesh/api.py":204
- *             email_overrides = overrides.get("email")
- *             if isinstance(email_overrides, dict):
- *                 to_value = email_overrides.get("to")             # <<<<<<<<<<<<<<
- *                 if isinstance(to_value, str) and "@" in to_value and to_value.strip():
- *                     return to_value.strip()
+    /* "sandesh/api.py":171
+ *         email_overrides = EventApi._email_overrides(overrides)
+ *         for key in ("to", "cc"):
+ *             inferred = EventApi._first_email(email_overrides.get(key))             # <<<<<<<<<<<<<<
+ *             if inferred:
+ *                 return inferred
 */
-      __pyx_t_3 = __pyx_v_email_overrides;
+    __pyx_t_3 = NULL;
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_EventApi); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 171, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_first_email); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 171, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_9);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_10 = __pyx_v_email_overrides;
+    __Pyx_INCREF(__pyx_t_10);
+    __pyx_t_5 = 0;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_10, __pyx_v_key};
+      __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 171, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+    }
+    __pyx_t_5 = 1;
+    #if CYTHON_UNPACK_METHODS
+    if (unlikely(PyMethod_Check(__pyx_t_9))) {
+      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_9);
+      assert(__pyx_t_3);
+      PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_9);
       __Pyx_INCREF(__pyx_t_3);
-      __pyx_t_7 = 0;
-      {
-        PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_n_u_to};
-        __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-      }
-      __pyx_v_to_value = __pyx_t_1;
-      __pyx_t_1 = 0;
+      __Pyx_INCREF(__pyx__function);
+      __Pyx_DECREF_SET(__pyx_t_9, __pyx__function);
+      __pyx_t_5 = 0;
+    }
+    #endif
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_t_4};
+      __pyx_t_8 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_9, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 171, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_8);
+    }
+    __Pyx_XDECREF_SET(__pyx_v_inferred, __pyx_t_8);
+    __pyx_t_8 = 0;
 
-      /* "sandesh/api.py":205
- *             if isinstance(email_overrides, dict):
- *                 to_value = email_overrides.get("to")
- *                 if isinstance(to_value, str) and "@" in to_value and to_value.strip():             # <<<<<<<<<<<<<<
- *                     return to_value.strip()
- *                 if isinstance(to_value, list):
-*/
-      __pyx_t_5 = PyUnicode_Check(__pyx_v_to_value); 
-      if (__pyx_t_5) {
-      } else {
-        __pyx_t_4 = __pyx_t_5;
-        goto __pyx_L13_bool_binop_done;
-      }
-      __pyx_t_5 = (__Pyx_PySequence_ContainsTF(__pyx_mstate_global->__pyx_kp_u__2, __pyx_v_to_value, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 205, __pyx_L1_error)
-      if (__pyx_t_5) {
-      } else {
-        __pyx_t_4 = __pyx_t_5;
-        goto __pyx_L13_bool_binop_done;
-      }
-      __pyx_t_3 = __pyx_v_to_value;
-      __Pyx_INCREF(__pyx_t_3);
-      __pyx_t_7 = 0;
-      {
-        PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
-        __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-      }
-      __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 205, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_4 = __pyx_t_5;
-      __pyx_L13_bool_binop_done:;
-      if (__pyx_t_4) {
-
-        /* "sandesh/api.py":206
- *                 to_value = email_overrides.get("to")
- *                 if isinstance(to_value, str) and "@" in to_value and to_value.strip():
- *                     return to_value.strip()             # <<<<<<<<<<<<<<
- *                 if isinstance(to_value, list):
- *                     for item in to_value:
-*/
-        __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = __pyx_v_to_value;
-        __Pyx_INCREF(__pyx_t_3);
-        __pyx_t_7 = 0;
-        {
-          PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
-          __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_1);
-        }
-        if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_1))) __PYX_ERR(0, 206, __pyx_L1_error)
-        __pyx_r = ((PyObject*)__pyx_t_1);
-        __pyx_t_1 = 0;
-        goto __pyx_L0;
-
-        /* "sandesh/api.py":205
- *             if isinstance(email_overrides, dict):
- *                 to_value = email_overrides.get("to")
- *                 if isinstance(to_value, str) and "@" in to_value and to_value.strip():             # <<<<<<<<<<<<<<
- *                     return to_value.strip()
- *                 if isinstance(to_value, list):
-*/
-      }
-
-      /* "sandesh/api.py":207
- *                 if isinstance(to_value, str) and "@" in to_value and to_value.strip():
- *                     return to_value.strip()
- *                 if isinstance(to_value, list):             # <<<<<<<<<<<<<<
- *                     for item in to_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():
-*/
-      __pyx_t_4 = PyList_Check(__pyx_v_to_value); 
-      if (__pyx_t_4) {
-
-        /* "sandesh/api.py":208
- *                     return to_value.strip()
- *                 if isinstance(to_value, list):
- *                     for item in to_value:             # <<<<<<<<<<<<<<
- *                         if isinstance(item, str) and "@" in item and item.strip():
- *                             return item.strip()
-*/
-        if (likely(PyList_CheckExact(__pyx_v_to_value)) || PyTuple_CheckExact(__pyx_v_to_value)) {
-          __pyx_t_1 = __pyx_v_to_value; __Pyx_INCREF(__pyx_t_1);
-          __pyx_t_2 = 0;
-          __pyx_t_8 = NULL;
-        } else {
-          __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_to_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 208, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_8 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 208, __pyx_L1_error)
-        }
-        for (;;) {
-          if (likely(!__pyx_t_8)) {
-            if (likely(PyList_CheckExact(__pyx_t_1))) {
-              {
-                Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
-                #if !CYTHON_ASSUME_SAFE_SIZE
-                if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 208, __pyx_L1_error)
-                #endif
-                if (__pyx_t_2 >= __pyx_temp) break;
-              }
-              __pyx_t_3 = __Pyx_PyList_GetItemRefFast(__pyx_t_1, __pyx_t_2, __Pyx_ReferenceSharing_OwnStrongReference);
-              ++__pyx_t_2;
-            } else {
-              {
-                Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
-                #if !CYTHON_ASSUME_SAFE_SIZE
-                if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 208, __pyx_L1_error)
-                #endif
-                if (__pyx_t_2 >= __pyx_temp) break;
-              }
-              #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-              __pyx_t_3 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2));
-              #else
-              __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_2);
-              #endif
-              ++__pyx_t_2;
-            }
-            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
-          } else {
-            __pyx_t_3 = __pyx_t_8(__pyx_t_1);
-            if (unlikely(!__pyx_t_3)) {
-              PyObject* exc_type = PyErr_Occurred();
-              if (exc_type) {
-                if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 208, __pyx_L1_error)
-                PyErr_Clear();
-              }
-              break;
-            }
-          }
-          __Pyx_GOTREF(__pyx_t_3);
-          __Pyx_XDECREF_SET(__pyx_v_item, __pyx_t_3);
-          __pyx_t_3 = 0;
-
-          /* "sandesh/api.py":209
- *                 if isinstance(to_value, list):
- *                     for item in to_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():             # <<<<<<<<<<<<<<
- *                             return item.strip()
- *                 cc_value = email_overrides.get("cc")
-*/
-          __pyx_t_5 = PyUnicode_Check(__pyx_v_item); 
-          if (__pyx_t_5) {
-          } else {
-            __pyx_t_4 = __pyx_t_5;
-            goto __pyx_L20_bool_binop_done;
-          }
-          __pyx_t_5 = (__Pyx_PySequence_ContainsTF(__pyx_mstate_global->__pyx_kp_u__2, __pyx_v_item, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 209, __pyx_L1_error)
-          if (__pyx_t_5) {
-          } else {
-            __pyx_t_4 = __pyx_t_5;
-            goto __pyx_L20_bool_binop_done;
-          }
-          __pyx_t_6 = __pyx_v_item;
-          __Pyx_INCREF(__pyx_t_6);
-          __pyx_t_7 = 0;
-          {
-            PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-            __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-            __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 209, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_3);
-          }
-          __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 209, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __pyx_t_4 = __pyx_t_5;
-          __pyx_L20_bool_binop_done:;
-          if (__pyx_t_4) {
-
-            /* "sandesh/api.py":210
- *                     for item in to_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():
- *                             return item.strip()             # <<<<<<<<<<<<<<
- *                 cc_value = email_overrides.get("cc")
- *                 if isinstance(cc_value, str):
-*/
-            __Pyx_XDECREF(__pyx_r);
-            __pyx_t_6 = __pyx_v_item;
-            __Pyx_INCREF(__pyx_t_6);
-            __pyx_t_7 = 0;
-            {
-              PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-              __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-              __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-              if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_3);
-            }
-            if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_3))) __PYX_ERR(0, 210, __pyx_L1_error)
-            __pyx_r = ((PyObject*)__pyx_t_3);
-            __pyx_t_3 = 0;
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-            goto __pyx_L0;
-
-            /* "sandesh/api.py":209
- *                 if isinstance(to_value, list):
- *                     for item in to_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():             # <<<<<<<<<<<<<<
- *                             return item.strip()
- *                 cc_value = email_overrides.get("cc")
-*/
-          }
-
-          /* "sandesh/api.py":208
- *                     return to_value.strip()
- *                 if isinstance(to_value, list):
- *                     for item in to_value:             # <<<<<<<<<<<<<<
- *                         if isinstance(item, str) and "@" in item and item.strip():
- *                             return item.strip()
-*/
-        }
-        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-        /* "sandesh/api.py":207
- *                 if isinstance(to_value, str) and "@" in to_value and to_value.strip():
- *                     return to_value.strip()
- *                 if isinstance(to_value, list):             # <<<<<<<<<<<<<<
- *                     for item in to_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():
-*/
-      }
-
-      /* "sandesh/api.py":211
- *                         if isinstance(item, str) and "@" in item and item.strip():
- *                             return item.strip()
- *                 cc_value = email_overrides.get("cc")             # <<<<<<<<<<<<<<
- *                 if isinstance(cc_value, str):
- *                     if "@" in cc_value and cc_value.strip():
-*/
-      __pyx_t_3 = __pyx_v_email_overrides;
-      __Pyx_INCREF(__pyx_t_3);
-      __pyx_t_7 = 0;
-      {
-        PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_n_u_cc};
-        __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_1);
-      }
-      __pyx_v_cc_value = __pyx_t_1;
-      __pyx_t_1 = 0;
-
-      /* "sandesh/api.py":212
- *                             return item.strip()
- *                 cc_value = email_overrides.get("cc")
- *                 if isinstance(cc_value, str):             # <<<<<<<<<<<<<<
- *                     if "@" in cc_value and cc_value.strip():
- *                         return cc_value.strip()
-*/
-      __pyx_t_4 = PyUnicode_Check(__pyx_v_cc_value); 
-      if (__pyx_t_4) {
-
-        /* "sandesh/api.py":213
- *                 cc_value = email_overrides.get("cc")
- *                 if isinstance(cc_value, str):
- *                     if "@" in cc_value and cc_value.strip():             # <<<<<<<<<<<<<<
- *                         return cc_value.strip()
- *                 if isinstance(cc_value, list):
-*/
-        __pyx_t_5 = (__Pyx_PySequence_ContainsTF(__pyx_mstate_global->__pyx_kp_u__2, __pyx_v_cc_value, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 213, __pyx_L1_error)
-        if (__pyx_t_5) {
-        } else {
-          __pyx_t_4 = __pyx_t_5;
-          goto __pyx_L26_bool_binop_done;
-        }
-        __pyx_t_3 = __pyx_v_cc_value;
-        __Pyx_INCREF(__pyx_t_3);
-        __pyx_t_7 = 0;
-        {
-          PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
-          __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_1);
-        }
-        __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 213, __pyx_L1_error)
-        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        __pyx_t_4 = __pyx_t_5;
-        __pyx_L26_bool_binop_done:;
-        if (__pyx_t_4) {
-
-          /* "sandesh/api.py":214
- *                 if isinstance(cc_value, str):
- *                     if "@" in cc_value and cc_value.strip():
- *                         return cc_value.strip()             # <<<<<<<<<<<<<<
- *                 if isinstance(cc_value, list):
- *                     for item in cc_value:
-*/
-          __Pyx_XDECREF(__pyx_r);
-          __pyx_t_3 = __pyx_v_cc_value;
-          __Pyx_INCREF(__pyx_t_3);
-          __pyx_t_7 = 0;
-          {
-            PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
-            __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-            __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-            if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_1);
-          }
-          if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_1))) __PYX_ERR(0, 214, __pyx_L1_error)
-          __pyx_r = ((PyObject*)__pyx_t_1);
-          __pyx_t_1 = 0;
-          goto __pyx_L0;
-
-          /* "sandesh/api.py":213
- *                 cc_value = email_overrides.get("cc")
- *                 if isinstance(cc_value, str):
- *                     if "@" in cc_value and cc_value.strip():             # <<<<<<<<<<<<<<
- *                         return cc_value.strip()
- *                 if isinstance(cc_value, list):
-*/
-        }
-
-        /* "sandesh/api.py":212
- *                             return item.strip()
- *                 cc_value = email_overrides.get("cc")
- *                 if isinstance(cc_value, str):             # <<<<<<<<<<<<<<
- *                     if "@" in cc_value and cc_value.strip():
- *                         return cc_value.strip()
-*/
-      }
-
-      /* "sandesh/api.py":215
- *                     if "@" in cc_value and cc_value.strip():
- *                         return cc_value.strip()
- *                 if isinstance(cc_value, list):             # <<<<<<<<<<<<<<
- *                     for item in cc_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():
-*/
-      __pyx_t_4 = PyList_Check(__pyx_v_cc_value); 
-      if (__pyx_t_4) {
-
-        /* "sandesh/api.py":216
- *                         return cc_value.strip()
- *                 if isinstance(cc_value, list):
- *                     for item in cc_value:             # <<<<<<<<<<<<<<
- *                         if isinstance(item, str) and "@" in item and item.strip():
- *                             return item.strip()
-*/
-        if (likely(PyList_CheckExact(__pyx_v_cc_value)) || PyTuple_CheckExact(__pyx_v_cc_value)) {
-          __pyx_t_1 = __pyx_v_cc_value; __Pyx_INCREF(__pyx_t_1);
-          __pyx_t_2 = 0;
-          __pyx_t_8 = NULL;
-        } else {
-          __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_cc_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
-          __Pyx_GOTREF(__pyx_t_1);
-          __pyx_t_8 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 216, __pyx_L1_error)
-        }
-        for (;;) {
-          if (likely(!__pyx_t_8)) {
-            if (likely(PyList_CheckExact(__pyx_t_1))) {
-              {
-                Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_1);
-                #if !CYTHON_ASSUME_SAFE_SIZE
-                if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 216, __pyx_L1_error)
-                #endif
-                if (__pyx_t_2 >= __pyx_temp) break;
-              }
-              __pyx_t_3 = __Pyx_PyList_GetItemRefFast(__pyx_t_1, __pyx_t_2, __Pyx_ReferenceSharing_OwnStrongReference);
-              ++__pyx_t_2;
-            } else {
-              {
-                Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_1);
-                #if !CYTHON_ASSUME_SAFE_SIZE
-                if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 216, __pyx_L1_error)
-                #endif
-                if (__pyx_t_2 >= __pyx_temp) break;
-              }
-              #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-              __pyx_t_3 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2));
-              #else
-              __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_1, __pyx_t_2);
-              #endif
-              ++__pyx_t_2;
-            }
-            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
-          } else {
-            __pyx_t_3 = __pyx_t_8(__pyx_t_1);
-            if (unlikely(!__pyx_t_3)) {
-              PyObject* exc_type = PyErr_Occurred();
-              if (exc_type) {
-                if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 216, __pyx_L1_error)
-                PyErr_Clear();
-              }
-              break;
-            }
-          }
-          __Pyx_GOTREF(__pyx_t_3);
-          __Pyx_XDECREF_SET(__pyx_v_item, __pyx_t_3);
-          __pyx_t_3 = 0;
-
-          /* "sandesh/api.py":217
- *                 if isinstance(cc_value, list):
- *                     for item in cc_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():             # <<<<<<<<<<<<<<
- *                             return item.strip()
+    /* "sandesh/api.py":172
+ *         for key in ("to", "cc"):
+ *             inferred = EventApi._first_email(email_overrides.get(key))
+ *             if inferred:             # <<<<<<<<<<<<<<
+ *                 return inferred
  *         return None
 */
-          __pyx_t_5 = PyUnicode_Check(__pyx_v_item); 
-          if (__pyx_t_5) {
-          } else {
-            __pyx_t_4 = __pyx_t_5;
-            goto __pyx_L32_bool_binop_done;
-          }
-          __pyx_t_5 = (__Pyx_PySequence_ContainsTF(__pyx_mstate_global->__pyx_kp_u__2, __pyx_v_item, Py_EQ)); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 217, __pyx_L1_error)
-          if (__pyx_t_5) {
-          } else {
-            __pyx_t_4 = __pyx_t_5;
-            goto __pyx_L32_bool_binop_done;
-          }
-          __pyx_t_6 = __pyx_v_item;
-          __Pyx_INCREF(__pyx_t_6);
-          __pyx_t_7 = 0;
-          {
-            PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-            __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-            __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 217, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_3);
-          }
-          __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 217, __pyx_L1_error)
-          __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          __pyx_t_4 = __pyx_t_5;
-          __pyx_L32_bool_binop_done:;
-          if (__pyx_t_4) {
+    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_v_inferred); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 172, __pyx_L1_error)
+    if (__pyx_t_6) {
 
-            /* "sandesh/api.py":218
- *                     for item in cc_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():
- *                             return item.strip()             # <<<<<<<<<<<<<<
+      /* "sandesh/api.py":173
+ *             inferred = EventApi._first_email(email_overrides.get(key))
+ *             if inferred:
+ *                 return inferred             # <<<<<<<<<<<<<<
  *         return None
  * 
 */
-            __Pyx_XDECREF(__pyx_r);
-            __pyx_t_6 = __pyx_v_item;
-            __Pyx_INCREF(__pyx_t_6);
-            __pyx_t_7 = 0;
-            {
-              PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-              __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_7, (1-__pyx_t_7) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-              __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-              if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 218, __pyx_L1_error)
-              __Pyx_GOTREF(__pyx_t_3);
-            }
-            if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_3))) __PYX_ERR(0, 218, __pyx_L1_error)
-            __pyx_r = ((PyObject*)__pyx_t_3);
-            __pyx_t_3 = 0;
-            __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-            goto __pyx_L0;
+      __Pyx_XDECREF(__pyx_r);
+      __pyx_t_8 = __pyx_v_inferred;
+      __Pyx_INCREF(__pyx_t_8);
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_8))||((__pyx_t_8) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_8))) __PYX_ERR(0, 173, __pyx_L1_error)
+      __pyx_r = ((PyObject*)__pyx_t_8);
+      __pyx_t_8 = 0;
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      goto __pyx_L0;
 
-            /* "sandesh/api.py":217
- *                 if isinstance(cc_value, list):
- *                     for item in cc_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():             # <<<<<<<<<<<<<<
- *                             return item.strip()
+      /* "sandesh/api.py":172
+ *         for key in ("to", "cc"):
+ *             inferred = EventApi._first_email(email_overrides.get(key))
+ *             if inferred:             # <<<<<<<<<<<<<<
+ *                 return inferred
  *         return None
-*/
-          }
-
-          /* "sandesh/api.py":216
- *                         return cc_value.strip()
- *                 if isinstance(cc_value, list):
- *                     for item in cc_value:             # <<<<<<<<<<<<<<
- *                         if isinstance(item, str) and "@" in item and item.strip():
- *                             return item.strip()
-*/
-        }
-        __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-        /* "sandesh/api.py":215
- *                     if "@" in cc_value and cc_value.strip():
- *                         return cc_value.strip()
- *                 if isinstance(cc_value, list):             # <<<<<<<<<<<<<<
- *                     for item in cc_value:
- *                         if isinstance(item, str) and "@" in item and item.strip():
-*/
-      }
-
-      /* "sandesh/api.py":203
- *         if isinstance(overrides, dict):
- *             email_overrides = overrides.get("email")
- *             if isinstance(email_overrides, dict):             # <<<<<<<<<<<<<<
- *                 to_value = email_overrides.get("to")
- *                 if isinstance(to_value, str) and "@" in to_value and to_value.strip():
 */
     }
 
-    /* "sandesh/api.py":201
- *                 return raw.strip()
+    /* "sandesh/api.py":170
  * 
- *         if isinstance(overrides, dict):             # <<<<<<<<<<<<<<
- *             email_overrides = overrides.get("email")
- *             if isinstance(email_overrides, dict):
+ *         email_overrides = EventApi._email_overrides(overrides)
+ *         for key in ("to", "cc"):             # <<<<<<<<<<<<<<
+ *             inferred = EventApi._first_email(email_overrides.get(key))
+ *             if inferred:
 */
   }
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":219
- *                         if isinstance(item, str) and "@" in item and item.strip():
- *                             return item.strip()
+  /* "sandesh/api.py":174
+ *             if inferred:
+ *                 return inferred
  *         return None             # <<<<<<<<<<<<<<
  * 
- * 
+ *     @staticmethod
 */
   __Pyx_XDECREF(__pyx_r);
   __pyx_r = ((PyObject*)Py_None); __Pyx_INCREF(Py_None);
   goto __pyx_L0;
 
-  /* "sandesh/api.py":184
- *             raise HTTPError(str(exc), response=response) from exc
+  /* "sandesh/api.py":152
+ *             raise self._http_error_from_sdk(exc) from exc
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
  *     def _infer_email_for_legacy(
- *         payload: Dict[str, Any],
+ *         payload: JsonDict,
 */
 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
   __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_XDECREF(__pyx_t_10);
   __Pyx_AddTraceback("sandesh.api.EventApi._infer_email_for_legacy", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -6639,15 +5652,1594 @@ static PyObject *__pyx_pf_7sandesh_3api_8EventApi_6_infer_email_for_legacy(CYTHO
   __Pyx_XDECREF(__pyx_v_key);
   __Pyx_XDECREF(__pyx_v_raw);
   __Pyx_XDECREF(__pyx_v_email_overrides);
-  __Pyx_XDECREF(__pyx_v_to_value);
-  __Pyx_XDECREF(__pyx_v_item);
-  __Pyx_XDECREF(__pyx_v_cc_value);
+  __Pyx_XDECREF(__pyx_v_inferred);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "sandesh/api.py":224
+/* "sandesh/api.py":176
+ *         return None
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _resolve_subscriber_id(recipients: Union[str, List[str]]) -> str:
+ *         if isinstance(recipients, list):
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_9_resolve_subscriber_id(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_8_resolve_subscriber_id, "EventApi._resolve_subscriber_id(recipients: Union[str, List[str]]) -> str");
+static PyMethodDef __pyx_mdef_7sandesh_3api_8EventApi_9_resolve_subscriber_id = {"_resolve_subscriber_id", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_8EventApi_9_resolve_subscriber_id, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_8EventApi_8_resolve_subscriber_id};
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_9_resolve_subscriber_id(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_recipients = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("_resolve_subscriber_id (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_recipients,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 176, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 176, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_resolve_subscriber_id", 0) < (0)) __PYX_ERR(0, 176, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_resolve_subscriber_id", 1, 1, 1, i); __PYX_ERR(0, 176, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 176, __pyx_L3_error)
+    }
+    __pyx_v_recipients = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("_resolve_subscriber_id", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 176, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("sandesh.api.EventApi._resolve_subscriber_id", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_7sandesh_3api_8EventApi_8_resolve_subscriber_id(__pyx_self, __pyx_v_recipients);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_8_resolve_subscriber_id(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_recipients) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  size_t __pyx_t_5;
+  PyObject *__pyx_t_6 = NULL;
+  PyObject *__pyx_t_7 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_resolve_subscriber_id", 0);
+
+  /* "sandesh/api.py":178
+ *     @staticmethod
+ *     def _resolve_subscriber_id(recipients: Union[str, List[str]]) -> str:
+ *         if isinstance(recipients, list):             # <<<<<<<<<<<<<<
+ *             if not recipients:
+ *                 raise ValueError("recipients cannot be empty")
+*/
+  __pyx_t_1 = PyList_Check(__pyx_v_recipients); 
+  if (__pyx_t_1) {
+
+    /* "sandesh/api.py":179
+ *     def _resolve_subscriber_id(recipients: Union[str, List[str]]) -> str:
+ *         if isinstance(recipients, list):
+ *             if not recipients:             # <<<<<<<<<<<<<<
+ *                 raise ValueError("recipients cannot be empty")
+ *             return str(recipients[0]).strip()
+*/
+    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_v_recipients); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 179, __pyx_L1_error)
+    __pyx_t_2 = (!__pyx_t_1);
+    if (unlikely(__pyx_t_2)) {
+
+      /* "sandesh/api.py":180
+ *         if isinstance(recipients, list):
+ *             if not recipients:
+ *                 raise ValueError("recipients cannot be empty")             # <<<<<<<<<<<<<<
+ *             return str(recipients[0]).strip()
+ *         return str(recipients).strip()
+*/
+      __pyx_t_4 = NULL;
+      __pyx_t_5 = 1;
+      {
+        PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_recipients_cannot_be_empty};
+        __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+        __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_3);
+      }
+      __Pyx_Raise(__pyx_t_3, 0, 0, 0);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __PYX_ERR(0, 180, __pyx_L1_error)
+
+      /* "sandesh/api.py":179
+ *     def _resolve_subscriber_id(recipients: Union[str, List[str]]) -> str:
+ *         if isinstance(recipients, list):
+ *             if not recipients:             # <<<<<<<<<<<<<<
+ *                 raise ValueError("recipients cannot be empty")
+ *             return str(recipients[0]).strip()
+*/
+    }
+
+    /* "sandesh/api.py":181
+ *             if not recipients:
+ *                 raise ValueError("recipients cannot be empty")
+ *             return str(recipients[0]).strip()             # <<<<<<<<<<<<<<
+ *         return str(recipients).strip()
+ * 
+*/
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_6 = __Pyx_GetItemInt(__pyx_v_recipients, 0, long, 1, __Pyx_PyLong_From_long, 0, 0, 0, 1, __Pyx_ReferenceSharing_FunctionArgument); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 181, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_7 = __Pyx_PyObject_Unicode(__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 181, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_t_4 = __pyx_t_7;
+    __Pyx_INCREF(__pyx_t_4);
+    __pyx_t_5 = 0;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_4, NULL};
+      __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_3);
+    }
+    __pyx_r = ((PyObject*)__pyx_t_3);
+    __pyx_t_3 = 0;
+    goto __pyx_L0;
+
+    /* "sandesh/api.py":178
+ *     @staticmethod
+ *     def _resolve_subscriber_id(recipients: Union[str, List[str]]) -> str:
+ *         if isinstance(recipients, list):             # <<<<<<<<<<<<<<
+ *             if not recipients:
+ *                 raise ValueError("recipients cannot be empty")
+*/
+  }
+
+  /* "sandesh/api.py":182
+ *                 raise ValueError("recipients cannot be empty")
+ *             return str(recipients[0]).strip()
+ *         return str(recipients).strip()             # <<<<<<<<<<<<<<
+ * 
+ *     @staticmethod
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_4 = __Pyx_PyObject_Unicode(__pyx_v_recipients); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 182, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_7 = __pyx_t_4;
+  __Pyx_INCREF(__pyx_t_7);
+  __pyx_t_5 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_7, NULL};
+    __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 182, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+  }
+  __pyx_r = ((PyObject*)__pyx_t_3);
+  __pyx_t_3 = 0;
+  goto __pyx_L0;
+
+  /* "sandesh/api.py":176
+ *         return None
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _resolve_subscriber_id(recipients: Union[str, List[str]]) -> str:
+ *         if isinstance(recipients, list):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_AddTraceback("sandesh.api.EventApi._resolve_subscriber_id", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "sandesh/api.py":184
+ *         return str(recipients).strip()
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _first_email(value: Any) -> Optional[str]:
+ *         if isinstance(value, str):
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_11_first_email(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_10_first_email, "EventApi._first_email(value: Any) -> Optional[str]");
+static PyMethodDef __pyx_mdef_7sandesh_3api_8EventApi_11_first_email = {"_first_email", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_8EventApi_11_first_email, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_8EventApi_10_first_email};
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_11_first_email(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_value = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("_first_email (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_value,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 184, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 184, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_first_email", 0) < (0)) __PYX_ERR(0, 184, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_first_email", 1, 1, 1, i); __PYX_ERR(0, 184, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 184, __pyx_L3_error)
+    }
+    __pyx_v_value = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("_first_email", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 184, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("sandesh.api.EventApi._first_email", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_7sandesh_3api_8EventApi_10_first_email(__pyx_self, __pyx_v_value);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_10_first_email(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_value) {
+  PyObject *__pyx_v_cleaned = NULL;
+  PyObject *__pyx_v_item = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  size_t __pyx_t_4;
+  Py_ssize_t __pyx_t_5;
+  PyObject *(*__pyx_t_6)(PyObject *);
+  PyObject *__pyx_t_7 = NULL;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_first_email", 0);
+
+  /* "sandesh/api.py":186
+ *     @staticmethod
+ *     def _first_email(value: Any) -> Optional[str]:
+ *         if isinstance(value, str):             # <<<<<<<<<<<<<<
+ *             cleaned = value.strip()
+ *             return cleaned if "@" in cleaned else None
+*/
+  __pyx_t_1 = PyUnicode_Check(__pyx_v_value); 
+  if (__pyx_t_1) {
+
+    /* "sandesh/api.py":187
+ *     def _first_email(value: Any) -> Optional[str]:
+ *         if isinstance(value, str):
+ *             cleaned = value.strip()             # <<<<<<<<<<<<<<
+ *             return cleaned if "@" in cleaned else None
+ *         if isinstance(value, list):
+*/
+    __pyx_t_3 = __pyx_v_value;
+    __Pyx_INCREF(__pyx_t_3);
+    __pyx_t_4 = 0;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
+      __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 187, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+    }
+    __pyx_v_cleaned = __pyx_t_2;
+    __pyx_t_2 = 0;
+
+    /* "sandesh/api.py":188
+ *         if isinstance(value, str):
+ *             cleaned = value.strip()
+ *             return cleaned if "@" in cleaned else None             # <<<<<<<<<<<<<<
+ *         if isinstance(value, list):
+ *             for item in value:
+*/
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_1 = (__Pyx_PySequence_ContainsTF(__pyx_mstate_global->__pyx_kp_u__2, __pyx_v_cleaned, Py_EQ)); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 188, __pyx_L1_error)
+    if (__pyx_t_1) {
+      __pyx_t_3 = __pyx_v_cleaned;
+      __Pyx_INCREF(__pyx_t_3);
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_3))) __PYX_ERR(0, 188, __pyx_L1_error)
+      __pyx_t_2 = __pyx_t_3;
+      __pyx_t_3 = 0;
+    } else {
+      __Pyx_INCREF(Py_None);
+      __pyx_t_2 = Py_None;
+    }
+    if (!(likely(PyUnicode_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_2))) __PYX_ERR(0, 188, __pyx_L1_error)
+    __pyx_r = ((PyObject*)__pyx_t_2);
+    __pyx_t_2 = 0;
+    goto __pyx_L0;
+
+    /* "sandesh/api.py":186
+ *     @staticmethod
+ *     def _first_email(value: Any) -> Optional[str]:
+ *         if isinstance(value, str):             # <<<<<<<<<<<<<<
+ *             cleaned = value.strip()
+ *             return cleaned if "@" in cleaned else None
+*/
+  }
+
+  /* "sandesh/api.py":189
+ *             cleaned = value.strip()
+ *             return cleaned if "@" in cleaned else None
+ *         if isinstance(value, list):             # <<<<<<<<<<<<<<
+ *             for item in value:
+ *                 if isinstance(item, str):
+*/
+  __pyx_t_1 = PyList_Check(__pyx_v_value); 
+  if (__pyx_t_1) {
+
+    /* "sandesh/api.py":190
+ *             return cleaned if "@" in cleaned else None
+ *         if isinstance(value, list):
+ *             for item in value:             # <<<<<<<<<<<<<<
+ *                 if isinstance(item, str):
+ *                     cleaned = item.strip()
+*/
+    if (likely(PyList_CheckExact(__pyx_v_value)) || PyTuple_CheckExact(__pyx_v_value)) {
+      __pyx_t_2 = __pyx_v_value; __Pyx_INCREF(__pyx_t_2);
+      __pyx_t_5 = 0;
+      __pyx_t_6 = NULL;
+    } else {
+      __pyx_t_5 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_value); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __pyx_t_6 = (CYTHON_COMPILING_IN_LIMITED_API) ? PyIter_Next : __Pyx_PyObject_GetIterNextFunc(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 190, __pyx_L1_error)
+    }
+    for (;;) {
+      if (likely(!__pyx_t_6)) {
+        if (likely(PyList_CheckExact(__pyx_t_2))) {
+          {
+            Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_2);
+            #if !CYTHON_ASSUME_SAFE_SIZE
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 190, __pyx_L1_error)
+            #endif
+            if (__pyx_t_5 >= __pyx_temp) break;
+          }
+          __pyx_t_3 = __Pyx_PyList_GetItemRefFast(__pyx_t_2, __pyx_t_5, __Pyx_ReferenceSharing_OwnStrongReference);
+          ++__pyx_t_5;
+        } else {
+          {
+            Py_ssize_t __pyx_temp = __Pyx_PyTuple_GET_SIZE(__pyx_t_2);
+            #if !CYTHON_ASSUME_SAFE_SIZE
+            if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 190, __pyx_L1_error)
+            #endif
+            if (__pyx_t_5 >= __pyx_temp) break;
+          }
+          #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+          __pyx_t_3 = __Pyx_NewRef(PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_5));
+          #else
+          __pyx_t_3 = __Pyx_PySequence_ITEM(__pyx_t_2, __pyx_t_5);
+          #endif
+          ++__pyx_t_5;
+        }
+        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
+      } else {
+        __pyx_t_3 = __pyx_t_6(__pyx_t_2);
+        if (unlikely(!__pyx_t_3)) {
+          PyObject* exc_type = PyErr_Occurred();
+          if (exc_type) {
+            if (unlikely(!__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) __PYX_ERR(0, 190, __pyx_L1_error)
+            PyErr_Clear();
+          }
+          break;
+        }
+      }
+      __Pyx_GOTREF(__pyx_t_3);
+      __Pyx_XDECREF_SET(__pyx_v_item, __pyx_t_3);
+      __pyx_t_3 = 0;
+
+      /* "sandesh/api.py":191
+ *         if isinstance(value, list):
+ *             for item in value:
+ *                 if isinstance(item, str):             # <<<<<<<<<<<<<<
+ *                     cleaned = item.strip()
+ *                     if "@" in cleaned:
+*/
+      __pyx_t_1 = PyUnicode_Check(__pyx_v_item); 
+      if (__pyx_t_1) {
+
+        /* "sandesh/api.py":192
+ *             for item in value:
+ *                 if isinstance(item, str):
+ *                     cleaned = item.strip()             # <<<<<<<<<<<<<<
+ *                     if "@" in cleaned:
+ *                         return cleaned
+*/
+        __pyx_t_7 = __pyx_v_item;
+        __Pyx_INCREF(__pyx_t_7);
+        __pyx_t_4 = 0;
+        {
+          PyObject *__pyx_callargs[2] = {__pyx_t_7, NULL};
+          __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+          __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+        }
+        __Pyx_XDECREF_SET(__pyx_v_cleaned, __pyx_t_3);
+        __pyx_t_3 = 0;
+
+        /* "sandesh/api.py":193
+ *                 if isinstance(item, str):
+ *                     cleaned = item.strip()
+ *                     if "@" in cleaned:             # <<<<<<<<<<<<<<
+ *                         return cleaned
+ *         return None
+*/
+        __pyx_t_1 = (__Pyx_PySequence_ContainsTF(__pyx_mstate_global->__pyx_kp_u__2, __pyx_v_cleaned, Py_EQ)); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 193, __pyx_L1_error)
+        if (__pyx_t_1) {
+
+          /* "sandesh/api.py":194
+ *                     cleaned = item.strip()
+ *                     if "@" in cleaned:
+ *                         return cleaned             # <<<<<<<<<<<<<<
+ *         return None
+ * 
+*/
+          __Pyx_XDECREF(__pyx_r);
+          __pyx_t_3 = __pyx_v_cleaned;
+          __Pyx_INCREF(__pyx_t_3);
+          if (!(likely(PyUnicode_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("str", __pyx_t_3))) __PYX_ERR(0, 194, __pyx_L1_error)
+          __pyx_r = ((PyObject*)__pyx_t_3);
+          __pyx_t_3 = 0;
+          __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+          goto __pyx_L0;
+
+          /* "sandesh/api.py":193
+ *                 if isinstance(item, str):
+ *                     cleaned = item.strip()
+ *                     if "@" in cleaned:             # <<<<<<<<<<<<<<
+ *                         return cleaned
+ *         return None
+*/
+        }
+
+        /* "sandesh/api.py":191
+ *         if isinstance(value, list):
+ *             for item in value:
+ *                 if isinstance(item, str):             # <<<<<<<<<<<<<<
+ *                     cleaned = item.strip()
+ *                     if "@" in cleaned:
+*/
+      }
+
+      /* "sandesh/api.py":190
+ *             return cleaned if "@" in cleaned else None
+ *         if isinstance(value, list):
+ *             for item in value:             # <<<<<<<<<<<<<<
+ *                 if isinstance(item, str):
+ *                     cleaned = item.strip()
+*/
+    }
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "sandesh/api.py":189
+ *             cleaned = value.strip()
+ *             return cleaned if "@" in cleaned else None
+ *         if isinstance(value, list):             # <<<<<<<<<<<<<<
+ *             for item in value:
+ *                 if isinstance(item, str):
+*/
+  }
+
+  /* "sandesh/api.py":195
+ *                     if "@" in cleaned:
+ *                         return cleaned
+ *         return None             # <<<<<<<<<<<<<<
+ * 
+ *     @staticmethod
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_r = ((PyObject*)Py_None); __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+
+  /* "sandesh/api.py":184
+ *         return str(recipients).strip()
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _first_email(value: Any) -> Optional[str]:
+ *         if isinstance(value, str):
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_AddTraceback("sandesh.api.EventApi._first_email", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_cleaned);
+  __Pyx_XDECREF(__pyx_v_item);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "sandesh/api.py":197
+ *         return None
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _email_overrides(
+ *         overrides: Optional[JsonDict],
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_13_email_overrides(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_12_email_overrides, "EventApi._email_overrides(overrides: Optional[JsonDict]) -> JsonDict");
+static PyMethodDef __pyx_mdef_7sandesh_3api_8EventApi_13_email_overrides = {"_email_overrides", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_8EventApi_13_email_overrides, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_8EventApi_12_email_overrides};
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_13_email_overrides(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_overrides = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("_email_overrides (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_overrides,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 197, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 197, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_email_overrides", 0) < (0)) __PYX_ERR(0, 197, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_email_overrides", 1, 1, 1, i); __PYX_ERR(0, 197, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 197, __pyx_L3_error)
+    }
+    __pyx_v_overrides = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("_email_overrides", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 197, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("sandesh.api.EventApi._email_overrides", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_7sandesh_3api_8EventApi_12_email_overrides(__pyx_self, __pyx_v_overrides);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_12_email_overrides(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_overrides) {
+  PyObject *__pyx_v_email_overrides = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  int __pyx_t_1;
+  int __pyx_t_2;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  size_t __pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_email_overrides", 0);
+
+  /* "sandesh/api.py":201
+ *         overrides: Optional[JsonDict],
+ *     ) -> JsonDict:
+ *         if not isinstance(overrides, dict):             # <<<<<<<<<<<<<<
+ *             return {}
+ *         email_overrides = overrides.get("email")
+*/
+  __pyx_t_1 = PyDict_Check(__pyx_v_overrides); 
+  __pyx_t_2 = (!__pyx_t_1);
+  if (__pyx_t_2) {
+
+    /* "sandesh/api.py":202
+ *     ) -> JsonDict:
+ *         if not isinstance(overrides, dict):
+ *             return {}             # <<<<<<<<<<<<<<
+ *         email_overrides = overrides.get("email")
+ *         return email_overrides if isinstance(email_overrides, dict) else {}
+*/
+    __Pyx_XDECREF(__pyx_r);
+    __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 202, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_r = __pyx_t_3;
+    __pyx_t_3 = 0;
+    goto __pyx_L0;
+
+    /* "sandesh/api.py":201
+ *         overrides: Optional[JsonDict],
+ *     ) -> JsonDict:
+ *         if not isinstance(overrides, dict):             # <<<<<<<<<<<<<<
+ *             return {}
+ *         email_overrides = overrides.get("email")
+*/
+  }
+
+  /* "sandesh/api.py":203
+ *         if not isinstance(overrides, dict):
+ *             return {}
+ *         email_overrides = overrides.get("email")             # <<<<<<<<<<<<<<
+ *         return email_overrides if isinstance(email_overrides, dict) else {}
+ * 
+*/
+  __pyx_t_4 = __pyx_v_overrides;
+  __Pyx_INCREF(__pyx_t_4);
+  __pyx_t_5 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_n_u_email};
+    __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 203, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+  }
+  __pyx_v_email_overrides = __pyx_t_3;
+  __pyx_t_3 = 0;
+
+  /* "sandesh/api.py":204
+ *             return {}
+ *         email_overrides = overrides.get("email")
+ *         return email_overrides if isinstance(email_overrides, dict) else {}             # <<<<<<<<<<<<<<
+ * 
+ *     @staticmethod
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_2 = PyDict_Check(__pyx_v_email_overrides); 
+  if (__pyx_t_2) {
+    __Pyx_INCREF(__pyx_v_email_overrides);
+    __pyx_t_3 = __pyx_v_email_overrides;
+  } else {
+    __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 204, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_3 = __pyx_t_4;
+    __pyx_t_4 = 0;
+  }
+  __pyx_r = __pyx_t_3;
+  __pyx_t_3 = 0;
+  goto __pyx_L0;
+
+  /* "sandesh/api.py":197
+ *         return None
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _email_overrides(
+ *         overrides: Optional[JsonDict],
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_AddTraceback("sandesh.api.EventApi._email_overrides", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_email_overrides);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "sandesh/api.py":206
+ *         return email_overrides if isinstance(email_overrides, dict) else {}
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _apply_legacy_email_overrides(
+ *         legacy_body: JsonDict, email_overrides: JsonDict
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_15_apply_legacy_email_overrides(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_14_apply_legacy_email_overrides, "EventApi._apply_legacy_email_overrides(legacy_body: JsonDict, email_overrides: JsonDict) -> None");
+static PyMethodDef __pyx_mdef_7sandesh_3api_8EventApi_15_apply_legacy_email_overrides = {"_apply_legacy_email_overrides", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_8EventApi_15_apply_legacy_email_overrides, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_8EventApi_14_apply_legacy_email_overrides};
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_15_apply_legacy_email_overrides(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_legacy_body = 0;
+  PyObject *__pyx_v_email_overrides = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[2] = {0,0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("_apply_legacy_email_overrides (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_legacy_body,&__pyx_mstate_global->__pyx_n_u_email_overrides_2,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 206, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  2:
+        values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 206, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 206, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_apply_legacy_email_overrides", 0) < (0)) __PYX_ERR(0, 206, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_apply_legacy_email_overrides", 1, 2, 2, i); __PYX_ERR(0, 206, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 2)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 206, __pyx_L3_error)
+      values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 206, __pyx_L3_error)
+    }
+    __pyx_v_legacy_body = values[0];
+    __pyx_v_email_overrides = values[1];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("_apply_legacy_email_overrides", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 206, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("sandesh.api.EventApi._apply_legacy_email_overrides", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_7sandesh_3api_8EventApi_14_apply_legacy_email_overrides(__pyx_self, __pyx_v_legacy_body, __pyx_v_email_overrides);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_14_apply_legacy_email_overrides(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_legacy_body, PyObject *__pyx_v_email_overrides) {
+  PyObject *__pyx_v_cc = NULL;
+  PyObject *__pyx_v_sender_name = NULL;
+  PyObject *__pyx_v_subject = NULL;
+  PyObject *__pyx_v_integration_identifier = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  size_t __pyx_t_3;
+  int __pyx_t_4;
+  int __pyx_t_5;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_apply_legacy_email_overrides", 0);
+
+  /* "sandesh/api.py":210
+ *         legacy_body: JsonDict, email_overrides: JsonDict
+ *     ) -> None:
+ *         cc = email_overrides.get("cc")             # <<<<<<<<<<<<<<
+ *         if isinstance(cc, list) and cc:
+ *             legacy_body["cc_emails"] = cc
+*/
+  __pyx_t_2 = __pyx_v_email_overrides;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_mstate_global->__pyx_n_u_cc};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_v_cc = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "sandesh/api.py":211
+ *     ) -> None:
+ *         cc = email_overrides.get("cc")
+ *         if isinstance(cc, list) and cc:             # <<<<<<<<<<<<<<
+ *             legacy_body["cc_emails"] = cc
+ *         sender_name = email_overrides.get("senderName")
+*/
+  __pyx_t_5 = PyList_Check(__pyx_v_cc); 
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_4 = __pyx_t_5;
+    goto __pyx_L4_bool_binop_done;
+  }
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_v_cc); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 211, __pyx_L1_error)
+  __pyx_t_4 = __pyx_t_5;
+  __pyx_L4_bool_binop_done:;
+  if (__pyx_t_4) {
+
+    /* "sandesh/api.py":212
+ *         cc = email_overrides.get("cc")
+ *         if isinstance(cc, list) and cc:
+ *             legacy_body["cc_emails"] = cc             # <<<<<<<<<<<<<<
+ *         sender_name = email_overrides.get("senderName")
+ *         if isinstance(sender_name, str) and sender_name.strip():
+*/
+    if (unlikely((PyObject_SetItem(__pyx_v_legacy_body, __pyx_mstate_global->__pyx_n_u_cc_emails, __pyx_v_cc) < 0))) __PYX_ERR(0, 212, __pyx_L1_error)
+
+    /* "sandesh/api.py":211
+ *     ) -> None:
+ *         cc = email_overrides.get("cc")
+ *         if isinstance(cc, list) and cc:             # <<<<<<<<<<<<<<
+ *             legacy_body["cc_emails"] = cc
+ *         sender_name = email_overrides.get("senderName")
+*/
+  }
+
+  /* "sandesh/api.py":213
+ *         if isinstance(cc, list) and cc:
+ *             legacy_body["cc_emails"] = cc
+ *         sender_name = email_overrides.get("senderName")             # <<<<<<<<<<<<<<
+ *         if isinstance(sender_name, str) and sender_name.strip():
+ *             legacy_body["sender_name"] = sender_name.strip()
+*/
+  __pyx_t_2 = __pyx_v_email_overrides;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_mstate_global->__pyx_n_u_senderName};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_v_sender_name = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "sandesh/api.py":214
+ *             legacy_body["cc_emails"] = cc
+ *         sender_name = email_overrides.get("senderName")
+ *         if isinstance(sender_name, str) and sender_name.strip():             # <<<<<<<<<<<<<<
+ *             legacy_body["sender_name"] = sender_name.strip()
+ *         subject = email_overrides.get("subject")
+*/
+  __pyx_t_5 = PyUnicode_Check(__pyx_v_sender_name); 
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_4 = __pyx_t_5;
+    goto __pyx_L7_bool_binop_done;
+  }
+  __pyx_t_2 = __pyx_v_sender_name;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 214, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 214, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_4 = __pyx_t_5;
+  __pyx_L7_bool_binop_done:;
+  if (__pyx_t_4) {
+
+    /* "sandesh/api.py":215
+ *         sender_name = email_overrides.get("senderName")
+ *         if isinstance(sender_name, str) and sender_name.strip():
+ *             legacy_body["sender_name"] = sender_name.strip()             # <<<<<<<<<<<<<<
+ *         subject = email_overrides.get("subject")
+ *         if isinstance(subject, str) and subject.strip():
+*/
+    __pyx_t_2 = __pyx_v_sender_name;
+    __Pyx_INCREF(__pyx_t_2);
+    __pyx_t_3 = 0;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
+      __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+    if (unlikely((PyObject_SetItem(__pyx_v_legacy_body, __pyx_mstate_global->__pyx_n_u_sender_name, __pyx_t_1) < 0))) __PYX_ERR(0, 215, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "sandesh/api.py":214
+ *             legacy_body["cc_emails"] = cc
+ *         sender_name = email_overrides.get("senderName")
+ *         if isinstance(sender_name, str) and sender_name.strip():             # <<<<<<<<<<<<<<
+ *             legacy_body["sender_name"] = sender_name.strip()
+ *         subject = email_overrides.get("subject")
+*/
+  }
+
+  /* "sandesh/api.py":216
+ *         if isinstance(sender_name, str) and sender_name.strip():
+ *             legacy_body["sender_name"] = sender_name.strip()
+ *         subject = email_overrides.get("subject")             # <<<<<<<<<<<<<<
+ *         if isinstance(subject, str) and subject.strip():
+ *             legacy_body["subject"] = subject.strip()
+*/
+  __pyx_t_2 = __pyx_v_email_overrides;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_mstate_global->__pyx_n_u_subject};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_v_subject = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "sandesh/api.py":217
+ *             legacy_body["sender_name"] = sender_name.strip()
+ *         subject = email_overrides.get("subject")
+ *         if isinstance(subject, str) and subject.strip():             # <<<<<<<<<<<<<<
+ *             legacy_body["subject"] = subject.strip()
+ *         integration_identifier = email_overrides.get("integrationIdentifier")
+*/
+  __pyx_t_5 = PyUnicode_Check(__pyx_v_subject); 
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_4 = __pyx_t_5;
+    goto __pyx_L10_bool_binop_done;
+  }
+  __pyx_t_2 = __pyx_v_subject;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 217, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_4 = __pyx_t_5;
+  __pyx_L10_bool_binop_done:;
+  if (__pyx_t_4) {
+
+    /* "sandesh/api.py":218
+ *         subject = email_overrides.get("subject")
+ *         if isinstance(subject, str) and subject.strip():
+ *             legacy_body["subject"] = subject.strip()             # <<<<<<<<<<<<<<
+ *         integration_identifier = email_overrides.get("integrationIdentifier")
+ *         if (
+*/
+    __pyx_t_2 = __pyx_v_subject;
+    __Pyx_INCREF(__pyx_t_2);
+    __pyx_t_3 = 0;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
+      __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 218, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+    if (unlikely((PyObject_SetItem(__pyx_v_legacy_body, __pyx_mstate_global->__pyx_n_u_subject, __pyx_t_1) < 0))) __PYX_ERR(0, 218, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "sandesh/api.py":217
+ *             legacy_body["sender_name"] = sender_name.strip()
+ *         subject = email_overrides.get("subject")
+ *         if isinstance(subject, str) and subject.strip():             # <<<<<<<<<<<<<<
+ *             legacy_body["subject"] = subject.strip()
+ *         integration_identifier = email_overrides.get("integrationIdentifier")
+*/
+  }
+
+  /* "sandesh/api.py":219
+ *         if isinstance(subject, str) and subject.strip():
+ *             legacy_body["subject"] = subject.strip()
+ *         integration_identifier = email_overrides.get("integrationIdentifier")             # <<<<<<<<<<<<<<
+ *         if (
+ *             isinstance(integration_identifier, str)
+*/
+  __pyx_t_2 = __pyx_v_email_overrides;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_mstate_global->__pyx_n_u_integrationIdentifier};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_v_integration_identifier = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "sandesh/api.py":221
+ *         integration_identifier = email_overrides.get("integrationIdentifier")
+ *         if (
+ *             isinstance(integration_identifier, str)             # <<<<<<<<<<<<<<
+ *             and integration_identifier.strip()
+ *             and isinstance(legacy_body.get("payload"), dict)
+*/
+  __pyx_t_5 = PyUnicode_Check(__pyx_v_integration_identifier); 
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_4 = __pyx_t_5;
+    goto __pyx_L13_bool_binop_done;
+  }
+
+  /* "sandesh/api.py":222
+ *         if (
+ *             isinstance(integration_identifier, str)
+ *             and integration_identifier.strip()             # <<<<<<<<<<<<<<
+ *             and isinstance(legacy_body.get("payload"), dict)
+ *         ):
+*/
+  __pyx_t_2 = __pyx_v_integration_identifier;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 222, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__pyx_t_5) {
+  } else {
+    __pyx_t_4 = __pyx_t_5;
+    goto __pyx_L13_bool_binop_done;
+  }
+
+  /* "sandesh/api.py":223
+ *             isinstance(integration_identifier, str)
+ *             and integration_identifier.strip()
+ *             and isinstance(legacy_body.get("payload"), dict)             # <<<<<<<<<<<<<<
+ *         ):
+ *             legacy_body["payload"]["_integration_identifier"] = (
+*/
+  __pyx_t_2 = __pyx_v_legacy_body;
+  __Pyx_INCREF(__pyx_t_2);
+  __pyx_t_3 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_mstate_global->__pyx_n_u_payload};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_3, (2-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 223, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_t_5 = PyDict_Check(__pyx_t_1); 
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_4 = __pyx_t_5;
+  __pyx_L13_bool_binop_done:;
+
+  /* "sandesh/api.py":220
+ *             legacy_body["subject"] = subject.strip()
+ *         integration_identifier = email_overrides.get("integrationIdentifier")
+ *         if (             # <<<<<<<<<<<<<<
+ *             isinstance(integration_identifier, str)
+ *             and integration_identifier.strip()
+*/
+  if (__pyx_t_4) {
+
+    /* "sandesh/api.py":226
+ *         ):
+ *             legacy_body["payload"]["_integration_identifier"] = (
+ *                 integration_identifier.strip()             # <<<<<<<<<<<<<<
+ *             )
+ * 
+*/
+    __pyx_t_2 = __pyx_v_integration_identifier;
+    __Pyx_INCREF(__pyx_t_2);
+    __pyx_t_3 = 0;
+    {
+      PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
+      __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 226, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
+    }
+
+    /* "sandesh/api.py":225
+ *             and isinstance(legacy_body.get("payload"), dict)
+ *         ):
+ *             legacy_body["payload"]["_integration_identifier"] = (             # <<<<<<<<<<<<<<
+ *                 integration_identifier.strip()
+ *             )
+*/
+    __pyx_t_2 = __Pyx_PyObject_Dict_GetItem(__pyx_v_legacy_body, __pyx_mstate_global->__pyx_n_u_payload); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 225, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    if (unlikely((PyObject_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_integration_identifier, __pyx_t_1) < 0))) __PYX_ERR(0, 225, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+    /* "sandesh/api.py":220
+ *             legacy_body["subject"] = subject.strip()
+ *         integration_identifier = email_overrides.get("integrationIdentifier")
+ *         if (             # <<<<<<<<<<<<<<
+ *             isinstance(integration_identifier, str)
+ *             and integration_identifier.strip()
+*/
+  }
+
+  /* "sandesh/api.py":206
+ *         return email_overrides if isinstance(email_overrides, dict) else {}
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _apply_legacy_email_overrides(
+ *         legacy_body: JsonDict, email_overrides: JsonDict
+*/
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_AddTraceback("sandesh.api.EventApi._apply_legacy_email_overrides", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_cc);
+  __Pyx_XDECREF(__pyx_v_sender_name);
+  __Pyx_XDECREF(__pyx_v_subject);
+  __Pyx_XDECREF(__pyx_v_integration_identifier);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "sandesh/api.py":229
+ *             )
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _http_error_from_sdk(exc: SandeshAPIError) -> HTTPError:
+ *         response = httpx.Response(
+*/
+
+/* Python wrapper */
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_17_http_error_from_sdk(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+); /*proto*/
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_8EventApi_16_http_error_from_sdk, "EventApi._http_error_from_sdk(exc: SandeshAPIError) -> HTTPError");
+static PyMethodDef __pyx_mdef_7sandesh_3api_8EventApi_17_http_error_from_sdk = {"_http_error_from_sdk", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_8EventApi_17_http_error_from_sdk, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_8EventApi_16_http_error_from_sdk};
+static PyObject *__pyx_pw_7sandesh_3api_8EventApi_17_http_error_from_sdk(PyObject *__pyx_self, 
+#if CYTHON_METH_FASTCALL
+PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
+#else
+PyObject *__pyx_args, PyObject *__pyx_kwds
+#endif
+) {
+  PyObject *__pyx_v_exc = 0;
+  #if !CYTHON_METH_FASTCALL
+  CYTHON_UNUSED Py_ssize_t __pyx_nargs;
+  #endif
+  CYTHON_UNUSED PyObject *const *__pyx_kwvalues;
+  PyObject* values[1] = {0};
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("_http_error_from_sdk (wrapper)", 0);
+  #if !CYTHON_METH_FASTCALL
+  #if CYTHON_ASSUME_SAFE_SIZE
+  __pyx_nargs = PyTuple_GET_SIZE(__pyx_args);
+  #else
+  __pyx_nargs = PyTuple_Size(__pyx_args); if (unlikely(__pyx_nargs < 0)) return NULL;
+  #endif
+  #endif
+  __pyx_kwvalues = __Pyx_KwValues_FASTCALL(__pyx_args, __pyx_nargs);
+  {
+    PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_exc,0};
+    const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 229, __pyx_L3_error)
+    if (__pyx_kwds_len > 0) {
+      switch (__pyx_nargs) {
+        case  1:
+        values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 229, __pyx_L3_error)
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      const Py_ssize_t kwd_pos_args = __pyx_nargs;
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_http_error_from_sdk", 0) < (0)) __PYX_ERR(0, 229, __pyx_L3_error)
+      for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_http_error_from_sdk", 1, 1, 1, i); __PYX_ERR(0, 229, __pyx_L3_error) }
+      }
+    } else if (unlikely(__pyx_nargs != 1)) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 229, __pyx_L3_error)
+    }
+    __pyx_v_exc = values[0];
+  }
+  goto __pyx_L6_skip;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("_http_error_from_sdk", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 229, __pyx_L3_error)
+  __pyx_L6_skip:;
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L3_error:;
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_AddTraceback("sandesh.api.EventApi._http_error_from_sdk", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_7sandesh_3api_8EventApi_16_http_error_from_sdk(__pyx_self, __pyx_v_exc);
+
+  /* function exit code */
+  for (Py_ssize_t __pyx_temp=0; __pyx_temp < (Py_ssize_t)(sizeof(values)/sizeof(values[0])); ++__pyx_temp) {
+    Py_XDECREF(values[__pyx_temp]);
+  }
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_7sandesh_3api_8EventApi_16_http_error_from_sdk(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_exc) {
+  PyObject *__pyx_v_response = NULL;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
+  PyObject *__pyx_t_3 = NULL;
+  PyObject *__pyx_t_4 = NULL;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  size_t __pyx_t_10;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("_http_error_from_sdk", 0);
+
+  /* "sandesh/api.py":231
+ *     @staticmethod
+ *     def _http_error_from_sdk(exc: SandeshAPIError) -> HTTPError:
+ *         response = httpx.Response(             # <<<<<<<<<<<<<<
+ *             status_code=exc.status_code,
+ *             request=httpx.Request(exc.request_method, exc.request_url),
+*/
+  __pyx_t_2 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_Response); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "sandesh/api.py":232
+ *     def _http_error_from_sdk(exc: SandeshAPIError) -> HTTPError:
+ *         response = httpx.Response(
+ *             status_code=exc.status_code,             # <<<<<<<<<<<<<<
+ *             request=httpx.Request(exc.request_method, exc.request_url),
+ *         )
+*/
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_status_code); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 232, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+
+  /* "sandesh/api.py":233
+ *         response = httpx.Response(
+ *             status_code=exc.status_code,
+ *             request=httpx.Request(exc.request_method, exc.request_url),             # <<<<<<<<<<<<<<
+ *         )
+ *         return HTTPError(str(exc), response=response)
+*/
+  __pyx_t_6 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_httpx); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_Request); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_request_method); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_exc, __pyx_mstate_global->__pyx_n_u_request_url); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 233, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_9);
+  __pyx_t_10 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_8))) {
+    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_8);
+    assert(__pyx_t_6);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_8);
+    __Pyx_INCREF(__pyx_t_6);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_8, __pyx__function);
+    __pyx_t_10 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[3] = {__pyx_t_6, __pyx_t_7, __pyx_t_9};
+    __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_8, __pyx_callargs+__pyx_t_10, (3-__pyx_t_10) | (__pyx_t_10*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 233, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+  }
+  __pyx_t_10 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_4))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
+    assert(__pyx_t_2);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_4);
+    __Pyx_INCREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_4, __pyx__function);
+    __pyx_t_10 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_2, NULL};
+    __pyx_t_8 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 231, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_8);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_status_code, __pyx_t_3, __pyx_t_8, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 231, __pyx_L1_error)
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_request, __pyx_t_5, __pyx_t_8, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 231, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_10, (1-__pyx_t_10) | (__pyx_t_10*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_8);
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 231, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_v_response = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "sandesh/api.py":235
+ *             request=httpx.Request(exc.request_method, exc.request_url),
+ *         )
+ *         return HTTPError(str(exc), response=response)             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __Pyx_XDECREF(__pyx_r);
+  __pyx_t_4 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_HTTPError); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __pyx_t_5 = __Pyx_PyObject_Unicode(__pyx_v_exc); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 235, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_10 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_8))) {
+    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_8);
+    assert(__pyx_t_4);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_8);
+    __Pyx_INCREF(__pyx_t_4);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_8, __pyx__function);
+    __pyx_t_10 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_t_5};
+    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 235, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_response, __pyx_v_response, __pyx_t_3, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 235, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_8, __pyx_callargs+__pyx_t_10, (2-__pyx_t_10) | (__pyx_t_10*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
+    __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 235, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "sandesh/api.py":229
+ *             )
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _http_error_from_sdk(exc: SandeshAPIError) -> HTTPError:
+ *         response = httpx.Response(
+*/
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_3);
+  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
+  __Pyx_AddTraceback("sandesh.api.EventApi._http_error_from_sdk", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_response);
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "sandesh/api.py":240
  * class SubscriberApi:
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
@@ -6698,51 +7290,51 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_url,&__pyx_mstate_global->__pyx_n_u_api_key,&__pyx_mstate_global->__pyx_n_u_timeout,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 224, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 240, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 224, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 240, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 224, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 240, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 224, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 240, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__init__", 0) < (0)) __PYX_ERR(0, 224, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__init__", 0) < (0)) __PYX_ERR(0, 240, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 3; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, i); __PYX_ERR(0, 224, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, i); __PYX_ERR(0, 240, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 3)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 224, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 240, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 224, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 240, __pyx_L3_error)
       values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 224, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 240, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
     __pyx_v_url = ((PyObject*)values[1]);
     __pyx_v_api_key = ((PyObject*)values[2]);
     if (values[3]) {
-      __pyx_v_timeout = __Pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_timeout == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 229, __pyx_L3_error)
+      __pyx_v_timeout = __Pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_timeout == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 245, __pyx_L3_error)
     } else {
       __pyx_v_timeout = ((double)((double)60.0));
     }
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 224, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 240, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6753,8 +7345,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_url), (&PyUnicode_Type), 0, "url", 2))) __PYX_ERR(0, 226, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_api_key), (&PyUnicode_Type), 0, "api_key", 2))) __PYX_ERR(0, 227, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_url), (&PyUnicode_Type), 0, "url", 2))) __PYX_ERR(0, 242, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_api_key), (&PyUnicode_Type), 0, "api_key", 2))) __PYX_ERR(0, 243, __pyx_L1_error)
   __pyx_r = __pyx_pf_7sandesh_3api_13SubscriberApi___init__(__pyx_self, __pyx_v_self, __pyx_v_url, __pyx_v_api_key, __pyx_v_timeout);
 
   /* function exit code */
@@ -6788,7 +7380,7 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi___init__(CYTHON_UNUSED P
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "sandesh/api.py":231
+  /* "sandesh/api.py":247
  *         timeout: float = 60.0,
  *     ) -> None:
  *         self._sdk = Sandesh(             # <<<<<<<<<<<<<<
@@ -6796,17 +7388,17 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi___init__(CYTHON_UNUSED P
  *             bearer_token=api_key,
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_Sandesh); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_Sandesh); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
 
-  /* "sandesh/api.py":234
+  /* "sandesh/api.py":250
  *             base_url=url,
  *             bearer_token=api_key,
  *             timeout=timeout,             # <<<<<<<<<<<<<<
  *         )
  * 
 */
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_timeout); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_timeout); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 250, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_5 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -6822,31 +7414,31 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi___init__(CYTHON_UNUSED P
   #endif
   {
     PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 3 : 0)] = {__pyx_t_2, NULL};
-    __pyx_t_6 = __Pyx_MakeVectorcallBuilderKwds(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 231, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_MakeVectorcallBuilderKwds(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 247, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_base_url, __pyx_v_url, __pyx_t_6, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 231, __pyx_L1_error)
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_bearer_token, __pyx_v_api_key, __pyx_t_6, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 231, __pyx_L1_error)
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_timeout, __pyx_t_4, __pyx_t_6, __pyx_callargs+1, 2) < (0)) __PYX_ERR(0, 231, __pyx_L1_error)
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_base_url, __pyx_v_url, __pyx_t_6, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_bearer_token, __pyx_v_api_key, __pyx_t_6, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_timeout, __pyx_t_4, __pyx_t_6, __pyx_callargs+1, 2) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
     __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_3, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_6);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 231, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
 
-  /* "sandesh/api.py":231
+  /* "sandesh/api.py":247
  *         timeout: float = 60.0,
  *     ) -> None:
  *         self._sdk = Sandesh(             # <<<<<<<<<<<<<<
  *             base_url=url,
  *             bearer_token=api_key,
 */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk, __pyx_t_1) < (0)) __PYX_ERR(0, 231, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk, __pyx_t_1) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":224
+  /* "sandesh/api.py":240
  * class SubscriberApi:
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
@@ -6871,10 +7463,10 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi___init__(CYTHON_UNUSED P
   return __pyx_r;
 }
 
-/* "sandesh/api.py":237
+/* "sandesh/api.py":253
  *         )
  * 
- *     def create(self, subscriber: SubscriberDto) -> Dict[str, Any]:             # <<<<<<<<<<<<<<
+ *     def create(self, subscriber: SubscriberDto) -> JsonDict:             # <<<<<<<<<<<<<<
  *         return self._sdk.create_subscriber(subscriber.to_payload())
  * 
 */
@@ -6887,7 +7479,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_7sandesh_3api_13SubscriberApi_2create, "SubscriberApi.create(self, subscriber: SubscriberDto) -> Dict[str, Any]");
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_13SubscriberApi_2create, "SubscriberApi.create(self, subscriber: SubscriberDto) -> JsonDict");
 static PyMethodDef __pyx_mdef_7sandesh_3api_13SubscriberApi_3create = {"create", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_13SubscriberApi_3create, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_13SubscriberApi_2create};
 static PyObject *__pyx_pw_7sandesh_3api_13SubscriberApi_3create(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -6920,39 +7512,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_subscriber,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 237, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 253, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 237, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 253, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 237, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 253, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "create", 0) < (0)) __PYX_ERR(0, 237, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "create", 0) < (0)) __PYX_ERR(0, 253, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("create", 1, 2, 2, i); __PYX_ERR(0, 237, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("create", 1, 2, 2, i); __PYX_ERR(0, 253, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 237, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 253, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 237, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 253, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
     __pyx_v_subscriber = values[1];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("create", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 237, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("create", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 253, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6987,15 +7579,15 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_2create(CYTHON_UNUSED Py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("create", 0);
 
-  /* "sandesh/api.py":238
+  /* "sandesh/api.py":254
  * 
- *     def create(self, subscriber: SubscriberDto) -> Dict[str, Any]:
+ *     def create(self, subscriber: SubscriberDto) -> JsonDict:
  *         return self._sdk.create_subscriber(subscriber.to_payload())             # <<<<<<<<<<<<<<
  * 
- *     def delete(self, subscriber_id: str) -> Dict[str, Any]:
+ *     def delete(self, subscriber_id: str) -> JsonDict:
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 254, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = __pyx_t_3;
   __Pyx_INCREF(__pyx_t_2);
@@ -7006,7 +7598,7 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_2create(CYTHON_UNUSED Py
     PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
     __pyx_t_4 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_to_payload, __pyx_callargs+__pyx_t_6, (1-__pyx_t_6) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 238, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 254, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
   }
   __pyx_t_6 = 0;
@@ -7016,18 +7608,17 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_2create(CYTHON_UNUSED Py
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 238, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 254, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_1))) __PYX_ERR(0, 238, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
+  __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "sandesh/api.py":237
+  /* "sandesh/api.py":253
  *         )
  * 
- *     def create(self, subscriber: SubscriberDto) -> Dict[str, Any]:             # <<<<<<<<<<<<<<
+ *     def create(self, subscriber: SubscriberDto) -> JsonDict:             # <<<<<<<<<<<<<<
  *         return self._sdk.create_subscriber(subscriber.to_payload())
  * 
 */
@@ -7047,10 +7638,10 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_2create(CYTHON_UNUSED Py
   return __pyx_r;
 }
 
-/* "sandesh/api.py":240
+/* "sandesh/api.py":256
  *         return self._sdk.create_subscriber(subscriber.to_payload())
  * 
- *     def delete(self, subscriber_id: str) -> Dict[str, Any]:             # <<<<<<<<<<<<<<
+ *     def delete(self, subscriber_id: str) -> JsonDict:             # <<<<<<<<<<<<<<
  *         return self._sdk.deactivate_subscriber(subscriber_id)
  * 
 */
@@ -7063,7 +7654,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_7sandesh_3api_13SubscriberApi_4delete, "SubscriberApi.delete(self, str subscriber_id: str) -> Dict[str, Any]");
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_13SubscriberApi_4delete, "SubscriberApi.delete(self, str subscriber_id: str) -> JsonDict");
 static PyMethodDef __pyx_mdef_7sandesh_3api_13SubscriberApi_5delete = {"delete", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_13SubscriberApi_5delete, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_13SubscriberApi_4delete};
 static PyObject *__pyx_pw_7sandesh_3api_13SubscriberApi_5delete(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -7096,39 +7687,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_subscriber_id,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 240, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 256, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 240, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 256, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 240, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 256, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "delete", 0) < (0)) __PYX_ERR(0, 240, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "delete", 0) < (0)) __PYX_ERR(0, 256, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("delete", 1, 2, 2, i); __PYX_ERR(0, 240, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("delete", 1, 2, 2, i); __PYX_ERR(0, 256, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 240, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 256, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 240, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 256, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
     __pyx_v_subscriber_id = ((PyObject*)values[1]);
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("delete", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 240, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("delete", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 256, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7139,7 +7730,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_subscriber_id), (&PyUnicode_Type), 0, "subscriber_id", 2))) __PYX_ERR(0, 240, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_subscriber_id), (&PyUnicode_Type), 0, "subscriber_id", 2))) __PYX_ERR(0, 256, __pyx_L1_error)
   __pyx_r = __pyx_pf_7sandesh_3api_13SubscriberApi_4delete(__pyx_self, __pyx_v_self, __pyx_v_subscriber_id);
 
   /* function exit code */
@@ -7171,15 +7762,15 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_4delete(CYTHON_UNUSED Py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("delete", 0);
 
-  /* "sandesh/api.py":241
+  /* "sandesh/api.py":257
  * 
- *     def delete(self, subscriber_id: str) -> Dict[str, Any]:
+ *     def delete(self, subscriber_id: str) -> JsonDict:
  *         return self._sdk.deactivate_subscriber(subscriber_id)             # <<<<<<<<<<<<<<
  * 
  *     def get(self, subscriber_id: str) -> _SubscriberResource:
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 241, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 257, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = __pyx_t_3;
   __Pyx_INCREF(__pyx_t_2);
@@ -7189,18 +7780,17 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_4delete(CYTHON_UNUSED Py
     __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_deactivate_subscriber, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 241, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 257, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  if (!(likely(PyDict_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_1))) __PYX_ERR(0, 241, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_1);
+  __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "sandesh/api.py":240
+  /* "sandesh/api.py":256
  *         return self._sdk.create_subscriber(subscriber.to_payload())
  * 
- *     def delete(self, subscriber_id: str) -> Dict[str, Any]:             # <<<<<<<<<<<<<<
+ *     def delete(self, subscriber_id: str) -> JsonDict:             # <<<<<<<<<<<<<<
  *         return self._sdk.deactivate_subscriber(subscriber_id)
  * 
 */
@@ -7218,7 +7808,7 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_4delete(CYTHON_UNUSED Py
   return __pyx_r;
 }
 
-/* "sandesh/api.py":243
+/* "sandesh/api.py":259
  *         return self._sdk.deactivate_subscriber(subscriber_id)
  * 
  *     def get(self, subscriber_id: str) -> _SubscriberResource:             # <<<<<<<<<<<<<<
@@ -7267,39 +7857,39 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_subscriber_id,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 243, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 259, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 243, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 259, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 243, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 259, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "get", 0) < (0)) __PYX_ERR(0, 243, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "get", 0) < (0)) __PYX_ERR(0, 259, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("get", 1, 2, 2, i); __PYX_ERR(0, 243, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("get", 1, 2, 2, i); __PYX_ERR(0, 259, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 243, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 259, __pyx_L3_error)
       values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 243, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 259, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
     __pyx_v_subscriber_id = ((PyObject*)values[1]);
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("get", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 243, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("get", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 259, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7310,7 +7900,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_subscriber_id), (&PyUnicode_Type), 0, "subscriber_id", 2))) __PYX_ERR(0, 243, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_subscriber_id), (&PyUnicode_Type), 0, "subscriber_id", 2))) __PYX_ERR(0, 259, __pyx_L1_error)
   __pyx_r = __pyx_pf_7sandesh_3api_13SubscriberApi_6get(__pyx_self, __pyx_v_self, __pyx_v_subscriber_id);
 
   /* function exit code */
@@ -7343,14 +7933,14 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_6get(CYTHON_UNUSED PyObj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("get", 0);
 
-  /* "sandesh/api.py":244
+  /* "sandesh/api.py":260
  * 
  *     def get(self, subscriber_id: str) -> _SubscriberResource:
  *         raw = self._sdk.get_subscriber(subscriber_id)             # <<<<<<<<<<<<<<
  *         return _SubscriberResource(raw)
  * 
 */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 244, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 260, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = __pyx_t_3;
   __Pyx_INCREF(__pyx_t_2);
@@ -7360,13 +7950,13 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_6get(CYTHON_UNUSED PyObj
     __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_subscriber, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 244, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 260, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __pyx_v_raw = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "sandesh/api.py":245
+  /* "sandesh/api.py":261
  *     def get(self, subscriber_id: str) -> _SubscriberResource:
  *         raw = self._sdk.get_subscriber(subscriber_id)
  *         return _SubscriberResource(raw)             # <<<<<<<<<<<<<<
@@ -7375,7 +7965,7 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_6get(CYTHON_UNUSED PyObj
 */
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_3 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_SubscriberResource); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 245, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_SubscriberResource); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -7394,14 +7984,14 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_6get(CYTHON_UNUSED PyObj
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 245, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "sandesh/api.py":243
+  /* "sandesh/api.py":259
  *         return self._sdk.deactivate_subscriber(subscriber_id)
  * 
  *     def get(self, subscriber_id: str) -> _SubscriberResource:             # <<<<<<<<<<<<<<
@@ -7423,7 +8013,7 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_6get(CYTHON_UNUSED PyObj
   return __pyx_r;
 }
 
-/* "sandesh/api.py":247
+/* "sandesh/api.py":263
  *         return _SubscriberResource(raw)
  * 
  *     def credentials(             # <<<<<<<<<<<<<<
@@ -7439,7 +8029,7 @@ PyObject *const *__pyx_args, Py_ssize_t __pyx_nargs, PyObject *__pyx_kwds
 PyObject *__pyx_args, PyObject *__pyx_kwds
 #endif
 ); /*proto*/
-PyDoc_STRVAR(__pyx_doc_7sandesh_3api_13SubscriberApi_8credentials, "SubscriberApi.credentials(self, *, str subscriber_id: str, str provider_id: str, list device_tokens: List[str]) -> Dict[str, Any]");
+PyDoc_STRVAR(__pyx_doc_7sandesh_3api_13SubscriberApi_8credentials, "SubscriberApi.credentials(self, *, str subscriber_id: str, str provider_id: str, list device_tokens: List[str]) -> JsonDict");
 static PyMethodDef __pyx_mdef_7sandesh_3api_13SubscriberApi_9credentials = {"credentials", (PyCFunction)(void(*)(void))(__Pyx_PyCFunction_FastCallWithKeywords)__pyx_pw_7sandesh_3api_13SubscriberApi_9credentials, __Pyx_METH_FASTCALL|METH_KEYWORDS, __pyx_doc_7sandesh_3api_13SubscriberApi_8credentials};
 static PyObject *__pyx_pw_7sandesh_3api_13SubscriberApi_9credentials(PyObject *__pyx_self, 
 #if CYTHON_METH_FASTCALL
@@ -7474,28 +8064,28 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_subscriber_id,&__pyx_mstate_global->__pyx_n_u_provider_id,&__pyx_mstate_global->__pyx_n_u_device_tokens,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 247, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 263, __pyx_L3_error)
     if (likely(__pyx_kwds_len > 0)) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 247, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 263, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "credentials", 0) < (0)) __PYX_ERR(0, 247, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "credentials", 0) < (0)) __PYX_ERR(0, 263, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("credentials", 1, 1, 1, i); __PYX_ERR(0, 247, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("credentials", 1, 1, 1, i); __PYX_ERR(0, 263, __pyx_L3_error) }
       }
       for (Py_ssize_t i = 1; i < 4; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseKeywordRequired("credentials", *(__pyx_pyargnames[i - 0])); __PYX_ERR(0, 247, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseKeywordRequired("credentials", *(__pyx_pyargnames[i - 0])); __PYX_ERR(0, 263, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
-      __Pyx_RaiseKeywordRequired("credentials", __pyx_mstate_global->__pyx_n_u_subscriber_id); __PYX_ERR(0, 247, __pyx_L3_error)
+      __Pyx_RaiseKeywordRequired("credentials", __pyx_mstate_global->__pyx_n_u_subscriber_id); __PYX_ERR(0, 263, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
     __pyx_v_subscriber_id = ((PyObject*)values[1]);
@@ -7504,7 +8094,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("credentials", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 247, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("credentials", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 263, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7515,9 +8105,9 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_subscriber_id), (&PyUnicode_Type), 0, "subscriber_id", 2))) __PYX_ERR(0, 250, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_provider_id), (&PyUnicode_Type), 0, "provider_id", 2))) __PYX_ERR(0, 251, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_device_tokens), (&PyList_Type), 0, "device_tokens", 2))) __PYX_ERR(0, 252, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_subscriber_id), (&PyUnicode_Type), 0, "subscriber_id", 2))) __PYX_ERR(0, 266, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_provider_id), (&PyUnicode_Type), 0, "provider_id", 2))) __PYX_ERR(0, 267, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_device_tokens), (&PyList_Type), 0, "device_tokens", 2))) __PYX_ERR(0, 268, __pyx_L1_error)
   __pyx_r = __pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(__pyx_self, __pyx_v_self, __pyx_v_subscriber_id, __pyx_v_provider_id, __pyx_v_device_tokens);
 
   /* function exit code */
@@ -7541,7 +8131,6 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
   PyObject *__pyx_v_current = NULL;
   PyObject *__pyx_v_current_data = NULL;
   PyObject *__pyx_v_new_data = NULL;
-  PyObject *__pyx_8genexpr1__pyx_v_token = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
@@ -7549,26 +8138,24 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
   PyObject *__pyx_t_3 = NULL;
   size_t __pyx_t_4;
   PyObject *__pyx_t_5 = NULL;
-  Py_ssize_t __pyx_t_6;
-  PyObject *__pyx_t_7 = NULL;
-  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_6 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("credentials", 0);
 
-  /* "sandesh/api.py":254
+  /* "sandesh/api.py":270
  *         device_tokens: List[str],
- *     ) -> Dict[str, Any]:
+ *     ) -> JsonDict:
  *         if provider_id != "fcm":             # <<<<<<<<<<<<<<
  *             raise ValueError("Only provider_id='fcm' is supported")
  *         current = self._sdk.get_subscriber(subscriber_id)
 */
-  __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_v_provider_id, __pyx_mstate_global->__pyx_n_u_fcm, Py_NE)); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 254, __pyx_L1_error)
+  __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_v_provider_id, __pyx_mstate_global->__pyx_n_u_fcm, Py_NE)); if (unlikely((__pyx_t_1 < 0))) __PYX_ERR(0, 270, __pyx_L1_error)
   if (unlikely(__pyx_t_1)) {
 
-    /* "sandesh/api.py":255
- *     ) -> Dict[str, Any]:
+    /* "sandesh/api.py":271
+ *     ) -> JsonDict:
  *         if provider_id != "fcm":
  *             raise ValueError("Only provider_id='fcm' is supported")             # <<<<<<<<<<<<<<
  *         current = self._sdk.get_subscriber(subscriber_id)
@@ -7580,30 +8167,30 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
       PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_kp_u_Only_provider_id_fcm_is_supporte};
       __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_ValueError)), __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 271, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
     }
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 255, __pyx_L1_error)
+    __PYX_ERR(0, 271, __pyx_L1_error)
 
-    /* "sandesh/api.py":254
+    /* "sandesh/api.py":270
  *         device_tokens: List[str],
- *     ) -> Dict[str, Any]:
+ *     ) -> JsonDict:
  *         if provider_id != "fcm":             # <<<<<<<<<<<<<<
  *             raise ValueError("Only provider_id='fcm' is supported")
  *         current = self._sdk.get_subscriber(subscriber_id)
 */
   }
 
-  /* "sandesh/api.py":256
+  /* "sandesh/api.py":272
  *         if provider_id != "fcm":
  *             raise ValueError("Only provider_id='fcm' is supported")
  *         current = self._sdk.get_subscriber(subscriber_id)             # <<<<<<<<<<<<<<
  *         current_data = (
  *             current.get("data")
 */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 256, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 272, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_3 = __pyx_t_5;
   __Pyx_INCREF(__pyx_t_3);
@@ -7613,13 +8200,13 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
     __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get_subscriber, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 256, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 272, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
   }
   __pyx_v_current = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":259
+  /* "sandesh/api.py":275
  *         current_data = (
  *             current.get("data")
  *             if isinstance(current.get("data"), dict)             # <<<<<<<<<<<<<<
@@ -7633,14 +8220,14 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
     PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_n_u_data};
     __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 259, __pyx_L1_error)
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 275, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
   }
   __pyx_t_1 = PyDict_Check(__pyx_t_5); 
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   if (__pyx_t_1) {
 
-    /* "sandesh/api.py":258
+    /* "sandesh/api.py":274
  *         current = self._sdk.get_subscriber(subscriber_id)
  *         current_data = (
  *             current.get("data")             # <<<<<<<<<<<<<<
@@ -7654,21 +8241,21 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
       PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_mstate_global->__pyx_n_u_data};
       __pyx_t_5 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_get, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 258, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 274, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
     __pyx_t_2 = __pyx_t_5;
     __pyx_t_5 = 0;
   } else {
 
-    /* "sandesh/api.py":260
+    /* "sandesh/api.py":276
  *             current.get("data")
  *             if isinstance(current.get("data"), dict)
  *             else {}             # <<<<<<<<<<<<<<
  *         )
  *         new_data = dict(current_data)
 */
-    __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 260, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 276, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_t_2 = __pyx_t_5;
     __pyx_t_5 = 0;
@@ -7676,12 +8263,12 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
   __pyx_v_current_data = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":262
+  /* "sandesh/api.py":278
  *             else {}
  *         )
  *         new_data = dict(current_data)             # <<<<<<<<<<<<<<
- *         new_data["fcm_device_tokens"] = [
- *             str(token).strip()
+ *         new_data["fcm_device_tokens"] = _SubscriberResource._normalize_tokens(
+ *             device_tokens
 */
   __pyx_t_5 = NULL;
   __pyx_t_4 = 1;
@@ -7689,183 +8276,101 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
     PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_v_current_data};
     __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)(&PyDict_Type), __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 262, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 278, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
   }
   __pyx_v_new_data = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":263
+  /* "sandesh/api.py":279
  *         )
  *         new_data = dict(current_data)
- *         new_data["fcm_device_tokens"] = [             # <<<<<<<<<<<<<<
- *             str(token).strip()
- *             for token in device_tokens
+ *         new_data["fcm_device_tokens"] = _SubscriberResource._normalize_tokens(             # <<<<<<<<<<<<<<
+ *             device_tokens
+ *         )
 */
-  { /* enter inner scope */
-    __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 263, __pyx_L6_error)
+  __pyx_t_5 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_SubscriberResource); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 279, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_normalize_tokens); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 279, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "sandesh/api.py":280
+ *         new_data = dict(current_data)
+ *         new_data["fcm_device_tokens"] = _SubscriberResource._normalize_tokens(
+ *             device_tokens             # <<<<<<<<<<<<<<
+ *         )
+ *         return self._sdk.update_subscriber(
+*/
+  __pyx_t_4 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_6))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_6);
+    assert(__pyx_t_5);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_6);
+    __Pyx_INCREF(__pyx_t_5);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_6, __pyx__function);
+    __pyx_t_4 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_v_device_tokens};
+    __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_6, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 279, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
+  }
 
-    /* "sandesh/api.py":265
- *         new_data["fcm_device_tokens"] = [
- *             str(token).strip()
- *             for token in device_tokens             # <<<<<<<<<<<<<<
- *             if str(token).strip()
- *         ]
-*/
-    __pyx_t_5 = __pyx_v_device_tokens; __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_6 = 0;
-    for (;;) {
-      {
-        Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_5);
-        #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 265, __pyx_L6_error)
-        #endif
-        if (__pyx_t_6 >= __pyx_temp) break;
-      }
-      __pyx_t_3 = __Pyx_PyList_GetItemRefFast(__pyx_t_5, __pyx_t_6, __Pyx_ReferenceSharing_OwnStrongReference);
-      ++__pyx_t_6;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 265, __pyx_L6_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_XDECREF_SET(__pyx_8genexpr1__pyx_v_token, __pyx_t_3);
-      __pyx_t_3 = 0;
-
-      /* "sandesh/api.py":266
- *             str(token).strip()
- *             for token in device_tokens
- *             if str(token).strip()             # <<<<<<<<<<<<<<
- *         ]
- *         return self._sdk.update_subscriber(
-*/
-      __pyx_t_8 = __Pyx_PyObject_Unicode(__pyx_8genexpr1__pyx_v_token); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 266, __pyx_L6_error)
-      __Pyx_GOTREF(__pyx_t_8);
-      __pyx_t_7 = __pyx_t_8;
-      __Pyx_INCREF(__pyx_t_7);
-      __pyx_t_4 = 0;
-      {
-        PyObject *__pyx_callargs[2] = {__pyx_t_7, NULL};
-        __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-        __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 266, __pyx_L6_error)
-        __Pyx_GOTREF(__pyx_t_3);
-      }
-      if (__pyx_t_3 == Py_None) __pyx_t_1 = 0;
-      else
-      {
-        Py_ssize_t __pyx_temp = __Pyx_PyUnicode_IS_TRUE(__pyx_t_3);
-        if (unlikely(((!CYTHON_ASSUME_SAFE_SIZE) && __pyx_temp < 0))) __PYX_ERR(0, 266, __pyx_L6_error)
-        __pyx_t_1 = (__pyx_temp != 0);
-      }
-
-      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (__pyx_t_1) {
-
-        /* "sandesh/api.py":264
- *         new_data = dict(current_data)
- *         new_data["fcm_device_tokens"] = [
- *             str(token).strip()             # <<<<<<<<<<<<<<
- *             for token in device_tokens
- *             if str(token).strip()
-*/
-        __pyx_t_7 = __Pyx_PyObject_Unicode(__pyx_8genexpr1__pyx_v_token); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 264, __pyx_L6_error)
-        __Pyx_GOTREF(__pyx_t_7);
-        __pyx_t_8 = __pyx_t_7;
-        __Pyx_INCREF(__pyx_t_8);
-        __pyx_t_4 = 0;
-        {
-          PyObject *__pyx_callargs[2] = {__pyx_t_8, NULL};
-          __pyx_t_3 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_strip, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-          __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-          __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L6_error)
-          __Pyx_GOTREF(__pyx_t_3);
-        }
-        if (unlikely(__Pyx_ListComp_Append(__pyx_t_2, (PyObject*)__pyx_t_3))) __PYX_ERR(0, 263, __pyx_L6_error)
-        __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-
-        /* "sandesh/api.py":266
- *             str(token).strip()
- *             for token in device_tokens
- *             if str(token).strip()             # <<<<<<<<<<<<<<
- *         ]
- *         return self._sdk.update_subscriber(
-*/
-      }
-
-      /* "sandesh/api.py":265
- *         new_data["fcm_device_tokens"] = [
- *             str(token).strip()
- *             for token in device_tokens             # <<<<<<<<<<<<<<
- *             if str(token).strip()
- *         ]
-*/
-    }
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_XDECREF(__pyx_8genexpr1__pyx_v_token); __pyx_8genexpr1__pyx_v_token = 0;
-    goto __pyx_L11_exit_scope;
-    __pyx_L6_error:;
-    __Pyx_XDECREF(__pyx_8genexpr1__pyx_v_token); __pyx_8genexpr1__pyx_v_token = 0;
-    goto __pyx_L1_error;
-    __pyx_L11_exit_scope:;
-  } /* exit inner scope */
-
-  /* "sandesh/api.py":263
+  /* "sandesh/api.py":279
  *         )
  *         new_data = dict(current_data)
- *         new_data["fcm_device_tokens"] = [             # <<<<<<<<<<<<<<
- *             str(token).strip()
- *             for token in device_tokens
+ *         new_data["fcm_device_tokens"] = _SubscriberResource._normalize_tokens(             # <<<<<<<<<<<<<<
+ *             device_tokens
+ *         )
 */
-  if (unlikely((PyDict_SetItem(__pyx_v_new_data, __pyx_mstate_global->__pyx_n_u_fcm_device_tokens, __pyx_t_2) < 0))) __PYX_ERR(0, 263, __pyx_L1_error)
+  if (unlikely((PyDict_SetItem(__pyx_v_new_data, __pyx_mstate_global->__pyx_n_u_fcm_device_tokens, __pyx_t_2) < 0))) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":268
- *             if str(token).strip()
- *         ]
+  /* "sandesh/api.py":282
+ *             device_tokens
+ *         )
  *         return self._sdk.update_subscriber(             # <<<<<<<<<<<<<<
  *             subscriber_id,
  *             {"data": new_data},
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 268, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __pyx_t_3;
-  __Pyx_INCREF(__pyx_t_5);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_sdk); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 282, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_6 = __pyx_t_5;
+  __Pyx_INCREF(__pyx_t_6);
 
-  /* "sandesh/api.py":270
+  /* "sandesh/api.py":284
  *         return self._sdk.update_subscriber(
  *             subscriber_id,
  *             {"data": new_data},             # <<<<<<<<<<<<<<
  *         )
 */
-  __pyx_t_7 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 270, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_data, __pyx_v_new_data) < (0)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 284, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  if (PyDict_SetItem(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_data, __pyx_v_new_data) < (0)) __PYX_ERR(0, 284, __pyx_L1_error)
   __pyx_t_4 = 0;
   {
-    PyObject *__pyx_callargs[3] = {__pyx_t_5, __pyx_v_subscriber_id, __pyx_t_7};
+    PyObject *__pyx_callargs[3] = {__pyx_t_6, __pyx_v_subscriber_id, __pyx_t_3};
     __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_update_subscriber, __pyx_callargs+__pyx_t_4, (3-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 268, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
   }
-
-  /* "sandesh/api.py":268
- *             if str(token).strip()
- *         ]
- *         return self._sdk.update_subscriber(             # <<<<<<<<<<<<<<
- *             subscriber_id,
- *             {"data": new_data},
-*/
-  if (!(likely(PyDict_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("dict", __pyx_t_2))) __PYX_ERR(0, 268, __pyx_L1_error)
-  __pyx_r = ((PyObject*)__pyx_t_2);
+  __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "sandesh/api.py":247
+  /* "sandesh/api.py":263
  *         return _SubscriberResource(raw)
  * 
  *     def credentials(             # <<<<<<<<<<<<<<
@@ -7878,15 +8383,13 @@ static PyObject *__pyx_pf_7sandesh_3api_13SubscriberApi_8credentials(CYTHON_UNUS
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_7);
-  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_6);
   __Pyx_AddTraceback("sandesh.api.SubscriberApi.credentials", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_current);
   __Pyx_XDECREF(__pyx_v_current_data);
   __Pyx_XDECREF(__pyx_v_new_data);
-  __Pyx_XDECREF(__pyx_8genexpr1__pyx_v_token);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
@@ -8384,7 +8887,7 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
  * from sandesh.sdk.client import Sandesh
  * from sandesh.sdk.exceptions import SandeshAPIError             # <<<<<<<<<<<<<<
  * 
- * 
+ * JsonDict = Dict[str, Any]
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_SandeshAPIError};
@@ -8403,75 +8906,96 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":17
+  /* "sandesh/api.py":15
+ * from sandesh.sdk.exceptions import SandeshAPIError
+ * 
+ * JsonDict = Dict[str, Any]             # <<<<<<<<<<<<<<
+ * 
+ * 
+*/
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_Dict); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_Any); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = PyTuple_Pack(2, ((PyObject *)(&PyUnicode_Type)), __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_4 = __Pyx_PyObject_GetItem(__pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_JsonDict, __pyx_t_4) < (0)) __PYX_ERR(0, 15, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+
+  /* "sandesh/api.py":19
  * 
  * @dataclass
  * class _ChannelCredentials:             # <<<<<<<<<<<<<<
  *     device_tokens: List[str]
  * 
 */
-  __pyx_t_2 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_ChannelCredentials, __pyx_mstate_global->__pyx_n_u_ChannelCredentials, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 17, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_ChannelCredentials, __pyx_mstate_global->__pyx_n_u_ChannelCredentials, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_device_tokens, __pyx_mstate_global->__pyx_kp_u_List_str) < (0)) __PYX_ERR(0, 17, __pyx_L1_error)
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_annotations, __pyx_t_4) < (0)) __PYX_ERR(0, 17, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_device_tokens, __pyx_mstate_global->__pyx_kp_u_List_str) < (0)) __PYX_ERR(0, 19, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_annotations, __pyx_t_5) < (0)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "sandesh/api.py":16
+  /* "sandesh/api.py":18
  * 
  * 
  * @dataclass             # <<<<<<<<<<<<<<
  * class _ChannelCredentials:
  *     device_tokens: List[str]
 */
-  __pyx_t_5 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_dataclass); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 16, __pyx_L1_error)
+  __pyx_t_2 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_dataclass); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
 
-  /* "sandesh/api.py":17
+  /* "sandesh/api.py":19
  * 
  * @dataclass
  * class _ChannelCredentials:             # <<<<<<<<<<<<<<
  *     device_tokens: List[str]
  * 
 */
-  __pyx_t_7 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_ChannelCredentials, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_2, NULL, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 17, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_ChannelCredentials, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_4, NULL, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 19, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
   #endif
   __pyx_t_8 = 1;
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_7};
-    __pyx_t_4 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_6, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_t_7};
+    __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_6, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 16, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 18, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
   }
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_ChannelCredentials, __pyx_t_4) < (0)) __PYX_ERR(0, 17, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_ChannelCredentials, __pyx_t_5) < (0)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":22
+  /* "sandesh/api.py":24
  * 
  * @dataclass
  * class _SubscriberChannel:             # <<<<<<<<<<<<<<
  *     provider_id: str
  *     credentials: _ChannelCredentials
 */
-  __pyx_t_2 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_SubscriberChannel, __pyx_mstate_global->__pyx_n_u_SubscriberChannel, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_SubscriberChannel, __pyx_mstate_global->__pyx_n_u_SubscriberChannel, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_provider_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 22, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_credentials, __pyx_mstate_global->__pyx_n_u_ChannelCredentials) < (0)) __PYX_ERR(0, 22, __pyx_L1_error)
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_annotations, __pyx_t_4) < (0)) __PYX_ERR(0, 22, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_provider_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 24, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_credentials, __pyx_mstate_global->__pyx_n_u_ChannelCredentials) < (0)) __PYX_ERR(0, 24, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_annotations, __pyx_t_5) < (0)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "sandesh/api.py":21
+  /* "sandesh/api.py":23
  * 
  * 
  * @dataclass             # <<<<<<<<<<<<<<
@@ -8479,81 +9003,112 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
  *     provider_id: str
 */
   __pyx_t_6 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_dataclass); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_dataclass); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
 
-  /* "sandesh/api.py":22
+  /* "sandesh/api.py":24
  * 
  * @dataclass
  * class _SubscriberChannel:             # <<<<<<<<<<<<<<
  *     provider_id: str
  *     credentials: _ChannelCredentials
 */
-  __pyx_t_5 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_SubscriberChannel, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_2, NULL, 0, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 22, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_2 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_SubscriberChannel, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_4, NULL, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __pyx_t_8 = 1;
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_t_5};
-    __pyx_t_4 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_7, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    PyObject *__pyx_callargs[2] = {__pyx_t_6, __pyx_t_2};
+    __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_7, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 21, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 23, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
   }
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_SubscriberChannel, __pyx_t_4) < (0)) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_SubscriberChannel, __pyx_t_5) < (0)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":27
+  /* "sandesh/api.py":29
  * 
  * 
  * class _SubscriberResource:             # <<<<<<<<<<<<<<
  * 
- *     def __init__(self, raw: Dict[str, Any]) -> None:
+ *     def __init__(self, raw: JsonDict) -> None:
 */
-  __pyx_t_2 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_SubscriberResource, __pyx_mstate_global->__pyx_n_u_SubscriberResource, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 27, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_SubscriberResource, __pyx_mstate_global->__pyx_n_u_SubscriberResource, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 29, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
 
-  /* "sandesh/api.py":29
+  /* "sandesh/api.py":31
  * class _SubscriberResource:
  * 
- *     def __init__(self, raw: Dict[str, Any]) -> None:             # <<<<<<<<<<<<<<
+ *     def __init__(self, raw: JsonDict) -> None:             # <<<<<<<<<<<<<<
  *         self.raw = raw
  *         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 29, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_raw, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 29, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 29, __pyx_L1_error)
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_19_SubscriberResource_1__init__, 0, __pyx_mstate_global->__pyx_n_u_SubscriberResource___init, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 29, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_raw, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 31, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_19_SubscriberResource_1__init__, 0, __pyx_mstate_global->__pyx_n_u_SubscriberResource___init, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
   #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_4);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_init, __pyx_t_7) < (0)) __PYX_ERR(0, 29, __pyx_L1_error)
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_5);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_init, __pyx_t_7) < (0)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "sandesh/api.py":27
+  /* "sandesh/api.py":42
+ *         ]
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _normalize_tokens(raw: Any) -> List[str]:
+ *         if not isinstance(raw, list):
+*/
+  __pyx_t_5 = NULL;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_raw, __pyx_mstate_global->__pyx_n_u_Any) < (0)) __PYX_ERR(0, 42, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_List_str) < (0)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_19_SubscriberResource_3_normalize_tokens, __Pyx_CYFUNCTION_STATICMETHOD, __pyx_mstate_global->__pyx_n_u_SubscriberResource__normalize_t, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_6);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_6, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_8 = 1;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_6};
+    __pyx_t_7 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_staticmethod, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 42, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_7);
+  }
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_normalize_tokens, __pyx_t_7) < (0)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+
+  /* "sandesh/api.py":29
  * 
  * 
  * class _SubscriberResource:             # <<<<<<<<<<<<<<
  * 
- *     def __init__(self, raw: Dict[str, Any]) -> None:
+ *     def __init__(self, raw: JsonDict) -> None:
 */
-  __pyx_t_7 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_SubscriberResource, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_2, NULL, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_SubscriberResource, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_4, NULL, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 29, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_SubscriberResource, __pyx_t_7) < (0)) __PYX_ERR(0, 27, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_SubscriberResource, __pyx_t_7) < (0)) __PYX_ERR(0, 29, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "sandesh/api.py":49
  * 
@@ -8562,8 +9117,8 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
  * 
  *     def __init__(
 */
-  __pyx_t_2 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_EventApi, __pyx_mstate_global->__pyx_n_u_EventApi, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_EventApi, __pyx_mstate_global->__pyx_n_u_EventApi, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
 
   /* "sandesh/api.py":51
  * class EventApi:
@@ -8582,10 +9137,10 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
  *     ) -> None:
  *         self._sdk = Sandesh(
 */
-  __pyx_t_4 = PyFloat_FromDouble(((double)60.0)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 56, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_timeout, __pyx_t_4) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __pyx_t_6 = PyFloat_FromDouble(((double)60.0)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 56, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_timeout, __pyx_t_6) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
   /* "sandesh/api.py":51
  * class EventApi:
@@ -8594,22 +9149,22 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
  *         self,
  *         url: str,
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 51, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_url, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_api_key, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_timeout, __pyx_mstate_global->__pyx_n_u_float) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_1__init__, 0, __pyx_mstate_global->__pyx_n_u_EventApi___init, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_url, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_api_key, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_timeout, __pyx_mstate_global->__pyx_n_u_float) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_1__init__, 0, __pyx_mstate_global->__pyx_n_u_EventApi___init, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 51, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
   __Pyx_CyFunction_SetDefaultsKwDict(__pyx_t_5, __pyx_t_7);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_4);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_6);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_init, __pyx_t_5) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_init, __pyx_t_5) < (0)) __PYX_ERR(0, 51, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
   /* "sandesh/api.py":64
@@ -8624,10 +9179,10 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
 
   /* "sandesh/api.py":70
  *         recipients: Union[str, List[str]],
- *         payload: Dict[str, Any],
- *         overrides: Optional[Dict[str, Any]] = None,             # <<<<<<<<<<<<<<
- *     ) -> Dict[str, Any]:
- *         if isinstance(recipients, list):
+ *         payload: JsonDict,
+ *         overrides: Optional[JsonDict] = None,             # <<<<<<<<<<<<<<
+ *     ) -> JsonDict:
+ *         subscriber_id = self._resolve_subscriber_id(recipients)
 */
   if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_overrides, Py_None) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
 
@@ -8638,80 +9193,236 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
  *         self,
  *         *,
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 64, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_name, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_recipients, __pyx_mstate_global->__pyx_kp_u_Union_str_List_str) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_payload, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_mstate_global->__pyx_kp_u_Optional_Dict_str_Any) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_3trigger, 0, __pyx_mstate_global->__pyx_n_u_EventApi_trigger, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_name, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_recipients, __pyx_mstate_global->__pyx_kp_u_Union_str_List_str) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_payload, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_mstate_global->__pyx_kp_u_Optional_JsonDict) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_3trigger, 0, __pyx_mstate_global->__pyx_n_u_EventApi_trigger, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
   #endif
   __Pyx_CyFunction_SetDefaultsKwDict(__pyx_t_7, __pyx_t_5);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_4);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_trigger, __pyx_t_7) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_trigger, __pyx_t_7) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "sandesh/api.py":104
- *             raise HTTPError(str(exc), response=response) from exc
+  /* "sandesh/api.py":95
+ *             raise self._http_error_from_sdk(exc) from exc
  * 
  *     def _trigger_legacy_from_v1(             # <<<<<<<<<<<<<<
  *         self,
  *         *,
 */
-  __pyx_t_7 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyDict_NewPresized(5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 95, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_name, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 104, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 104, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_payload, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 104, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_mstate_global->__pyx_kp_u_Optional_Dict_str_Any) < (0)) __PYX_ERR(0, 104, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 104, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_5_trigger_legacy_from_v1, 0, __pyx_mstate_global->__pyx_n_u_EventApi__trigger_legacy_from_v1, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 104, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
-  #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_4, __pyx_t_7);
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_trigger_legacy_from_v1, __pyx_t_4) < (0)) __PYX_ERR(0, 104, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-
-  /* "sandesh/api.py":184
- *             raise HTTPError(str(exc), response=response) from exc
- * 
- *     @staticmethod             # <<<<<<<<<<<<<<
- *     def _infer_email_for_legacy(
- *         payload: Dict[str, Any],
-*/
-  __pyx_t_7 = NULL;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 184, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_payload, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_mstate_global->__pyx_kp_u_Optional_Dict_str_Any) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_Optional_str) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
-  __pyx_t_6 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_7_infer_email_for_legacy, __Pyx_CYFUNCTION_STATICMETHOD, __pyx_mstate_global->__pyx_n_u_EventApi__infer_email_for_legacy, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 184, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_name, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 95, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 95, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_payload, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 95, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_mstate_global->__pyx_kp_u_Optional_JsonDict) < (0)) __PYX_ERR(0, 95, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_5_trigger_legacy_from_v1, 0, __pyx_mstate_global->__pyx_n_u_EventApi__trigger_legacy_from_v1, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 95, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_6);
   #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_6, __pyx_t_5);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_6, __pyx_t_7);
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_trigger_legacy_from_v1, __pyx_t_6) < (0)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+
+  /* "sandesh/api.py":152
+ *             raise self._http_error_from_sdk(exc) from exc
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _infer_email_for_legacy(
+ *         payload: JsonDict,
+*/
+  __pyx_t_7 = NULL;
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_payload, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 152, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_mstate_global->__pyx_kp_u_Optional_JsonDict) < (0)) __PYX_ERR(0, 152, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_Optional_str) < (0)) __PYX_ERR(0, 152, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_7_infer_email_for_legacy, __Pyx_CYFUNCTION_STATICMETHOD, __pyx_mstate_global->__pyx_n_u_EventApi__infer_email_for_legacy, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 152, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_8 = 1;
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_t_6};
-    __pyx_t_4 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_staticmethod, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_t_2};
+    __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_staticmethod, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 184, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
   }
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_infer_email_for_legacy, __pyx_t_4) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_infer_email_for_legacy, __pyx_t_6) < (0)) __PYX_ERR(0, 152, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+
+  /* "sandesh/api.py":176
+ *         return None
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _resolve_subscriber_id(recipients: Union[str, List[str]]) -> str:
+ *         if isinstance(recipients, list):
+*/
+  __pyx_t_2 = NULL;
+  __pyx_t_7 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_recipients, __pyx_mstate_global->__pyx_kp_u_Union_str_List_str) < (0)) __PYX_ERR(0, 176, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_9_resolve_subscriber_id, __Pyx_CYFUNCTION_STATICMETHOD, __pyx_mstate_global->__pyx_n_u_EventApi__resolve_subscriber_id, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_7);
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  __pyx_t_8 = 1;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_t_5};
+    __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_staticmethod, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 176, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+  }
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_resolve_subscriber_id, __pyx_t_6) < (0)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+
+  /* "sandesh/api.py":184
+ *         return str(recipients).strip()
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _first_email(value: Any) -> Optional[str]:
+ *         if isinstance(value, str):
+*/
+  __pyx_t_5 = NULL;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_value, __pyx_mstate_global->__pyx_n_u_Any) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_Optional_str) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_11_first_email, __Pyx_CYFUNCTION_STATICMETHOD, __pyx_mstate_global->__pyx_n_u_EventApi__first_email, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_8 = 1;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_7};
+    __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_staticmethod, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 184, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+  }
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_first_email, __pyx_t_6) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+
+  /* "sandesh/api.py":197
+ *         return None
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _email_overrides(
+ *         overrides: Optional[JsonDict],
+*/
+  __pyx_t_7 = NULL;
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 197, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_overrides, __pyx_mstate_global->__pyx_kp_u_Optional_JsonDict) < (0)) __PYX_ERR(0, 197, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 197, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_13_email_overrides, __Pyx_CYFUNCTION_STATICMETHOD, __pyx_mstate_global->__pyx_n_u_EventApi__email_overrides, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 197, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_8 = 1;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_7, __pyx_t_2};
+    __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_staticmethod, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 197, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+  }
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_email_overrides, __pyx_t_6) < (0)) __PYX_ERR(0, 197, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+
+  /* "sandesh/api.py":206
+ *         return email_overrides if isinstance(email_overrides, dict) else {}
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _apply_legacy_email_overrides(
+ *         legacy_body: JsonDict, email_overrides: JsonDict
+*/
+  __pyx_t_2 = NULL;
+  __pyx_t_7 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 206, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_legacy_body, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 206, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_email_overrides_2, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 206, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 206, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_15_apply_legacy_email_overrides, __Pyx_CYFUNCTION_STATICMETHOD, __pyx_mstate_global->__pyx_n_u_EventApi__apply_legacy_email_ove, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 206, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_7);
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  __pyx_t_8 = 1;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_t_5};
+    __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_staticmethod, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 206, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+  }
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_apply_legacy_email_overrides, __pyx_t_6) < (0)) __PYX_ERR(0, 206, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+
+  /* "sandesh/api.py":229
+ *             )
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def _http_error_from_sdk(exc: SandeshAPIError) -> HTTPError:
+ *         response = httpx.Response(
+*/
+  __pyx_t_5 = NULL;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_exc, __pyx_mstate_global->__pyx_n_u_SandeshAPIError) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_HTTPError) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_8EventApi_17_http_error_from_sdk, __Pyx_CYFUNCTION_STATICMETHOD, __pyx_mstate_global->__pyx_n_u_EventApi__http_error_from_sdk, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[10])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
+  #endif
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_2);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_8 = 1;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_7};
+    __pyx_t_6 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_staticmethod, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 229, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+  }
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_http_error_from_sdk, __pyx_t_6) < (0)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
   /* "sandesh/api.py":49
  * 
@@ -8720,183 +9431,183 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
  * 
  *     def __init__(
 */
-  __pyx_t_4 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_EventApi, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_2, NULL, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 49, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_6 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_EventApi, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_4, NULL, 0, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_4);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_6);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_EventApi, __pyx_t_4) < (0)) __PYX_ERR(0, 49, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_EventApi, __pyx_t_6) < (0)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "sandesh/api.py":222
+  /* "sandesh/api.py":238
  * 
  * 
  * class SubscriberApi:             # <<<<<<<<<<<<<<
  * 
  *     def __init__(
 */
-  __pyx_t_2 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_SubscriberApi, __pyx_mstate_global->__pyx_n_u_SubscriberApi, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_SubscriberApi, __pyx_mstate_global->__pyx_n_u_SubscriberApi, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, (PyObject *) NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
 
-  /* "sandesh/api.py":224
+  /* "sandesh/api.py":240
  * class SubscriberApi:
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
  *         self,
  *         url: str,
 */
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 224, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_6 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
 
-  /* "sandesh/api.py":229
+  /* "sandesh/api.py":245
  *         api_key: str,
  *         *,
  *         timeout: float = 60.0,             # <<<<<<<<<<<<<<
  *     ) -> None:
  *         self._sdk = Sandesh(
 */
-  __pyx_t_6 = PyFloat_FromDouble(((double)60.0)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 229, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_timeout, __pyx_t_6) < (0)) __PYX_ERR(0, 224, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __pyx_t_7 = PyFloat_FromDouble(((double)60.0)); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 245, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_timeout, __pyx_t_7) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "sandesh/api.py":224
+  /* "sandesh/api.py":240
  * class SubscriberApi:
  * 
  *     def __init__(             # <<<<<<<<<<<<<<
  *         self,
  *         url: str,
 */
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 224, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_url, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 224, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_api_key, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 224, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_timeout, __pyx_mstate_global->__pyx_n_u_float) < (0)) __PYX_ERR(0, 224, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 224, __pyx_L1_error)
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_1__init__, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi___init, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 224, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_url, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_api_key, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_timeout, __pyx_mstate_global->__pyx_n_u_float) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_None) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_1__init__, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi___init, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[11])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
+  #endif
+  __Pyx_CyFunction_SetDefaultsKwDict(__pyx_t_5, __pyx_t_6);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_7);
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_init, __pyx_t_5) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+  /* "sandesh/api.py":253
+ *         )
+ * 
+ *     def create(self, subscriber: SubscriberDto) -> JsonDict:             # <<<<<<<<<<<<<<
+ *         return self._sdk.create_subscriber(subscriber.to_payload())
+ * 
+*/
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_subscriber, __pyx_mstate_global->__pyx_n_u_SubscriberDto) < (0)) __PYX_ERR(0, 253, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_3create, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi_create, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[12])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
   #endif
-  __Pyx_CyFunction_SetDefaultsKwDict(__pyx_t_7, __pyx_t_4);
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_6);
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_init, __pyx_t_7) < (0)) __PYX_ERR(0, 224, __pyx_L1_error)
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_5);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_create, __pyx_t_7) < (0)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-  /* "sandesh/api.py":237
- *         )
- * 
- *     def create(self, subscriber: SubscriberDto) -> Dict[str, Any]:             # <<<<<<<<<<<<<<
+  /* "sandesh/api.py":256
  *         return self._sdk.create_subscriber(subscriber.to_payload())
  * 
-*/
-  __pyx_t_7 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 237, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_subscriber, __pyx_mstate_global->__pyx_n_u_SubscriberDto) < (0)) __PYX_ERR(0, 237, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 237, __pyx_L1_error)
-  __pyx_t_6 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_3create, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi_create, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 237, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_6);
-  #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_6, __pyx_t_7);
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_create, __pyx_t_6) < (0)) __PYX_ERR(0, 237, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-
-  /* "sandesh/api.py":240
- *         return self._sdk.create_subscriber(subscriber.to_payload())
- * 
- *     def delete(self, subscriber_id: str) -> Dict[str, Any]:             # <<<<<<<<<<<<<<
+ *     def delete(self, subscriber_id: str) -> JsonDict:             # <<<<<<<<<<<<<<
  *         return self._sdk.deactivate_subscriber(subscriber_id)
  * 
 */
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 240, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_5delete, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi_delete, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 256, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 256, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 256, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_5delete, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi_delete, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[13])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 256, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_6);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_delete, __pyx_t_7) < (0)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_7);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_delete, __pyx_t_5) < (0)) __PYX_ERR(0, 256, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "sandesh/api.py":243
+  /* "sandesh/api.py":259
  *         return self._sdk.deactivate_subscriber(subscriber_id)
  * 
  *     def get(self, subscriber_id: str) -> _SubscriberResource:             # <<<<<<<<<<<<<<
  *         raw = self._sdk.get_subscriber(subscriber_id)
  *         return _SubscriberResource(raw)
 */
-  __pyx_t_7 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 259, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 259, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_SubscriberResource) < (0)) __PYX_ERR(0, 259, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_7get, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi_get, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[14])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 259, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 243, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_SubscriberResource) < (0)) __PYX_ERR(0, 243, __pyx_L1_error)
-  __pyx_t_6 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_7get, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi_get, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 243, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_6);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
   #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_6, __pyx_t_7);
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_5);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_get, __pyx_t_7) < (0)) __PYX_ERR(0, 259, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_get, __pyx_t_6) < (0)) __PYX_ERR(0, 243, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "sandesh/api.py":247
+  /* "sandesh/api.py":263
  *         return _SubscriberResource(raw)
  * 
  *     def credentials(             # <<<<<<<<<<<<<<
  *         self,
  *         *,
 */
-  __pyx_t_6 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 247, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_provider_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_device_tokens, __pyx_mstate_global->__pyx_kp_u_List_str) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_Dict_str_Any) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
-  __pyx_t_7 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_9credentials, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi_credentials, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyDict_NewPresized(4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 263, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_subscriber_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 263, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_provider_id, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 263, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_device_tokens, __pyx_mstate_global->__pyx_kp_u_List_str) < (0)) __PYX_ERR(0, 263, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_JsonDict) < (0)) __PYX_ERR(0, 263, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7sandesh_3api_13SubscriberApi_9credentials, 0, __pyx_mstate_global->__pyx_n_u_SubscriberApi_credentials, NULL, __pyx_mstate_global->__pyx_n_u_sandesh_api, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[15])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 263, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
-  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_7, __pyx_t_6);
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_credentials, __pyx_t_7) < (0)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_7);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  if (__Pyx_SetNameInClass(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_credentials, __pyx_t_5) < (0)) __PYX_ERR(0, 263, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "sandesh/api.py":222
+  /* "sandesh/api.py":238
  * 
  * 
  * class SubscriberApi:             # <<<<<<<<<<<<<<
  * 
  *     def __init__(
 */
-  __pyx_t_7 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_SubscriberApi, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_2, NULL, 0, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 222, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
+  __pyx_t_5 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_SubscriberApi, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_4, NULL, 0, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
-  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_7);
+  PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_SubscriberApi, __pyx_t_7) < (0)) __PYX_ERR(0, 222, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_SubscriberApi, __pyx_t_5) < (0)) __PYX_ERR(0, 238, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "sandesh/api.py":1
  * # License: MIT             # <<<<<<<<<<<<<<
  * # See LICENSE.
  * from __future__ import annotations
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_test, __pyx_t_2) < (0)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_test, __pyx_t_4) < (0)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /*--- Wrapped vars code ---*/
 
@@ -8938,11 +9649,9 @@ __Pyx_RefNannySetupContext("PyInit_api", 0);
 
 static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
-  __pyx_builtin_staticmethod = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_staticmethod); if (!__pyx_builtin_staticmethod) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_builtin_staticmethod = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_staticmethod); if (!__pyx_builtin_staticmethod) __PYX_ERR(0, 42, __pyx_L1_error)
 
   /* Cached unbound methods */
-  __pyx_mstate->__pyx_umethod_PyDict_Type_get.type = (PyObject*)&PyDict_Type;
-  __pyx_mstate->__pyx_umethod_PyDict_Type_get.method_name = &__pyx_mstate->__pyx_n_u_get;
   __pyx_mstate->__pyx_umethod_PyDict_Type_items.type = (PyObject*)&PyDict_Type;
   __pyx_mstate->__pyx_umethod_PyDict_Type_items.method_name = &__pyx_mstate->__pyx_n_u_items;
   __pyx_mstate->__pyx_umethod_PyDict_Type_pop.type = (PyObject*)&PyDict_Type;
@@ -8960,20 +9669,31 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "sandesh/api.py":190
+  /* "sandesh/api.py":158
  *     ) -> Optional[str]:
  *         candidate_keys = (
  *             "email",             # <<<<<<<<<<<<<<
  *             "vendor_email",
  *             "recipient_email",
 */
-  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(5, __pyx_mstate_global->__pyx_n_u_email, __pyx_mstate_global->__pyx_n_u_vendor_email, __pyx_mstate_global->__pyx_n_u_recipient_email, __pyx_mstate_global->__pyx_n_u_to_email, __pyx_mstate_global->__pyx_n_u_user_email); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(5, __pyx_mstate_global->__pyx_n_u_email, __pyx_mstate_global->__pyx_n_u_vendor_email, __pyx_mstate_global->__pyx_n_u_recipient_email, __pyx_mstate_global->__pyx_n_u_to_email, __pyx_mstate_global->__pyx_n_u_user_email); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[0]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[0]);
+
+  /* "sandesh/api.py":170
+ * 
+ *         email_overrides = EventApi._email_overrides(overrides)
+ *         for key in ("to", "cc"):             # <<<<<<<<<<<<<<
+ *             inferred = EventApi._first_email(email_overrides.get(key))
+ *             if inferred:
+*/
+  __pyx_mstate_global->__pyx_tuple[1] = PyTuple_Pack(2, __pyx_mstate_global->__pyx_n_u_to, __pyx_mstate_global->__pyx_n_u_cc); if (unlikely(!__pyx_mstate_global->__pyx_tuple[1])) __PYX_ERR(0, 170, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[1]);
+  __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[1]);
   #if CYTHON_IMMORTAL_CONSTANTS
   {
     PyObject **table = __pyx_mstate->__pyx_tuple;
-    for (Py_ssize_t i=0; i<1; ++i) {
+    for (Py_ssize_t i=0; i<2; ++i) {
       #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
       #if PY_VERSION_HEX < 0x030E0000
       if (_Py_IsOwnedByCurrentThread(table[i]) && Py_REFCNT(table[i]) == 1)
@@ -9000,34 +9720,34 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
 static int __Pyx_InitConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   {
-    const struct { const unsigned int length: 9; } index[] = {{0},{14},{62},{67},{9},{179},{35},{24},{13},{21},{1},{1},{1},{8},{20},{15},{26},{39},{14},{281},{3},{19},{4},{8},{17},{32},{32},{16},{3},{9},{4},{4},{8},{20},{7},{8},{7},{15},{13},{22},{20},{25},{20},{17},{18},{13},{19},{28},{5},{15},{7},{18},{5},{8},{12},{4},{14},{2},{9},{8},{9},{18},{6},{17},{11},{7},{12},{4},{9},{11},{21},{6},{13},{7},{5},{15},{14},{21},{3},{3},{17},{5},{8},{3},{14},{5},{23},{14},{8},{13},{4},{5},{3},{11},{8},{11},{13},{10},{4},{8},{8},{9},{7},{3},{11},{11},{12},{3},{15},{10},{7},{14},{11},{15},{8},{6},{11},{11},{18},{22},{4},{4},{10},{11},{12},{10},{12},{11},{3},{5},{7},{10},{12},{13},{11},{8},{7},{2},{8},{10},{8},{5},{6},{7},{23},{6},{17},{3},{10},{6},{12},{26},{261},{509},{326},{40},{147},{21},{30},{135}};
-    #if (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (2095 bytes) */
-const char* const cstring = "BZh91AY&SY\2768\266\352\000\001\230\177\377\357\377\377\377\377\377\277W\357\357\377\352\377\377\377\372\300@@@@@@@@@@@@\000@\000`\007\274>y\336\336\367\030\302\331\266\014\265\201\265o\001\355\350jzISmH\304\365\006\217\322\031OiOOB\233\323)\344\221\243G\352\206\323L\246\323Q\352h\r\032\r4\330\211\352\014\232i\350\2314\364\203D\023\004\004\3104\236\251\355MM\033$\000\000\000\000\000\000\r\000\000\000\000\001\252z\231\251\224\305=F\203@\001\2404\000\032\003@\000\000\000\000\032\r\003G\244\000\002SD&\204\311\2444\324z\024\332\206\200\036\240\006\203@\003j\0004=@\000\000\000=FF\324A\246&\000\000\000\000\000\000\000\000\000\000\000\214#\000\000\000\002H\204h\231\000\251\376\247\251\204h\236\215S#\324\003A\223@\000\000\000\000\000\000h\000\t\330\233:\342\366z_\317\030\227\037\366)8@\205\323GK\375\007\221\024\037\221\212\314\210\3527#&d\204\204\204\201&\022\004\212\t\214\213,\344\3205#S\020\014\3660\025\0230$\302D\003\273\317[3\356\\O\026\224\304\204\311\257\262\0335\030\265\014\324\222\336\"I\253\232\205C\021\031\361\214\260\231!)\017\2254W\010\233\201\026\226\220\271\244\234&9,L\204\352\334\026\226+\0246\024\347\232\244\342,-\236C\216\242aE,\352\350\213 D\221Y\233iM\325Qo%d\"\360v\256.\031\020\0276\353\001l\032\301\005\205\322 \312\2704\3215\tb=\350\225&2$\262\220\372%\036D\206\213\265 \323\344\316\022 8\353\210\tnB\014\324\277BQ\003\016(\233\321d\007\376\022\271A\324\266\036;\273\311\205\207\314Z`\306\014\307\350\310\310jL\320\332\262\226\265\207J\n\016\240\024\343 \212\203\004a\007\036\310#\021\312\022%\202\202\245&)\225\351$\3525\262\036\272JB\311C,\251\010\022k\367\266\225g\2238\230\016G&\335\247\033\221a\276\010\203\355\326\272\226\023W\000\032Y$4`\231A\t\2435\314\036\260QLv6\3163R6\033T\tS\232\"D\236R\211*N\010\237\017\233g\271\321\344\013B\241*\234\362b\017\\\2724C\232iR\021#\351\021\317\203\270\241W\371\357\356%\332\355a\201\206\221\242GjPI\n\241\013\377\020O\t\270\343kAD\3531}6\217c\006\207\220\374\331\3235\364\271\322\nD\352R\251\226\261s\336\2063sC\036\262}y""\3535\2714M\025v#$<\257\237\306\207\213\200\242!p\025!\"\205&\245\005\005\222\324&\307@F\2676|2#\021\2616\230\222ji\363\334\242\343\0307C\364\325}8m{K+\206\321\342\247QwW\241\320\371\222\237M\307\331\356\340\213P\372^\367;\310\\\306\245.\262-o\361o\246V\330]Y\271.\237\207L\344\261\266\262'>\032H\314^P\202\304,r\223\033\322\233\020\327!\335\357\266\350\014QaD\345\216e|P\211S\023%[~,\177\357 Y\374\252\326\016\374\n\305\003\353r\324\"\r\205n<\213\227\335\335\251#\253\320\306\256G)\275\024\336^\214W\247\321\262\351\354\274\216\264j\226+\370\021U\016\371\335\365b\r\367\321`\034\306\356]\307=3\356wf\302X]\260\312g\226\304\n2\341p\025\013Qt^q}\034\016\331\312\317+\224\262\274\"\2125\r]W\2254\354i;O\300{&\002\232*\241k\224\001\312\322c\265c\212cU\320\267\"\253\022z\341\345~\030g\323{f\250\220&#J`\245\270\222\220\370\230{4%\352$\345\262\333\301\324Ol\265\245i@MV\212\214\254|M`\244\235r\232\214\\Ro\350k\240\340\323\375j\374\213E\032\030\211S;Syx\\;8M\205\022-\227UFa\325\316\213\034l\n0\"1\236Yq\270\263\035\001fL\016\256E\375P\240\202L\364xi;\314\275\207\t\315-\333\033f3@\004\001\234W\3432Q\210\2433b)\tHS\002\342\016\2536\254\265\026\0331\036d@\362M\2020\303\244\244c3`\330rrL\260\013\200\315\275V\260(\265(\376&,P\025\372RN\235\001\221\222\326C\252\020\261i\222\202'\022h\233D\r\242\rl\253fj(\200\345:\3412!f\"\"qWf\002\242\231\361\256Z\303\254\321a\240\334i\r\024q\312A\220\3067\0021o\264h7i\021YztT\214\327\233\333\306\013\330)\250&T\244\006\331N#\320\34398(\302\351[\014u\214E\010\300M\022g$G{\201\333r\322\312\253g\016!\005\246tK\014\352\302\004\002(Yj\301\225S7\030\203\372\250\324(\221K*\262C\263\t3\034\346\334\242J\344\306,\033{\273\\\361\364\230JQj\225B\217Z\346\371SF\202\263|\221*\255\n\231\356\225\032J\214\234\321\212\256\254\253\266\373XD\346\341\223\000\002\006`\301\324\t!\027\330.\335k\236n\254\243uVQ\024\272\363*8Q\233t\030r)\310\220vn\330iG\212T\242\346\300\231!\331'gt\311\002L\223:\273!\315\255m\261\237\201j\337\323\254\354jV\016V<\275v\320\302\342X\265\3005na0g\r\346""\203`\360q*PLs\204UQ\017z\314C\346y&\"\343\022{\344\356\262,\023\333\031Wau\2402\272\355\243nW\342pl\331\234\235\255\246\322rL\334\304\306{\357\032\335\023Bi\345\036 \322\276\355\230 \322\202,\352b\334\322\367\245p\353\033|\337;)\0325\351\320\361l1\275>\3158\205-!YQ\224\204\240!EE\022\202N\206\331w\246\312\256S\310\021\273sVz\2610\226\333%qq\271\2539\3354\n9SxH\tf\036\034\222I\230`\202\020\003\223.\204&{\267\223\340\003\006\r1\313\014\377\346T\272 3\014\203,\020\3079\311oc\343\207g72\032\364^6\213y\330I\224\345H:q\210\311\247h|\272r\031\202\004\014\031A\345\177J\273/c\261@P\351\305\321\236|KK\251\316\270\304\204\000\311e\341\035\325\344\341\013\361\330\331\216\013}\346\346\370\301{\001\356\374\236\271\302\310\004\216\"\345\321k\365\037NHg\\<K\226\354&\365\234=\266\350{\303|a\017\367\361\033_E\222\255\362\230\242e\2608\n\202\301\225\273 k\200U~\331W\257e|gP\377$\313=d\026\201\371\r\220\332#d\010\010\27494nx\201\003@\241\256\t\311\311\002\021op8\346\362\221\000\2558*|6v\247`O\375jk\246\340\274\355DA\304Fv\251:\024oA\345\211a\363c\205\000_\005\315k\314\360\244>\302\303\002\223\037\235\372\225_\t\001\313\377\010\002]V\265\333<\254\3016\024P\261`\0357\251C\331\235\010\300\031\2063\224^\205Q\330\244\303\tF\270\253\245\227C\356\365>:\310X\020_\272\374\014\237R\323\005\352!\372\242\262e+F\246\303\241\331\221\002\034C?\372\203b\344\266\34669%a\3101c\367f\265\215\343\315\354dw\025';7\020\301}\246\272\243\025\221\237\037Tbg\216\360\277\313/\355\333\264\330\355fHS\372]1R\310\206*\362\251\253M\240p\330\277\0215\006\\\033(A\024q\260`\274\250\216\274QR\242$\224\311\222\302\214\231Y\232\267\324\267\227qX\335\3505\265{\351#\010\301\256\262j\255*Y\023(aDD<\346\232\333km&\366L tV\250\220\036\330\270\362h\246q\243\031B\030\221;&\007\016\316'\305<\t\255\024%\tXY\251e3\022f:\n\254J;Z\357\377\213\271\"\234(H_\034[u\000";
-    PyObject *data = __Pyx_DecompressString(cstring, 2095, 2);
+    const struct { const unsigned int length: 9; } index[] = {{0},{62},{67},{9},{179},{35},{18},{13},{21},{1},{1},{1},{8},{20},{15},{26},{39},{14},{281},{3},{19},{4},{8},{17},{38},{25},{21},{29},{32},{31},{32},{16},{3},{9},{8},{4},{4},{8},{20},{7},{8},{7},{15},{13},{22},{20},{25},{20},{17},{18},{13},{19},{28},{37},{5},{15},{7},{29},{18},{5},{8},{12},{4},{14},{2},{9},{9},{17},{7},{18},{6},{17},{11},{7},{12},{4},{9},{11},{21},{6},{13},{7},{5},{16},{15},{14},{21},{3},{3},{17},{12},{5},{8},{3},{14},{20},{5},{23},{8},{14},{8},{21},{23},{22},{13},{4},{5},{3},{11},{8},{13},{10},{4},{8},{8},{17},{9},{7},{3},{11},{11},{12},{3},{15},{10},{7},{14},{11},{15},{22},{8},{6},{11},{11},{18},{22},{4},{4},{10},{11},{12},{10},{12},{11},{3},{5},{7},{10},{12},{13},{11},{8},{7},{2},{8},{10},{5},{6},{7},{23},{6},{17},{3},{10},{5},{6},{12},{26},{201},{177},{54},{288},{58},{97},{64},{138},{40},{58},{125},{21},{88},{30}};
+    #if (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (2202 bytes) */
+const char* const cstring = "BZh91AY&SYjF#J\000\001\276\177\377\355\377\377\377\377\377\377\177\357\377\377\252\377\377\377\372\300@@@@@@@@@@@@\000@\000`\010/\235wt\274\271\267\201@\0002u\263\031\340y\356\032\231\010\247\252i\372MM\031\250\332i\251\344\300\321\244ja4<\246\233\n=Fe\031\003\321\001\243@\365\017I\352=&\320\236\023(4A\252xD\332\223\323\322\236\250\364\203jd\r\r\00044\000\000h\000\000\000\001\240\000\000jz\214\215&D\247\251\220\000\003@\000\006\206\200\000\r\000\000\0004\003A\352\006\200\014DF\246\221\246\324\324\3654\317Jhz\200\364\232h\001\243M\000\006\215\000\000\006\215\000\320\000\003@A\200\002`\000&\t\200\000\000\000\002`\023\001\014\000\001\030\000\000\t\022\004\023Bi\246\004\233Si4jM\000\006\232\000\000\000\000\000\000\000i\240h\032\030Z\036\027\252\270\275\311\313\314.\251IM\325\231\005\245\027\227}\226\022\316\000\r\224%\n\304\002K\n1\r\t\264\330\330\r\266&\301\260l\271\245\321^\204\247\005\333\022\232\025P\026hCb1\220\245(\256\360\"\3340+pQU\214`lh\001H\271\3021B\t\317\204\241r\336\210`/\013\304\334V\267\324D\221\033\355\220\237\211\031\262y\024(\366D'\021{)V\004\004\2603G%K\355\323qq\245\r\013\201\234j\307\200D\001\014\356\032\204\332\320\026\352a^\230:w\"\354\210)f\253Z\374n\223`0\207\215g\032J@6\226\030\350\345=H\373\\\267>u\263P\343M\305\367\354\260\\*\013W\021\353\302t\255 \022\317d\025d\337S\"\024RF\314w\201\203)\033\350*\226\013\217\303\344\372\332\260{L\214g\271/\372\261\240\304~\214\360\035ujJ\224f\2240\242=\202j\014\351+!\236S\031C\301\031\017\022\221\217\216f\200\304p\266\3633\233\256\323N\320z\336B\346\262a\303\005(\262\006R\373\242\036i9\030\220-\3105\323\216\336\353\023\000%\300\221\202z\332#\223W0\250\363\010\250/\201\030J\255yzbBk\376G\033\017'O\3678\212qx\343\004\3110F\243\026N\355(\007w\314\314\345O\331\351\377\210\240\n\306,\3035\215z9\373,\271\3674\023+:\266\024tc\032\226\007\002o\246\245\362\257\"P\010)\351s\331\304a\203}\350`\020\252@\377\234\340y-\211\265\222\264\364\273\321\215:\310J\335\207\234\344j\245@\226\266\233us\256\256\254\326/N\376\002g""\275V?\201;]\023\372PUe\310\322\212;\357\305\271\244\321\315[\007y\243\177\310\250\013\001 \260b\205\237-\231\306\323f\024\013\226\247\020\225\223,4\253\t\242\360\231`\277\177\323\177N\226\273\275\225\203_\026\226O+\016\204\326\005\325\r\026\rKo\020z\023\025^\302C\210\262\220\350](R\307e\035\021qJ\tFd\300\021\372Z&XB\3434@\3235\210\350\264FE\263X\231qy:L2\320B\211i\252&p\244\\0\236L\210\213|\335\031\221\236\201L\264\216E\330\242\014 3\332U%:\330\362u\376-\036\257\220-\217\372P\260\371B4\212G\355\203!\nO:g\220\372{W\360\370\005Q\351\370i[\021\375\316\336\212(\372\374w'\305\236;[\236\342}\202\315L\266\362E\365\210\325\021\307{Mn\214@\357<\247y\333\347\312S\360q\r\231\030\232\373\016\202}\200\224\247\342\204\205E\304\327>\351\317\203\335\322\260;\374\246l3\212a'\304q\206\375\305\356y:C\273\333\306l\222\025\310\302\253\204\344#f}ux(\035 \362\r\326\243\027\256v)\005\262\265\273\r\235\271ai\004\200\013\234Q*\221\\\0219\230\326\303\272%\204\324\2748o8Gf\323\036\235]\232x\022\244\240\226\316\363cS\253\260\327\375\260\356\276\3740U\244\n\317\376\017t\243\026\241\307\251\207\3661\002\252\225e\013\3349\234\016\001\270\207\010*\3052oW\212\206\242\021\272\004c\003\300S\2211\232\351\253L\013\244\363\307\231\240\207\203X\362\034I\266\260(\245h\232\244R\253\024\032\n\205\254\337e\350\324\344\363\260(d\241\307<\355M\225\316\335\243Y)\016\324t\251~\276}^wR\342r\355|j?\r<3#\202\334ke\303\010~3\306wX\304F\320:w\\b\005\025z\r\211W\3234h\220\2575\361\004IoB51x\211\177@\225\203\215 d\220E\354\271\027>J\365P;\322GcRm\332\322 \273\016\311\340Q\027\274\363\3240 S\266&c\002\353\371\257.!\217W\\\032\r\234N5\347=GB|\222\321\301\314\363\035b/or\204\027\013\2479\267i<71^\\\311\227\242\200n\245\323+'\004\027A9g:\253\230\323JcG\001\002\026k\213\321W\354'b\275\223\205\303\002\327<)(\006\323ay\245\223\317\245\330\220\300eKJ\370\320\235\314\017\3620\365**\224+\014\213\256c\322\310\000n\344\320\275\016\026m\315\206t\0338\353\360#\201\234\262\\\014\350\254\030 \247\232\r\346\016v1\031\300\316T\2562\013""\334m\245qW\035\036\2771\255\024\242\337\331\2631}\311Z\356\031mB\334\330\307\254R#n\262\343\252&]~\016\375\3536\031u\326h\343\214\225h\033C \006k\314\332\245\030\241\024\316\243u\344F\022\276D\206@&,\310\242\210\t\024\213+\306\373\004\270\265p\351)\331\254;\270W\0064\203I\014L\n\256V\230e\201\244\256\203\024\205~(\030\022zV\241\362E\002G\274\320YTh=\001\206b\370\263\"O\"Q\246&\321,\r2\037:\270r\214-:N,9\337-\016\257$\210\023\236\311\212\311\221\2725\211Y\324\032\362\233\303@\030\346>\240\311\014\245\022'\342M\217\244e5O\336\204\363_i\02260\226J\357V\0171\214V\354\271\256\323\270\346L\246\253t\263\326pF(\216:,!l\311B`\202P\n\014\200w\220M\007\020c\005Z\230KAY\272I \014h\234N2n\013\242\226\201a\031\272\002\003\033,\345\010\220\242\241`\024\200\303\017\016Y,\314 \202\224\003\227w(\251\252\017\336J\320-\267P\252\377\267\222\367\0006\232D#\240\356\202\2334s\227\205\320\264\235{\366\217~]\331\313\226\235C\363\273L\306\373\371\014\307G\224E\014P1\255\274\345\327\263\267\256a\244\314u\036g\333\306\262E\013ND\357\003F;\202~\030\362\332u\020\264myn\217\\g\344D~\210\3733\375\210_i\037\237\325\342<\342\210\t,\341:2\024i\207\254\331@2\315\320\317d\025LJ(v< m\007/\314\017p\257\237\273?E\006b\311\323[\031\332\324G\341\027\010j\007w\"\241\241\344\037g\003\244,\221_(;\207\332\342\205\351\372\305\tLT\330AEb-\310\332\261\213\220H\347\374\321!\263.N\235@_\202r\314\262\371\021&\324\215M\277\272{\311\334\3703\312\207\035p]\343\244\355\253\020\301\272N\225R\007)\322Y\356\255\236b\225\350#\320u\\\373\273\027\014\351K\006%\213U\336l\226&$\302\227(\302j\npE)\236\004\251EB\213V\346)G\032\224\2720\354\353\307)%\364\200#\304$`\210\307\350\242\326TqA \347\217v\222 \027pu\357?\201~\264\356\003P\235\007\005\277\034\304?-ml\260\370\025mW3?e\342\260(\352\023g\347\315\322\303{\202\236]3}#o'\327\207\024\2132'\304}\333\366M\341\023\334\233W;~\210\033\355\357\r\257\010k\241%\02447\253h\264\324*\225I\215\035\250\372y|\311\234E\370\361\3210\245\005Ey&!\200G\227\260\202J^\t\254\303-\341\273\235\212\235,wJ""o\253 \245\250b\223{\310H\263\214d\370FN|DH\202,\025\355c\036\313\240\260\310#s\251\312t\2064.B\244\2151\355\344A\311T^\267\301A\227\227$4\272\021\355qXI\030;\177\305\334\221N\024$\032\221\210\322\200";
+    PyObject *data = __Pyx_DecompressString(cstring, 2202, 2);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (1979 bytes) */
-const char* const cstring = "x\332\235U\317o\333F\026\216Q7+\247N-\305\212\243\324NK%n\034\247\211\014\255\235 0v7+\370G\034l7\261\033o\333E\020\32049\212\031S$\305\031*\326\026\213\356\321G\036\3478G\036y\324\321G\037u\344Q\177B\376\204\375\206?$9\315b\201\032\2268\234\231\367\336\367\276\367\275\247MSg\257)\363\036(\r\273\373\346{\362V\323\273\n\363\314\267o\211\24745\313:\324\364c\305#m\337\364\010U4[!'&e\246\375V\241\376!\325=\363\220\300\370\320g\312\301\377\265\036Y(\244\245\231Vj7\266{\360=|K8o^8\214(\354Hc\312F\227\0359\266bR\305 \226\274\2451bu\025\\\002t\330\340\222\255\354n\355>\\{\262\006|\006\302\275#:K\242\351\226F)\002;MD2-\300VX\327%\264\246<o*]\307WlB\014\2059\212\213{\343\006\354\210\330\n%L.\224%\315\266\035\2461\323\261U\230#\367%\305@B:3;DZok\026%\265\2276`\271\236\3231\r\342\251\246\361\347\245\246\336Z\222\300\251\357\272\216\307\210\361\322\225N4\353\365\346\005\332\337\014\367e\352\377\260\261N\017\207t\274\371k\355\251f\030*p\220\025\3155W:\365\225\021ot\345@9\322\250b;)\2575`3]\223\330`AO\300+\207\004G.\353\216\235\264|\312\024\335\261\231\006Z\264\3612\230\006\005\221\204\036\311P5\267{\240\274O\2743\245\351\370`\030U9\370\024\212_F/\310\377\337\007\017\222z\000\3250j\212\017Q}\313\220\230L\273I<\0175hzN\013U\350Z\216f\2548\035l\202E\324i7\345Sql|\232\353\371\225Z\246\237\374\265Cl\303\361\324\217v\207a?>`\316\307;>%C\363Q\370\224M\346`\317\373\315\266\256\327P<u\003\372\263\211\265\201,\020\311\204\024dq\267\200\2105\\3\177\326T\325\264M\246\252\243\215$\3674\246\332\004x+i\237\321y\326G\331\276*\031R;\365\341yv\374lk\177g\177\177w\313\363\034O\312\345\005\230\312\345\244\252\273\335\023|$ \365\0059a?\220\346\017hFB\261\242\256cS\362*-t\366h\354>O\034\275\032\326\021\221.\274\014\363\270\270\253{\004m\371\233\275\234\221\213\007\350c\362\361\345\267\204\215\271\3148\035ml\242b\2437\200w|O'\237\330\032\342K\272HUG\255K\361\342\232\3521\351j\264k\353\246S\323\035\317\3611\023\010U\0175J\344G\365=\353\220h\036hg\3161\261\017\035\243\213\0162L\003\351I[\252\343/-\032""\226jG\263|\242\352)\\\252[p\206\370(\235\246\0239\373R^\322ou\324\035c\324\350>\364o\263\354\241\"\216\226\177\222a4\\\020j\020M\216\234\213\256R2\r\3221\301G\202\031\211\032\216\256\246 Sy\r\245K\244zh.\255\213o\231\320\310\211\216\271\205\177\365\202\323&\332\004\2646}\033\256Q-Y\260\021\212#\306\334\223\377\241\350\274\307\263\203\254>\252I\325a\001LFZ\362C\301p&w\311\274\252\302\302\226\337\335C\222\233\267HF\010|\250-\307\360-\242\252\266\326\032}\223\367\t\215\303\244\263\036w\035WU]\217\270(\257\\\014\007\265\252\266}\315J\215=\355\375GSc41\275\264u\262\207\004r\344\030\371\033\204\223-i\r\250\240\006/k1\2170\337\263\263\211Z\203\006\363\245\301\234|I\215\343\032\324#\243\214\355\240\024\304M\265\213WJ\254&\305\234#\336\013@MWY\312\370\245\032\255\014\322\324|\213Q){=\005)\327\276\344\333\220\370\345O\247\213\332%?\223\243\361=\\=7.\314q\324\305\265\244\350$SL\346\2522\263EP9\346\344\203\024\317\214e\254\222\246HT\223J'\327\327\247\007Z\372\213\352\273\306E]\203\317\321LN<\322\361!\337\237\254\366\253\253Q=.\314\234\262\340Q\277r?\254\206\353\321\353\263\211\3774>\\\2764S\214\313\327\343\322\265\2700\033\324\343\251+q\341\213\323\365`/\260D5\236\226\026\365\2708\027\274\023\023\242\024O/\360\r\336\026W\340`5lF\215A\266\361E\3708*I\303\265\323v<}-\270\317\033|oP\230\212\247\313A#\236\236\355\317\336\021\365x\372Fp\302\251\250\016\222\010?q\234\024\203\211\340\0331\021\313\253\263\301Z\340\363\227a=l\000j\177\346v\n\200\006\0179\023\217\302\211\270x#`\375y\231I\371&/\305ey\241\274\300w\304\206h\307\345\257\2716@\004\237?\027{q1\301\025\027+\374s\376\263\330\023z\177y\275w\247\2677\000\270e^O@_\026f\370kO\313I\270Q\221$\314\226\023\nn\362r\377\326\243h/2{m\034O\225\202\031\211|\230\342\325\270x\213\357\213\353\302\301\035-\311\360\256\320\342\342l\260\032\264\304*\226\345\257\370\262\250\017\026n\305\013\213\242\361\241x\351\346m\\7\303v\274p\017\271`s+\254\2004\245\032+HD\254\t\277\377`\347|\002\321`S\234\347\217\304T\210$\025\361\031\250C\232[\242\022\226""\302;\375\207\177\351\351g\245\001jb\"\t\034\212\355p9zzV\225do\004m~E,\nMt\243\317\242\325\250\331k\214\225\005\231\017P\353\362\222h\177(\\\232\372.\254\346\305>\226\305\225\210\327D\033\350@\373\277x\211?\004\257\305\333\262`(\317<G\005\257\007{\262\214\355A\341\352\251\3127\023Qd.\014~WL\212Fr\314g`Y\230\013\034\261\017\314\303(-\224q2\374[\324\351\245^\372\225\345p>\332\356\341\302\265`E\224Q(-\277kr_l\206\177\010;Qz\227_\025?\205\333Q\212%\221J\177\341\217Q5\221u\246\225\337U\374\301\250\350S\262\256c\377\203\302\364\3513\310\037fK\274\314\367\270\226\023\363m\002n2\334\010Y\264\026\321\336\335\263D\235\024\024L\014\306)\375\232\233\202%\212N-\373_}\027\326eu\237\206\213\241\0061@1\353\360\374.\374<\334\217\312\321\253\336\324Y\371\354\347\363\037\373\257\366\343\362<\177\"\036C\004\303K\023q\271\302\013\350\227\312<_Gf\315p\013F\373\275\331\336\026\314\366\317\347\316!\257;(b'\334\373d\0248@\023\361\325\004\326\223\350q\257\024W\276\341'\351\375\337\025\005C\245\r\026\257~\211\356\031\024JA)\241r\372t'x6\024\214\354V9\t\222V\253\334\214\257\317\311nKG\315\237\300Zu83\244\020\026\003\002\340U\360\224\227\272\315'\342\0318\341K\211Fd\023\311`\371Q\001S\244_\272\227\352\266\035\\\016\232\351h\231\222a\345\000\251\006\217\371\034\207hG\003PV\370*\300\365'\027\305N2p\322\243\232\344\013\023S6[\\\370\362\324\010\276\r~E;\265s\231\211z\177r\241\277\260\002\014\231<\n2\304b\240\005\277\210\373a#|\025MF\215\350\237\275\343s8(\005\345`_\226=\271/\033Q\312\347\236T\253d\006\036\376\316\023\231hR\265\r|\245\256\223\331\006\372\353|[\334Eb\225\205D\331\330Y\345\032\357\210\037\303\372\177\001\264G\267\254";
-    PyObject *data = __Pyx_DecompressString(cstring, 1979, 1);
+    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (2102 bytes) */
+const char* const cstring = "x\332\205VKs\323X\032\305Ej\3060\201\330\304\t\001B#CHx:\223!P3\320==\256$<zx$\r\323]S\024\245(\322u\242F\221d\335+\023\323\3255\275\314R\313\273\324RK-\263\314\222\245\226Z\372'\360\023\346\334+\311\217\220\356N\305\326}~\217s\316\367\311\317\311\266\246w\025\346\231\333\333\304SZ\232emi\372{\305#m\337\364\010U4[!{&e\246\275\255P\177\213\352\236\271E\274;\312\226\317\224\315\347\177t{pC!\273\232ie\367\206V7\237\303\366[\312\274w/\035F\024\266\2431e\245\313v\034[1\251b\020K\234\322\030\261\272\n\016\231:\303\035\034\262\225\365\265\365\273\313\177_F|\006\334\375Dt&\275\351\226F)\034;-x2-\204\255\260\256KhCy\326R\272\216\257\330\204\030\ns\024\027\347\206/\260\035b+\22401P\0264\333v\230\306L\307Vq\035\271/(\006\022\322\231\331!\342\366c\315\242\244\361\312FX\256\347tL\203x\252i|\263\320\322w\027D\340\324w]\307c\304x\345\n#\232\365\366;\352\330\253\210\377]\177E$\375\037\033c1\272\243\364\201x\367\257\306\267\232a\250\210\200,j\256\271\330YZ\034 F\0277\225\035\215*\266\223!\332@T\246k\022\033\371\3532le\213`\313e\335\241\235]\2372Ewl\246\001\020m\230\000\323\240\200\220\320\035\341\252\341v7\225\017\322:SZ\216\017l\301\307\346qQ\374<\230 \363_6\357H&\020U\337k\026\037\274\372\226!b2\355\026\361<\240\337\362\234]\340\337\265\034\315Xt:X\004~`h=CRql|Z\017\213#\215\\9\305\264Cl\303\361\324#\253}\267G7\230st\305\247\244\177}\340>C\2239X\363\276X\326\365F\323\356\252+P\236M\254\025d\001O&D (]CD\254\351\232\305\263\241\252\246m2U\035,h\256kuUK\226K\346Z\355\273\030\234\372\315\215\226\351\321<\261\301\342\016c\256\212\243\300B \252R\343\375`S\202\235\033l\341D\346z\260\217\342t\254\016QGX\034l\347\025]D,\355w\226\372\373\371\366\223\2657O\337\274Y_\0231\024\372\0262~\t\006\013\231\253\352zw\017\037\261\247\276${\354{\322\372\036\355\201P\214\250\353\330\224\274\316\004\230?\232\353\317\244\301\327\375\310\340qd\322\307wtU\367\010\032\305\027k\005S\243\033\350,\344\350\341m\302\206L\346\\\017\026V\241\244\301\014\301;\276\247\223c\226\372\361\035\273g;\336\256f\231\037\211""\312\234\367\304\246\262\005\250\352\240\343PL\\S}O\272\277+\033\215vm\335t\032\272\3439>\372\034\241\352\226F\211\370\250\276gm\021\315\003\201\322\307\226ct\321\033\014\323\000@\3020\325\361\227\031\244\252\236%\n\267\262\027\252\200\301ddWL\211f\023C\267`\034\031A\024\232ND\177\317\220\316\276\207\0244\004\266\356\243\322m\226?T\370\325\212\217t\322\037\020j\020M\264\325QS\031=\006\351\230z\201\223\252\032\216\256\346(\034\301\342\350T\350\224\026\"\036\235\345h\222=\035\275\032\377\352\250\223\241Jk\241Y\200\304\226o\303-@\021\362\030*\227c\312O,\355\375F\351\025\335\257x\346\007r\245\2306#\333\236\244\377\231\304\260e\212\212\034\254\242:\213\345\343WU\023L\026R\020\374\211\017\005\327\271z\204\006T\025>\2415<I\216\277\2348\206o\021U\265\265\335\3017\371 Y\373B\256}\220\363n\352:\256\252\272\036q!71\350\277\014U\265\355kVf\315\323>\034\351\317\203w\223\2275\203\374!\"\333q\214b\006!\347C\332@\230B\245\307v./o%\036a\276g\347o\264\006\312\250\030\032\314)\206 \252\001M\013\337C+\020\004q\263\362\303\224\022\253E\361\236!\336K$\220\215rd\360\033a02HK\363-FE\345\352Y\350b\354\013.\014\221\225\370\321\342\"T\371\003e\360\372\354\217\236\031#y\2003\327\022\245 \360c\002\001\225\231\273\004\2542\247x\221\341\231c/\031\311h)\324}|\343\316~\303\370\2561Ze@w\360.\354h\226O\344\027\035~\303&c\365\244~/^J\313\023\373,\270\237\314\334\212\352\321\303\370\355a\351\327fo\352\257q)=u:-\237\331W\371jX\n\253i\371/\373\017\203\215\300\340\363\341X\330L\307\317\007m>\021\266\323\362t\340\204o\242jT/\216\354\206\367\243\261\350\337q\347`C\036KfnF\227\342\307\0078p.X\014k\341F\250\025gM\356\207\253\321\237\243N\234\235\345g\302\037\243\3071\216\326\303+\361X\334\304z\371T:>\035h\311\371\305\250\235\216W\222\312|\330\212\020A%8\315\353\374Qh \360\257\343vO\336?\035\326\303\2454;\362k\363\363\237NLT\322\332TZ=\227\226'\203%\231\323\014\037Kf\221y\334\024Q,\357\303\350\271\340\026o\362\215\236pU\013`{2\231\274\006;0\271\307iX\357\311p\177\344\322k)\270\022\226dT\223\301r\340\363W\321""\022\302)O$\023W\303z:>\261O\203\273\234\001\204RZ9\037\260\344\222@\271v\201W\323\2328P\233\345O\303\025 W\373\212k=\270\236K\246o\303\304w\261\006\344'k2F\021\327G^\345\267\303\r\341\006,]\3447\303\345\260\r\243\231\247[Q3\271\373\317\203\367\237\252E\232\347gD\232\271\201\013\274\226\\\276\037o\304\346\0018\252\004\023\"\215~\276g\322\312e\376&\234\n\035\234\320d\272\363 \2452\031\334\003}\3670\254\t\177K\275\331\313\351\354\\\330\374\\9q\341*\216\233``\366\006b\300\342Z4\023WS\245\236*\310\n\241\371\311\235\247\237J\010\005w*\323\201\221\\\004_\361i\320\016HW$5s\241\026v\343\223\361\275\270u0\014\376M\276\324\003I\265\205\260\375\271|\342\324%>\227|%.g(_\342 b*\310\004\322+\217'\343B\252\337\034\224z}\016\222\331\277\305u\251\345\234\204QT\323\253\017\220%\004p\237\237\202\224\307g\370Ia\263\026\254\361\231\260\032^K\256?\210\365\203j\017\245\320\345%>\t-\374\020\376C\010Hf_\210u\233o\010%\022\376@\030\231\014\036q#\274\026\276\213\353#\007*A\231\227\004\224\017\371\006o\3416x6\302y\200V\203\032\370=\256\2453Wx[\324]\033\016n\257\035n\024\367\255L?\014|\003\301\237d\335\215\013N\264\340\243\2103\374!\222\365J\203:\234\3036\0043\240\374\224\340u\350\037P\355?\201)\200\261\300k\010F\023\306\205\252\256\313\252\033\213V\"\026/\307\364`\376PJ\225\242\266\001\352E~#\271\232\327\207\264\020<\346\365\254\024~\211\232\221z\260zX:\254\n[mq\253\310\244w\346,\364\327+W\203\252\014g|\377i\360\244O\235\220\277(-d|eA\264\215B\341\327\001E\246pX\tNJo\363\341I\010\252\213\372_At\365\203\007\207\323\207m)\363\231\013\351\324\264PzV$_#\346z\277|E\177\231\003=\337B\036K\375\002m\203\215\t\270\347\013\262\365\010\t\2130\213-\324F)\251\336Hn<J\036\275\370\264!q\033tD\201\344\031$\220\214\315\205Oe\225g[\215H\213\332\311\330,\177\021Us\2242b\346\300\325\317\2428\243\327\262}\375WTh\nPj\311\024\362\006\350\253q)\226w^\010H\320\003\322\312,\032Ke6\231\025\232?{\240\2415\2073\302\356\331}#\270\036\374\017U\323.\244\035.\375\037\025\0046\374";
+    PyObject *data = __Pyx_DecompressString(cstring, 2102, 1);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #else /* compression: none (3727 bytes) */
-const char* const bytes = "Dict[str, Any]Legacy trigger fallback requires an existing subscriber, but `Legacy trigger fallback requires subscriber email, but subscriber `List[str]Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.Only provider_id='fcm' is supportedOptional[Dict[str, Any]]Optional[str]Union[str, List[str]]@.?add_note/api/v1/subscribers/` has no email.recipients cannot be emptyrecipients must contain a subscriber idsandesh/api.py` was not found at `/api/v1/subscribers/{subscriber_id}`, and no recipient email could be inferred from payload/overrides. Provide one of: payload.email, payload.vendor_email, payload.recipient_email, payload.to_email, payload.user_email, overrides.email.to, or overrides.email.cc.Any_ChannelCredentialsDictEventApiEventApi.__init__EventApi._infer_email_for_legacyEventApi._trigger_legacy_from_v1EventApi.triggerGETHTTPErrorListNoneOptional__Pyx_PyDict_NextRefRequestResponseSandeshSandeshAPIErrorSubscriberApiSubscriberApi.__init__SubscriberApi.createSubscriberApi.credentialsSubscriberApi.deleteSubscriberApi.get_SubscriberChannelSubscriberDto_SubscriberResource_SubscriberResource.__init__Union__annotations__api_keyasyncio.coroutines_basebase_urlbearer_tokenbodycandidate_keyscccc_emailscc_value_channelscline_in_tracebackcreatecreate_subscribercredentialscurrentcurrent_datadatadataclassdataclassesdeactivate_subscriberdeletedevice_tokens__doc__emailemail_overridesevents_triggerevents_trigger_legacyexcfcmfcm_device_tokensfloat__func__getget_subscriberhttpx_infer_email_for_legacyinferred_email__init___is_coroutineitemitemskeylegacy_body__main__maybe_email__metaclass____module__name__name__new_dataoverridespayloadpop__prepare__provider_id__qualname__rawrecipient_emailrecipientsrequestrequest_methodrequest_urlrequests.modelsresponsereturnsandesh.apisandesh.dtosandesh.sdk.clientsandesh.sdk.exceptions_sdkselfsenderNamesender_name__set_name__""setdefaultstaticmethodstatus_codestrstripsubjectsubscribersubscriberIdsubscriber_idtemplate_id__test__timeouttoto_emailto_payloadto_valuetokentokenstrigger_trigger_legacy_from_v1typingupdate_subscriberurluser_emailvaluesvendor_email\320\004!\320!3\2601\330\010\017\210t\2205\320\030*\250!\250:\260[\300\001\200A\360\006\000\017\020\330\024\025\330\021\022\330\010\023\2201\330\t\n\330\010\013\210:\220Q\220l\240!\330\014\017\210t\2201\330\020\026\220j\240\001\240\021\330\014\034\230C\230q\240\n\250!\2503\250f\260A\340\014\034\230C\230q\240\013\2506\260\021\330\010\013\2104\210q\330\014\022\220*\230A\230Q\340\010\t\330\014\024\220A\330\014\023\320\023#\2401\330\014\027\220x\230s\240!\340\010\013\210:\220W\230A\330\014\020\220\001\220\037\240\001\330\010\t\330\014\023\2204\220u\230O\2501\250A\330\010\017\320\017\"\240!\330\014\017\210s\220-\230t\2405\250\001\330\020\027\220t\320\0333\2601\330\024\031\230\021\330\024\"\240!\330\024\034\230H\240C\240q\330\024\036\230a\340\014\027\220u\230I\240Q\330\020\034\230C\230q\330\020\030\230\005\230X\240Q\240c\320):\270#\270Q\340\014\022\220)\2301\230C\230q\240\006\240i\250\177\270a\200A\360\006\000\017\020\330\027\030\330\021\022\330\023\024\330\t\n\330\010\031\230\024\320\0355\260Q\260i\270q\360\006\000\t\021\220\017\230s\240!\330\010\013\2104\210q\330\014\r\330\020\035\230T\240\025\240o\260Q\260a\330\014\023\320\023&\240a\330\020\023\2203\220m\2403\240a\330\024\032\230)\2401\340\034\035\330\034$\240A\360\020\000\031\"\240\025\240i\250q\330\034(\250\001\330\034$\240E\250\030\260\021\330 !\330 \"\240!\2404\240u\320,H\310\001\360\006\000\034\035\330\020\033\2305\240\t\250\021\330\024 \240\003\2401\330\024\034\230E\240\030\250\021\250#\320->\270c\300\021\340\020\026\220i\230q\240\003\2401\240F\250)\260?\300!\330\014\024\220C\220q\230\n\240$\240a\240y\260\003\2603\260f\270A\330\010\013\2104\210q\330\014\022\220)\2301\340\024\025\330\024'\240q\360\010\000\t+\250!\330\010\013\210:\220Q\220k\240\021\330\014\032\230)\2404\240q\250\001\330""\014\017\210z\230\021\230-\240q\330\020\"\240!\340\010\t\330\014\033\2301\330\014\025\220Q\330\014\027\220q\340\010\r\210_\230D\240\001\240\021\330\010\013\210:\220Q\220d\230&\240\004\240A\330\014\027\220q\230\017\240q\330\010\026\220o\240T\250\021\250!\330\010\013\210:\220Q\220m\2405\250\004\250K\260v\270Q\330\014\027\220q\320\030)\250\033\260F\270!\330\010\022\220/\240\024\240Q\240a\330\010\013\210:\220Q\220i\230u\240D\250\007\250v\260Q\330\014\027\220q\230\r\240W\250F\260!\340\010\t\330\014\023\2204\220u\320\0342\260!\2601\330\010\017\320\017\"\240!\330\014\027\220u\230I\240Q\330\020\034\230C\230q\330\020\030\230\005\230X\240Q\240c\320):\270#\270Q\340\014\022\220)\2301\230C\230q\240\006\240i\250\177\270a\200A\340\021\022\330\023\024\330\t\n\330\010\t\330\014\r\330\014\r\330\014\r\330\014\r\330\014\r\340\010\014\210G\2201\330\014\022\220'\230\024\230Q\230a\330\014\017\210z\230\021\230%\230u\240D\250\004\250C\250t\2604\260s\270&\300\001\330\020\027\220s\230&\240\001\340\010\013\210:\220Q\220k\240\021\330\014\036\230i\240t\2501\250A\330\014\017\210z\230\021\320\032+\2501\330\020\033\230?\250$\250a\250q\330\020\023\220:\230Q\230j\250\005\250T\260\024\260S\270\t\300\024\300X\310V\320ST\330\024\033\2308\2406\250\021\330\020\023\220:\230Q\230j\250\001\330\024\030\230\010\240\001\330\030\033\230:\240Q\240f\250E\260\024\260T\270\023\270E\300\024\300T\310\026\310q\330\034#\2404\240v\250Q\330\020\033\230?\250$\250a\250q\330\020\023\220:\230Q\230j\250\001\330\024\027\220t\2303\230i\240t\2508\2606\270\021\330\030\037\230x\240v\250Q\330\020\023\220:\230Q\230j\250\001\330\024\030\230\010\240\001\330\030\033\230:\240Q\240f\250E\260\024\260T\270\023\270E\300\024\300T\310\026\310q\330\034#\2404\240v\250Q\330\010\017\210q\200A\340\r\016\330\021\022\340\010\021\220\021\330\t\n\330\010\014\210H\220G\2301\330\014\025\220Q\330\014\031\230\021\330\014\024\220A\200A\360\006\000\030\031\330\025\026\330\027\030\330\t\n\330\010\013\210<\220s\230!\330\014\022\220*\230A\230Q\330\010\022\220$""\220e\230?\250!\2501\330\010\t\330\014\023\2204\220q\230\001\330\017\031\230\021\230'\240\024\240Q\240i\250q\330\021\022\340\010\023\2204\220q\230\001\330\010\020\220\001\320\021(\250\001\330\014\017\210q\220\006\220f\230A\330\014\020\220\t\230\021\330\014\017\210s\220!\2206\230\026\230q\340\010\017\210t\2205\320\030*\250!\330\014\r\330\r\025\220Q\320\004$\240H\250A\330\010\017\210t\2205\320\030.\250a\250q\320\004!\240\030\250\021\330\010\016\210d\220%\220\177\240a\240q\330\010\017\320\017\"\240!\2401\320\004\034\320\034/\250q\330\010\014\210G\2201\330\010\017\210s\220$\220a\220{\240*\250A\250S\260\004\260A\260Y\270k\310\021\330\010\021\220\024\220T\230\021\320\032/\250q\330\010\013\2104\210z\230\021\230(\240!\330\014\025\220Q\330\010\014\210M\230\021\330\014\036\230a\330\020\034\230A\330\020\034\320\034/\250q\330\024\"\240!\330\030\033\2301\230F\240&\250\001\330\030\034\230I\240Q\330\030\033\2303\230a\230v\240V\2501";
+    #else /* compression: none (4058 bytes) */
+const char* const bytes = "Legacy trigger fallback requires an existing subscriber, but `Legacy trigger fallback requires subscriber email, but subscriber `List[str]Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.Only provider_id='fcm' is supportedOptional[JsonDict]Optional[str]Union[str, List[str]]@.?add_note/api/v1/subscribers/` has no email.recipients cannot be emptyrecipients must contain a subscriber idsandesh/api.py` was not found at `/api/v1/subscribers/{subscriber_id}`, and no recipient email could be inferred from payload/overrides. Provide one of: payload.email, payload.vendor_email, payload.recipient_email, payload.to_email, payload.user_email, overrides.email.to, or overrides.email.cc.Any_ChannelCredentialsDictEventApiEventApi.__init__EventApi._apply_legacy_email_overridesEventApi._email_overridesEventApi._first_emailEventApi._http_error_from_sdkEventApi._infer_email_for_legacyEventApi._resolve_subscriber_idEventApi._trigger_legacy_from_v1EventApi.triggerGETHTTPErrorJsonDictListNoneOptional__Pyx_PyDict_NextRefRequestResponseSandeshSandeshAPIErrorSubscriberApiSubscriberApi.__init__SubscriberApi.createSubscriberApi.credentialsSubscriberApi.deleteSubscriberApi.get_SubscriberChannelSubscriberDto_SubscriberResource_SubscriberResource.__init___SubscriberResource._normalize_tokensUnion__annotations__api_key_apply_legacy_email_overridesasyncio.coroutines_basebase_urlbearer_tokenbodycandidate_keyscccc_emails_channels__class_getitem__cleanedcline_in_tracebackcreatecreate_subscribercredentialscurrentcurrent_datadatadataclassdataclassesdeactivate_subscriberdeletedevice_tokens__doc__email_email_overridesemail_overridesevents_triggerevents_trigger_legacyexcfcmfcm_device_tokens_first_emailfloat__func__getget_subscriber_http_error_from_sdkhttpx_infer_email_for_legacyinferredinferred_email__init__integrationIdentifier_integration_identifierintegration_identifier_is_cor""outineitemitemskeylegacy_body__main____metaclass____module__name__name__new_data_normalize_tokensoverridespayloadpop__prepare__provider_id__qualname__rawrecipient_emailrecipientsrequestrequest_methodrequest_urlrequests.models_resolve_subscriber_idresponsereturnsandesh.apisandesh.dtosandesh.sdk.clientsandesh.sdk.exceptions_sdkselfsenderNamesender_name__set_name__setdefaultstaticmethodstatus_codestrstripsubjectsubscribersubscriberIdsubscriber_idtemplate_id__test__timeouttoto_emailto_payloadtokentokenstrigger_trigger_legacy_from_v1typingupdate_subscriberurluser_emailvaluevaluesvendor_email\320\004!\320!3\2601\330\010\017\210t\2205\320\030*\250!\250:\260[\300\001\200A\340\0250\260\001\330\t\n\330\010\r\210_\230D\240\001\240\021\330\010\013\210:\220Q\220d\230&\240\004\240A\330\014\027\220q\230\017\240q\330\010\026\220o\240T\250\021\250!\330\010\013\210:\220Q\220m\2405\250\004\250K\260v\270Q\330\014\027\220q\320\030)\250\033\260F\270!\330\010\022\220/\240\024\240Q\240a\330\010\013\210:\220Q\220i\230u\240D\250\007\250v\260Q\330\014\027\220q\230\r\240W\250F\260!\330\010!\240\037\260\004\260A\260Q\330\010\t\330\014\026\220a\320\027/\250q\330\014\020\320\020&\240f\250A\330\014\020\220\n\230!\230;\240d\250!\250<\260q\340\014\027\220q\230\n\240!\2401\330\020&\240f\250A\200A\360\006\000\017\020\330\024\025\330\021\022\330\010\023\2201\330\t\n\330\010\030\230\004\320\0343\2601\260A\330\010\013\2104\210q\330\014\022\220*\230A\230Q\340\010\t\330\014\024\220A\330\014\023\320\023#\2401\330\014\027\220x\230s\240!\340\010\013\210:\220W\230A\330\014\020\220\001\220\037\240\001\330\010\t\330\014\023\2204\220u\230O\2501\250A\330\010\017\320\017\"\240!\330\014\017\210s\220-\230t\2405\250\001\330\020\027\220t\320\0333\2601\330\024\031\230\021\330\024\"\240!\330\024\034\230H\240C\240q\330\024\036\230a\340\014\022\220$\320\026+\2501\250J\260a\200A\340\023\024\330\t\n\330\010\013\2104\210z\230\021\230+\240Q\330\014\023\2201\330\010\032\230)\2404\240q\250\001\330\010\017\320\017\"\240*\250A""\320->\270k\310\021\200A\360\006\000\017\020\330\027\030\330\021\022\330\023\024\330\t\n\330\010\031\230\024\320\0355\260Q\260i\270q\330\010\020\220\017\230s\240!\330\010\013\2104\210q\330\014\r\330\020\035\230T\240\025\240o\260Q\260a\330\014\023\320\023&\240a\330\020\023\2203\220m\2403\240a\330\024\032\230)\2401\340\034\035\330\034$\240A\360\020\000\031\"\240\025\240i\250q\330\034(\250\001\330\034$\240E\250\030\260\021\330 !\330 \"\240!\2404\240u\320,H\310\001\360\006\000\034\035\330\020\026\220d\320\032/\250q\260\n\270!\330\014\024\220C\220q\230\n\240$\240a\240y\260\003\2603\260f\270A\330\010\013\2104\210q\330\014\022\220)\2301\340\024\025\330\024'\240q\360\010\000\t\033\230$\320\036/\250q\260\001\330\010\t\330\014\033\2301\330\014\025\220Q\330\014\027\220q\340\010\014\320\014*\250!\250=\270\001\340\010\t\330\014\023\2204\220u\320\0342\260!\2601\330\010\017\320\017\"\240!\330\014\022\220$\320\026+\2501\250J\260a\200A\330\"6\260a\330\010\023\2205\230\t\240\021\330\014\030\230\003\2301\330\014\024\220E\230\030\240\021\240#\320%6\260c\270\021\340\010\017\210y\230\001\230\023\230A\230V\2409\250A\200A\330\034$\240A\330\010\013\210:\220Q\220g\230Q\330\014\026\220e\2306\240\021\330\014\023\220;\230d\240#\240]\260!\330\010\013\210:\220Q\220g\230Q\330\014\020\220\010\230\001\330\020\023\220:\230Q\230f\240A\330\024\036\230d\240&\250\001\330\024\027\220t\2303\230a\330\030\037\230q\330\010\017\210q\200A\330+E\300Q\330\010\013\210:\220Q\220l\240!\330\014\017\210t\2201\330\020\026\220j\240\001\240\021\330\014\023\2203\220a\220z\240\021\240#\240V\2501\330\010\017\210s\220!\220;\230f\240A\200A\340\021\022\330\023\024\330\t\n\330\010\t\330\014\r\330\014\r\330\014\r\330\014\r\330\014\r\340\010\014\210G\2201\330\014\022\220'\230\024\230Q\230a\330\014\017\210z\230\021\230%\230u\240D\250\004\250C\250t\2604\260s\270&\300\001\330\020\027\220s\230&\240\001\340\010\032\230(\320\"3\2601\260A\330\010\014\210G\2201\220F\230!\330\014\027\220x\230}\250A\250_\270D\300\001\300\021\330\014\017""\210q\330\020\027\220q\330\010\017\210q\200A\340\r\016\330\021\022\340\010\021\220\021\330\t\n\330\010\014\210H\220G\2301\330\014\025\220Q\330\014\031\230\021\330\014\024\220A\200A\330\037'\240q\330\010\013\2104\210z\230\021\230%\230q\330\014\023\2201\330\010\017\210q\220\003\2201\220F\230&\240\003\2404\240y\260\004\260C\260s\270!\2706\300\026\300q\200A\360\006\000\030\031\330\025\026\330\027\030\330\t\n\330\010\013\210<\220s\230!\330\014\022\220*\230A\230Q\330\010\022\220$\220e\230?\250!\2501\330\010\t\330\014\023\2204\220q\230\001\330\017\031\230\021\230'\240\024\240Q\240i\250q\330\021\022\340\010\023\2204\220q\230\001\330\010\020\220\001\320\021(\320(;\320;M\310Q\330\014\r\340\010\017\210t\2205\320\030*\250!\330\014\r\330\r\025\220Q\320\004$\240H\250A\330\010\017\210t\2205\320\030.\250a\250q\320\004\034\230M\250\021\330\010\014\210G\2201\330\010\017\210s\220$\220a\220{\240*\250A\250S\260\004\260A\260Y\270k\310\021\330\010\021\220\024\320\025'\240q\250\004\250D\260\001\260\021\330\010\014\210M\230\021\330\014\036\230a\330\020\034\230A\330\020\034\320\034/\250q\260\016\270a\320\004!\240\030\250\021\330\010\016\210d\220%\220\177\240a\240q\330\010\017\320\017\"\240!\2401";
     PyObject *data = NULL;
     CYTHON_UNUSED_VAR(__Pyx_DecompressString);
     #endif
     PyObject **stringtab = __pyx_mstate->__pyx_string_tab;
     Py_ssize_t pos = 0;
-    for (int i = 0; i < 151; i++) {
+    for (int i = 0; i < 167; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyUnicode_DecodeUTF8(bytes + pos, bytes_length, NULL);
-      if (likely(string) && i >= 20) PyUnicode_InternInPlace(&string);
+      if (likely(string) && i >= 19) PyUnicode_InternInPlace(&string);
       if (unlikely(!string)) {
         Py_XDECREF(data);
         __PYX_ERR(0, 1, __pyx_L1_error)
@@ -9035,7 +9755,7 @@ const char* const bytes = "Dict[str, Any]Legacy trigger fallback requires an exi
       stringtab[i] = string;
       pos += bytes_length;
     }
-    for (int i = 151; i < 160; i++) {
+    for (int i = 167; i < 182; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyBytes_FromStringAndSize(bytes + pos, bytes_length);
       stringtab[i] = string;
@@ -9046,15 +9766,15 @@ const char* const bytes = "Dict[str, Any]Legacy trigger fallback requires an exi
       }
     }
     Py_XDECREF(data);
-    for (Py_ssize_t i = 0; i < 160; i++) {
+    for (Py_ssize_t i = 0; i < 182; i++) {
       if (unlikely(PyObject_Hash(stringtab[i]) == -1)) {
         __PYX_ERR(0, 1, __pyx_L1_error)
       }
     }
     #if CYTHON_IMMORTAL_CONSTANTS
     {
-      PyObject **table = stringtab + 151;
-      for (Py_ssize_t i=0; i<9; ++i) {
+      PyObject **table = stringtab + 167;
+      for (Py_ssize_t i=0; i<15; ++i) {
         #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
         #if PY_VERSION_HEX < 0x030E0000
         if (_Py_IsOwnedByCurrentThread(table[i]) && Py_REFCNT(table[i]) == 1)
@@ -9107,9 +9827,9 @@ typedef struct {
     unsigned int argcount : 2;
     unsigned int num_posonly_args : 1;
     unsigned int num_kwonly_args : 3;
-    unsigned int nlocals : 5;
+    unsigned int nlocals : 4;
     unsigned int flags : 10;
-    unsigned int first_line : 8;
+    unsigned int first_line : 9;
 } __Pyx_PyCode_New_function_description;
 /* NewCodeObj.proto */
 static PyObject* __Pyx_PyCode_New(
@@ -9126,54 +9846,84 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
   PyObject* tuple_dedup_map = PyDict_New();
   if (unlikely(!tuple_dedup_map)) return -1;
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 5, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 29};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_raw, __pyx_mstate->__pyx_n_u_data, __pyx_mstate->__pyx_n_u_tokens, __pyx_mstate->__pyx_n_u_token};
-    __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_init, __pyx_mstate->__pyx_kp_b_iso88591_q_G1_s_a_AS_AYk_T_q_4z_Q_M_a_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 31};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_raw, __pyx_mstate->__pyx_n_u_data, __pyx_mstate->__pyx_n_u_tokens};
+    __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_init, __pyx_mstate->__pyx_kp_b_iso88591_M_G1_s_a_AS_AYk_q_D_M_a_A_q_a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 42};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_raw, __pyx_mstate->__pyx_n_u_token};
+    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_normalize_tokens, __pyx_mstate->__pyx_kp_b_iso88591_A_q_4z_q_1_q_1F_4y_Cs_6_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
   }
   {
     const __Pyx_PyCode_New_function_description descr = {3, 0, 1, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 51};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_url, __pyx_mstate->__pyx_n_u_api_key, __pyx_mstate->__pyx_n_u_timeout};
-    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_init, __pyx_mstate->__pyx_kp_b_iso88591_A_HG1_Q_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_init, __pyx_mstate->__pyx_kp_b_iso88591_A_HG1_Q_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 4, 9, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 64};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_name, __pyx_mstate->__pyx_n_u_recipients, __pyx_mstate->__pyx_n_u_payload, __pyx_mstate->__pyx_n_u_overrides, __pyx_mstate->__pyx_n_u_subscriber_id, __pyx_mstate->__pyx_n_u_body, __pyx_mstate->__pyx_n_u_exc, __pyx_mstate->__pyx_n_u_response};
-    __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_trigger, __pyx_mstate->__pyx_kp_b_iso88591_A_1_Ql_t1_j_Cq_3fA_Cq_6_4q_AQ_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 4, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 64};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_name, __pyx_mstate->__pyx_n_u_recipients, __pyx_mstate->__pyx_n_u_payload, __pyx_mstate->__pyx_n_u_overrides, __pyx_mstate->__pyx_n_u_subscriber_id, __pyx_mstate->__pyx_n_u_body, __pyx_mstate->__pyx_n_u_exc};
+    __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_trigger, __pyx_mstate->__pyx_kp_b_iso88591_A_1_31A_4q_AQ_A_1_xs_WA_4uO1A_s, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 4, 16, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 104};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_name, __pyx_mstate->__pyx_n_u_subscriber_id, __pyx_mstate->__pyx_n_u_payload, __pyx_mstate->__pyx_n_u_overrides, __pyx_mstate->__pyx_n_u_inferred_email, __pyx_mstate->__pyx_n_u_email, __pyx_mstate->__pyx_n_u_subscriber, __pyx_mstate->__pyx_n_u_exc, __pyx_mstate->__pyx_n_u_response, __pyx_mstate->__pyx_n_u_email_overrides, __pyx_mstate->__pyx_n_u_maybe_email, __pyx_mstate->__pyx_n_u_legacy_body, __pyx_mstate->__pyx_n_u_cc, __pyx_mstate->__pyx_n_u_sender_name, __pyx_mstate->__pyx_n_u_subject};
-    __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_trigger_legacy_from_v1, __pyx_mstate->__pyx_kp_b_iso88591_A_5Qiq_s_4q_T_oQa_a_3m3a_1_A_iq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 4, 11, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 95};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_name, __pyx_mstate->__pyx_n_u_subscriber_id, __pyx_mstate->__pyx_n_u_payload, __pyx_mstate->__pyx_n_u_overrides, __pyx_mstate->__pyx_n_u_inferred_email, __pyx_mstate->__pyx_n_u_email, __pyx_mstate->__pyx_n_u_subscriber, __pyx_mstate->__pyx_n_u_exc, __pyx_mstate->__pyx_n_u_email_overrides_2, __pyx_mstate->__pyx_n_u_legacy_body};
+    __pyx_mstate_global->__pyx_codeobj_tab[4] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_trigger_legacy_from_v1, __pyx_mstate->__pyx_kp_b_iso88591_A_5Qiq_s_4q_T_oQa_a_3m3a_1_A_iq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[4])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 9, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 184};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_payload, __pyx_mstate->__pyx_n_u_overrides, __pyx_mstate->__pyx_n_u_candidate_keys, __pyx_mstate->__pyx_n_u_key, __pyx_mstate->__pyx_n_u_raw, __pyx_mstate->__pyx_n_u_email_overrides, __pyx_mstate->__pyx_n_u_to_value, __pyx_mstate->__pyx_n_u_item, __pyx_mstate->__pyx_n_u_cc_value};
-    __pyx_mstate_global->__pyx_codeobj_tab[4] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_infer_email_for_legacy, __pyx_mstate->__pyx_kp_b_iso88591_A_G1_Qa_z_uD_Ct4s_s_Qk_it1A_z_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[4])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 152};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_payload, __pyx_mstate->__pyx_n_u_overrides, __pyx_mstate->__pyx_n_u_candidate_keys, __pyx_mstate->__pyx_n_u_key, __pyx_mstate->__pyx_n_u_raw, __pyx_mstate->__pyx_n_u_email_overrides_2, __pyx_mstate->__pyx_n_u_inferred};
+    __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_infer_email_for_legacy, __pyx_mstate->__pyx_kp_b_iso88591_A_G1_Qa_z_uD_Ct4s_s_31A_G1F_x_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {3, 0, 1, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 224};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 176};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_recipients};
+    __pyx_mstate_global->__pyx_codeobj_tab[6] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_resolve_subscriber_id, __pyx_mstate->__pyx_kp_b_iso88591_A_EQ_Ql_t1_j_3az_V1_s_fA, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[6])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 184};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_value, __pyx_mstate->__pyx_n_u_cleaned, __pyx_mstate->__pyx_n_u_item};
+    __pyx_mstate_global->__pyx_codeobj_tab[7] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_first_email, __pyx_mstate->__pyx_kp_b_iso88591_A_A_QgQ_e6_d_QgQ_QfA_d_t3a_q_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[7])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 197};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_overrides, __pyx_mstate->__pyx_n_u_email_overrides_2};
+    __pyx_mstate_global->__pyx_codeobj_tab[8] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_email_overrides, __pyx_mstate->__pyx_kp_b_iso88591_A_4z_Q_1_4q_A_k, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[8])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 6, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 206};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_legacy_body, __pyx_mstate->__pyx_n_u_email_overrides_2, __pyx_mstate->__pyx_n_u_cc, __pyx_mstate->__pyx_n_u_sender_name, __pyx_mstate->__pyx_n_u_subject, __pyx_mstate->__pyx_n_u_integration_identifier_2};
+    __pyx_mstate_global->__pyx_codeobj_tab[9] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_apply_legacy_email_overrides, __pyx_mstate->__pyx_kp_b_iso88591_A_0__D_Qd_A_q_q_oT_Qm5_KvQ_q_F_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[9])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 229};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_exc, __pyx_mstate->__pyx_n_u_response};
+    __pyx_mstate_global->__pyx_codeobj_tab[10] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_http_error_from_sdk, __pyx_mstate->__pyx_kp_b_iso88591_A_6a_5_1_E_6c_y_AV9A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[10])) goto bad;
+  }
+  {
+    const __Pyx_PyCode_New_function_description descr = {3, 0, 1, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 240};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_url, __pyx_mstate->__pyx_n_u_api_key, __pyx_mstate->__pyx_n_u_timeout};
-    __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_init, __pyx_mstate->__pyx_kp_b_iso88591_A_HG1_Q_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[11] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_init, __pyx_mstate->__pyx_kp_b_iso88591_A_HG1_Q_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[11])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 237};
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 253};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_subscriber};
-    __pyx_mstate_global->__pyx_codeobj_tab[6] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_create, __pyx_mstate->__pyx_kp_b_iso88591_31_t5, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[6])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[12] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_create, __pyx_mstate->__pyx_kp_b_iso88591_31_t5, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[12])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 240};
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 256};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_subscriber_id};
-    __pyx_mstate_global->__pyx_codeobj_tab[7] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_delete, __pyx_mstate->__pyx_kp_b_iso88591_HA_t5_aq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[7])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[13] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_delete, __pyx_mstate->__pyx_kp_b_iso88591_HA_t5_aq, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[13])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 243};
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 259};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_subscriber_id, __pyx_mstate->__pyx_n_u_raw};
-    __pyx_mstate_global->__pyx_codeobj_tab[8] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_get, __pyx_mstate->__pyx_kp_b_iso88591_d_aq_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[8])) goto bad;
+    __pyx_mstate_global->__pyx_codeobj_tab[14] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_get, __pyx_mstate->__pyx_kp_b_iso88591_d_aq_1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[14])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 3, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 247};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_subscriber_id, __pyx_mstate->__pyx_n_u_provider_id, __pyx_mstate->__pyx_n_u_device_tokens, __pyx_mstate->__pyx_n_u_current, __pyx_mstate->__pyx_n_u_current_data, __pyx_mstate->__pyx_n_u_new_data, __pyx_mstate->__pyx_n_u_token};
-    __pyx_mstate_global->__pyx_codeobj_tab[9] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_credentials, __pyx_mstate->__pyx_kp_b_iso88591_A_s_AQ_e_1_4q_Qiq_4q_q_fA_s_6_q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[9])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 3, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 263};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_subscriber_id, __pyx_mstate->__pyx_n_u_provider_id, __pyx_mstate->__pyx_n_u_device_tokens, __pyx_mstate->__pyx_n_u_current, __pyx_mstate->__pyx_n_u_current_data, __pyx_mstate->__pyx_n_u_new_data};
+    __pyx_mstate_global->__pyx_codeobj_tab[15] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_sandesh_api_py, __pyx_mstate->__pyx_n_u_credentials, __pyx_mstate->__pyx_kp_b_iso88591_A_s_AQ_e_1_4q_Qiq_4q_MQ_t5_Q, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[15])) goto bad;
   }
   Py_DECREF(tuple_dedup_map);
   return 0;
@@ -10430,54 +11180,6 @@ static void __Pyx_RaiseArgtupleInvalid(
                  (num_expected == 1) ? "" : "s", num_found);
 }
 
-/* ArgTypeTestFunc (used by ArgTypeTest) */
-static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact)
-{
-    __Pyx_TypeName type_name;
-    __Pyx_TypeName obj_type_name;
-    PyObject *extra_info = __pyx_mstate_global->__pyx_empty_unicode;
-    int from_annotation_subclass = 0;
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
-    }
-    else if (!exact) {
-        if (likely(__Pyx_TypeCheck(obj, type))) return 1;
-    } else if (exact == 2) {
-        if (__Pyx_TypeCheck(obj, type)) {
-            from_annotation_subclass = 1;
-            extra_info = __pyx_mstate_global->__pyx_kp_u_Note_that_Cython_is_deliberately;
-        }
-    }
-    type_name = __Pyx_PyType_GetFullyQualifiedName(type);
-    obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
-    PyErr_Format(PyExc_TypeError,
-        "Argument '%.200s' has incorrect type (expected " __Pyx_FMT_TYPENAME
-        ", got " __Pyx_FMT_TYPENAME ")"
-#if __PYX_LIMITED_VERSION_HEX < 0x030C0000
-        "%s%U"
-#endif
-        , name, type_name, obj_type_name
-#if __PYX_LIMITED_VERSION_HEX < 0x030C0000
-        , (from_annotation_subclass ? ". " : ""), extra_info
-#endif
-        );
-#if __PYX_LIMITED_VERSION_HEX >= 0x030C0000
-    if (exact == 2 && from_annotation_subclass) {
-        PyObject *res;
-        PyObject *vargs[2];
-        vargs[0] = PyErr_GetRaisedException();
-        vargs[1] = extra_info;
-        res = PyObject_VectorcallMethod(__pyx_mstate_global->__pyx_kp_u_add_note, vargs, 2, NULL);
-        Py_XDECREF(res);
-        PyErr_SetRaisedException(vargs[0]);
-    }
-#endif
-    __Pyx_DECREF_TypeName(type_name);
-    __Pyx_DECREF_TypeName(obj_type_name);
-    return 0;
-}
-
 /* PyObjectSetAttrStr */
 #if CYTHON_USE_TYPE_SLOTS
 static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr_name, PyObject* value) {
@@ -10487,95 +11189,6 @@ static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr
     return PyObject_SetAttr(obj, attr_name, value);
 }
 #endif
-
-/* PyObjectCall2Args (used by CallUnboundCMethod1) */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2) {
-    PyObject *args[3] = {NULL, arg1, arg2};
-    return __Pyx_PyObject_FastCall(function, args+1, 2 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
-}
-
-/* CallUnboundCMethod1 */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg) {
-    int was_initialized =  __Pyx_CachedCFunction_GetAndSetInitializing(cfunc);
-    if (likely(was_initialized == 2 && cfunc->func)) {
-        int flag = cfunc->flag;
-        if (flag == METH_O) {
-            return __Pyx_CallCFunction(cfunc, self, arg);
-        } else if (flag == METH_FASTCALL) {
-            return __Pyx_CallCFunctionFast(cfunc, self, &arg, 1);
-        } else if (flag == (METH_FASTCALL | METH_KEYWORDS)) {
-            return __Pyx_CallCFunctionFastWithKeywords(cfunc, self, &arg, 1, NULL);
-        }
-    }
-#if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
-    else if (unlikely(was_initialized == 1)) {
-        __Pyx_CachedCFunction tmp_cfunc = {
-#ifndef __cplusplus
-            0
-#endif
-        };
-        tmp_cfunc.type = cfunc->type;
-        tmp_cfunc.method_name = cfunc->method_name;
-        return __Pyx__CallUnboundCMethod1(&tmp_cfunc, self, arg);
-    }
-#endif
-    PyObject* result = __Pyx__CallUnboundCMethod1(cfunc, self, arg);
-    __Pyx_CachedCFunction_SetFinishedInitializing(cfunc);
-    return result;
-}
-#endif
-static PyObject* __Pyx__CallUnboundCMethod1(__Pyx_CachedCFunction* cfunc, PyObject* self, PyObject* arg){
-    PyObject *result = NULL;
-    if (unlikely(!cfunc->func && !cfunc->method) && unlikely(__Pyx_TryUnpackUnboundCMethod(cfunc) < 0)) return NULL;
-#if CYTHON_COMPILING_IN_CPYTHON
-    if (cfunc->func && (cfunc->flag & METH_VARARGS)) {
-        PyObject *args = PyTuple_New(1);
-        if (unlikely(!args)) return NULL;
-        Py_INCREF(arg);
-        PyTuple_SET_ITEM(args, 0, arg);
-        if (cfunc->flag & METH_KEYWORDS)
-            result = __Pyx_CallCFunctionWithKeywords(cfunc, self, args, NULL);
-        else
-            result = __Pyx_CallCFunction(cfunc, self, args);
-        Py_DECREF(args);
-    } else
-#endif
-    {
-        result = __Pyx_PyObject_Call2Args(cfunc->method, self, arg);
-    }
-    return result;
-}
-
-/* dict_getitem_default */
-static PyObject* __Pyx_PyDict_GetItemDefault(PyObject* d, PyObject* key, PyObject* default_value) {
-    PyObject* value;
-#if !CYTHON_COMPILING_IN_PYPY || PYPY_VERSION_NUM >= 0x07020000
-    value = PyDict_GetItemWithError(d, key);
-    if (unlikely(!value)) {
-        if (unlikely(PyErr_Occurred()))
-            return NULL;
-        value = default_value;
-    }
-    Py_INCREF(value);
-    if ((1));
-#else
-    if (PyBytes_CheckExact(key) || PyUnicode_CheckExact(key) || PyLong_CheckExact(key)) {
-        value = PyDict_GetItem(d, key);
-        if (unlikely(!value)) {
-            value = default_value;
-        }
-        Py_INCREF(value);
-    }
-#endif
-    else {
-        if (default_value == Py_None)
-            value = __Pyx_CallUnboundCMethod1(&__pyx_mstate_global->__pyx_umethod_PyDict_Type_get, d, key);
-        else
-            value = __Pyx_CallUnboundCMethod2(&__pyx_mstate_global->__pyx_umethod_PyDict_Type_get, d, key, default_value);
-    }
-    return value;
-}
 
 /* PyObjectFastCallMethod */
 #if !CYTHON_VECTORCALL || PY_VERSION_HEX < 0x03090000
@@ -10683,6 +11296,54 @@ CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyO
     return PyDict_SetItem(builder, key, value);
 }
 #endif
+
+/* ArgTypeTestFunc (used by ArgTypeTest) */
+static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact)
+{
+    __Pyx_TypeName type_name;
+    __Pyx_TypeName obj_type_name;
+    PyObject *extra_info = __pyx_mstate_global->__pyx_empty_unicode;
+    int from_annotation_subclass = 0;
+    if (unlikely(!type)) {
+        PyErr_SetString(PyExc_SystemError, "Missing type object");
+        return 0;
+    }
+    else if (!exact) {
+        if (likely(__Pyx_TypeCheck(obj, type))) return 1;
+    } else if (exact == 2) {
+        if (__Pyx_TypeCheck(obj, type)) {
+            from_annotation_subclass = 1;
+            extra_info = __pyx_mstate_global->__pyx_kp_u_Note_that_Cython_is_deliberately;
+        }
+    }
+    type_name = __Pyx_PyType_GetFullyQualifiedName(type);
+    obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
+    PyErr_Format(PyExc_TypeError,
+        "Argument '%.200s' has incorrect type (expected " __Pyx_FMT_TYPENAME
+        ", got " __Pyx_FMT_TYPENAME ")"
+#if __PYX_LIMITED_VERSION_HEX < 0x030C0000
+        "%s%U"
+#endif
+        , name, type_name, obj_type_name
+#if __PYX_LIMITED_VERSION_HEX < 0x030C0000
+        , (from_annotation_subclass ? ". " : ""), extra_info
+#endif
+        );
+#if __PYX_LIMITED_VERSION_HEX >= 0x030C0000
+    if (exact == 2 && from_annotation_subclass) {
+        PyObject *res;
+        PyObject *vargs[2];
+        vargs[0] = PyErr_GetRaisedException();
+        vargs[1] = extra_info;
+        res = PyObject_VectorcallMethod(__pyx_mstate_global->__pyx_kp_u_add_note, vargs, 2, NULL);
+        Py_XDECREF(res);
+        PyErr_SetRaisedException(vargs[0]);
+    }
+#endif
+    __Pyx_DECREF_TypeName(type_name);
+    __Pyx_DECREF_TypeName(obj_type_name);
+    return 0;
+}
 
 /* RaiseKeywordRequired */
 static void __Pyx_RaiseKeywordRequired(const char* func_name, PyObject* kw_name) {
@@ -10796,120 +11457,6 @@ static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject 
 bad:
     Py_XDECREF(owned_instance);
     return;
-}
-
-/* GetItemInt */
-static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j) {
-    PyObject *r;
-    if (unlikely(!j)) return NULL;
-    r = PyObject_GetItem(o, j);
-    Py_DECREF(j);
-    return r;
-}
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
-                                                              int wraparound, int boundscheck, int unsafe_shared) {
-    CYTHON_MAYBE_UNUSED_VAR(unsafe_shared);
-#if CYTHON_ASSUME_SAFE_SIZE
-    Py_ssize_t wrapped_i = i;
-    if (wraparound & unlikely(i < 0)) {
-        wrapped_i += PyList_GET_SIZE(o);
-    }
-    if ((CYTHON_AVOID_BORROWED_REFS || CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS || !CYTHON_ASSUME_SAFE_MACROS)) {
-        return __Pyx_PyList_GetItemRefFast(o, wrapped_i, unsafe_shared);
-    } else
-    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyList_GET_SIZE(o)))) {
-        return __Pyx_NewRef(PyList_GET_ITEM(o, wrapped_i));
-    }
-    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
-#else
-    (void)wraparound;
-    (void)boundscheck;
-    return PySequence_GetItem(o, i);
-#endif
-}
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
-                                                              int wraparound, int boundscheck, int unsafe_shared) {
-    CYTHON_MAYBE_UNUSED_VAR(unsafe_shared);
-#if CYTHON_ASSUME_SAFE_SIZE && CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    Py_ssize_t wrapped_i = i;
-    if (wraparound & unlikely(i < 0)) {
-        wrapped_i += PyTuple_GET_SIZE(o);
-    }
-    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyTuple_GET_SIZE(o)))) {
-        return __Pyx_NewRef(PyTuple_GET_ITEM(o, wrapped_i));
-    }
-    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
-#else
-    (void)wraparound;
-    (void)boundscheck;
-    return PySequence_GetItem(o, i);
-#endif
-}
-static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i, int is_list,
-                                                     int wraparound, int boundscheck, int unsafe_shared) {
-    CYTHON_MAYBE_UNUSED_VAR(unsafe_shared);
-#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE
-    if (is_list || PyList_CheckExact(o)) {
-        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyList_GET_SIZE(o);
-        if ((CYTHON_AVOID_BORROWED_REFS || CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS)) {
-            return __Pyx_PyList_GetItemRefFast(o, n, unsafe_shared);
-        } else if ((!boundscheck) || (likely(__Pyx_is_valid_index(n, PyList_GET_SIZE(o))))) {
-            return __Pyx_NewRef(PyList_GET_ITEM(o, n));
-        }
-    } else
-    #if !CYTHON_AVOID_BORROWED_REFS
-    if (PyTuple_CheckExact(o)) {
-        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyTuple_GET_SIZE(o);
-        if ((!boundscheck) || likely(__Pyx_is_valid_index(n, PyTuple_GET_SIZE(o)))) {
-            return __Pyx_NewRef(PyTuple_GET_ITEM(o, n));
-        }
-    } else
-    #endif
-#endif
-#if CYTHON_USE_TYPE_SLOTS && !CYTHON_COMPILING_IN_PYPY
-    {
-        PyMappingMethods *mm = Py_TYPE(o)->tp_as_mapping;
-        PySequenceMethods *sm = Py_TYPE(o)->tp_as_sequence;
-        if (!is_list && mm && mm->mp_subscript) {
-            PyObject *r, *key = PyLong_FromSsize_t(i);
-            if (unlikely(!key)) return NULL;
-            r = mm->mp_subscript(o, key);
-            Py_DECREF(key);
-            return r;
-        }
-        if (is_list || likely(sm && sm->sq_item)) {
-            if (wraparound && unlikely(i < 0) && likely(sm->sq_length)) {
-                Py_ssize_t l = sm->sq_length(o);
-                if (likely(l >= 0)) {
-                    i += l;
-                } else {
-                    if (!PyErr_ExceptionMatches(PyExc_OverflowError))
-                        return NULL;
-                    PyErr_Clear();
-                }
-            }
-            return sm->sq_item(o, i);
-        }
-    }
-#else
-    if (is_list || !PyMapping_Check(o)) {
-        return PySequence_GetItem(o, i);
-    }
-#endif
-    (void)wraparound;
-    (void)boundscheck;
-    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
-}
-
-/* RaiseUnexpectedTypeError */
-static int
-__Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj)
-{
-    __Pyx_TypeName obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
-    PyErr_Format(PyExc_TypeError, "Expected %s, got " __Pyx_FMT_TYPENAME,
-                 expected, obj_type_name);
-    __Pyx_DECREF_TypeName(obj_type_name);
-    return 0;
 }
 
 /* GetTopmostException (used by SaveResetException) */
@@ -11390,6 +11937,139 @@ bad:
 #endif
 }
 
+/* RaiseUnexpectedTypeError */
+static int
+__Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj)
+{
+    __Pyx_TypeName obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
+    PyErr_Format(PyExc_TypeError, "Expected %s, got " __Pyx_FMT_TYPENAME,
+                 expected, obj_type_name);
+    __Pyx_DECREF_TypeName(obj_type_name);
+    return 0;
+}
+
+/* GetItemInt */
+static PyObject *__Pyx_GetItemInt_Generic(PyObject *o, PyObject* j) {
+    PyObject *r;
+    if (unlikely(!j)) return NULL;
+    r = PyObject_GetItem(o, j);
+    Py_DECREF(j);
+    return r;
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_List_Fast(PyObject *o, Py_ssize_t i,
+                                                              int wraparound, int boundscheck, int unsafe_shared) {
+    CYTHON_MAYBE_UNUSED_VAR(unsafe_shared);
+#if CYTHON_ASSUME_SAFE_SIZE
+    Py_ssize_t wrapped_i = i;
+    if (wraparound & unlikely(i < 0)) {
+        wrapped_i += PyList_GET_SIZE(o);
+    }
+    if ((CYTHON_AVOID_BORROWED_REFS || CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS || !CYTHON_ASSUME_SAFE_MACROS)) {
+        return __Pyx_PyList_GetItemRefFast(o, wrapped_i, unsafe_shared);
+    } else
+    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyList_GET_SIZE(o)))) {
+        return __Pyx_NewRef(PyList_GET_ITEM(o, wrapped_i));
+    }
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
+#else
+    (void)wraparound;
+    (void)boundscheck;
+    return PySequence_GetItem(o, i);
+#endif
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Tuple_Fast(PyObject *o, Py_ssize_t i,
+                                                              int wraparound, int boundscheck, int unsafe_shared) {
+    CYTHON_MAYBE_UNUSED_VAR(unsafe_shared);
+#if CYTHON_ASSUME_SAFE_SIZE && CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+    Py_ssize_t wrapped_i = i;
+    if (wraparound & unlikely(i < 0)) {
+        wrapped_i += PyTuple_GET_SIZE(o);
+    }
+    if ((!boundscheck) || likely(__Pyx_is_valid_index(wrapped_i, PyTuple_GET_SIZE(o)))) {
+        return __Pyx_NewRef(PyTuple_GET_ITEM(o, wrapped_i));
+    }
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
+#else
+    (void)wraparound;
+    (void)boundscheck;
+    return PySequence_GetItem(o, i);
+#endif
+}
+static CYTHON_INLINE PyObject *__Pyx_GetItemInt_Fast(PyObject *o, Py_ssize_t i, int is_list,
+                                                     int wraparound, int boundscheck, int unsafe_shared) {
+    CYTHON_MAYBE_UNUSED_VAR(unsafe_shared);
+#if CYTHON_ASSUME_SAFE_MACROS && CYTHON_ASSUME_SAFE_SIZE
+    if (is_list || PyList_CheckExact(o)) {
+        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyList_GET_SIZE(o);
+        if ((CYTHON_AVOID_BORROWED_REFS || CYTHON_AVOID_THREAD_UNSAFE_BORROWED_REFS)) {
+            return __Pyx_PyList_GetItemRefFast(o, n, unsafe_shared);
+        } else if ((!boundscheck) || (likely(__Pyx_is_valid_index(n, PyList_GET_SIZE(o))))) {
+            return __Pyx_NewRef(PyList_GET_ITEM(o, n));
+        }
+    } else
+    #if !CYTHON_AVOID_BORROWED_REFS
+    if (PyTuple_CheckExact(o)) {
+        Py_ssize_t n = ((!wraparound) | likely(i >= 0)) ? i : i + PyTuple_GET_SIZE(o);
+        if ((!boundscheck) || likely(__Pyx_is_valid_index(n, PyTuple_GET_SIZE(o)))) {
+            return __Pyx_NewRef(PyTuple_GET_ITEM(o, n));
+        }
+    } else
+    #endif
+#endif
+#if CYTHON_USE_TYPE_SLOTS && !CYTHON_COMPILING_IN_PYPY
+    {
+        PyMappingMethods *mm = Py_TYPE(o)->tp_as_mapping;
+        PySequenceMethods *sm = Py_TYPE(o)->tp_as_sequence;
+        if (!is_list && mm && mm->mp_subscript) {
+            PyObject *r, *key = PyLong_FromSsize_t(i);
+            if (unlikely(!key)) return NULL;
+            r = mm->mp_subscript(o, key);
+            Py_DECREF(key);
+            return r;
+        }
+        if (is_list || likely(sm && sm->sq_item)) {
+            if (wraparound && unlikely(i < 0) && likely(sm->sq_length)) {
+                Py_ssize_t l = sm->sq_length(o);
+                if (likely(l >= 0)) {
+                    i += l;
+                } else {
+                    if (!PyErr_ExceptionMatches(PyExc_OverflowError))
+                        return NULL;
+                    PyErr_Clear();
+                }
+            }
+            return sm->sq_item(o, i);
+        }
+    }
+#else
+    if (is_list || !PyMapping_Check(o)) {
+        return PySequence_GetItem(o, i);
+    }
+#endif
+    (void)wraparound;
+    (void)boundscheck;
+    return __Pyx_GetItemInt_Generic(o, PyLong_FromSsize_t(i));
+}
+
+/* DictGetItem */
+#if !CYTHON_COMPILING_IN_PYPY
+static PyObject *__Pyx_PyDict_GetItem(PyObject *d, PyObject* key) {
+    PyObject *value;
+    if (unlikely(__Pyx_PyDict_GetItemRef(d, key, &value) == 0)) { // no value, no error
+        if (unlikely(PyTuple_Check(key))) {
+            PyObject* args = PyTuple_Pack(1, key);
+            if (likely(args)) {
+                PyErr_SetObject(PyExc_KeyError, args);
+                Py_DECREF(args);
+            }
+        } else {
+            PyErr_SetObject(PyExc_KeyError, key);
+        }
+    }
+    return value;
+}
+#endif
+
 /* HasAttr (used by ImportImpl) */
 #if __PYX_LIMITED_VERSION_HEX < 0x030d0000
 static CYTHON_INLINE int __Pyx_HasAttr(PyObject *o, PyObject *n) {
@@ -11567,6 +12247,56 @@ static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name) {
     return value;
 }
 
+/* ObjectGetItem */
+#if CYTHON_USE_TYPE_SLOTS
+static PyObject *__Pyx_PyObject_GetIndex(PyObject *obj, PyObject *index) {
+    PyObject *runerr = NULL;
+    Py_ssize_t key_value;
+    key_value = __Pyx_PyIndex_AsSsize_t(index);
+    if (likely(key_value != -1 || !(runerr = PyErr_Occurred()))) {
+        return __Pyx_GetItemInt_Fast(obj, key_value, 0, 1, 1, 1);
+    }
+    if (PyErr_GivenExceptionMatches(runerr, PyExc_OverflowError)) {
+        __Pyx_TypeName index_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(index));
+        PyErr_Clear();
+        PyErr_Format(PyExc_IndexError,
+            "cannot fit '" __Pyx_FMT_TYPENAME "' into an index-sized integer", index_type_name);
+        __Pyx_DECREF_TypeName(index_type_name);
+    }
+    return NULL;
+}
+static PyObject *__Pyx_PyObject_GetItem_Slow(PyObject *obj, PyObject *key) {
+    __Pyx_TypeName obj_type_name;
+    if (likely(PyType_Check(obj))) {
+        PyObject *meth = __Pyx_PyObject_GetAttrStrNoError(obj, __pyx_mstate_global->__pyx_n_u_class_getitem);
+        if (!meth) {
+            PyErr_Clear();
+        } else {
+            PyObject *result = __Pyx_PyObject_CallOneArg(meth, key);
+            Py_DECREF(meth);
+            return result;
+        }
+    }
+    obj_type_name = __Pyx_PyType_GetFullyQualifiedName(Py_TYPE(obj));
+    PyErr_Format(PyExc_TypeError,
+        "'" __Pyx_FMT_TYPENAME "' object is not subscriptable", obj_type_name);
+    __Pyx_DECREF_TypeName(obj_type_name);
+    return NULL;
+}
+static PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject *key) {
+    PyTypeObject *tp = Py_TYPE(obj);
+    PyMappingMethods *mm = tp->tp_as_mapping;
+    PySequenceMethods *sm = tp->tp_as_sequence;
+    if (likely(mm && mm->mp_subscript)) {
+        return mm->mp_subscript(obj, key);
+    }
+    if (likely(sm && sm->sq_item)) {
+        return __Pyx_PyObject_GetIndex(obj, key);
+    }
+    return __Pyx_PyObject_GetItem_Slow(obj, key);
+}
+#endif
+
 /* CalculateMetaclass (used by Py3ClassCreate) */
 static PyObject *__Pyx_CalculateMetaclass(PyTypeObject *metaclass, PyObject *bases) {
     Py_ssize_t i, nbases;
@@ -11607,6 +12337,12 @@ static PyObject *__Pyx_CalculateMetaclass(PyTypeObject *metaclass, PyObject *bas
     }
     Py_INCREF((PyObject*) metaclass);
     return (PyObject*) metaclass;
+}
+
+/* PyObjectCall2Args (used by Py3ClassCreate) */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2) {
+    PyObject *args[3] = {NULL, arg1, arg2};
+    return __Pyx_PyObject_FastCall(function, args+1, 2 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
 }
 
 /* PyObjectLookupSpecial (used by Py3ClassCreate) */
