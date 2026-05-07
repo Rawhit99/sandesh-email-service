@@ -95,3 +95,37 @@ Set credentials using environment variables before uploading:
 
 - `TWINE_USERNAME=__token__`
 - `TWINE_PASSWORD=<your_pypi_api_token>`
+
+## Build compiled wheel (Cython)
+
+To ship a binary wheel with Cython-compiled SDK modules, build with
+`SANDESH_BUILD_COMPILED=1`.
+
+Windows PowerShell:
+
+```powershell
+$env:SANDESH_BUILD_COMPILED="1"
+python -m pip install --upgrade build cython
+python -m build --wheel
+```
+
+Standard source + wheel build (default, no Cython compilation):
+
+```powershell
+Remove-Item Env:SANDESH_BUILD_COMPILED -ErrorAction Ignore
+python -m build
+```
+
+Notes:
+
+- Compiled wheels require a local C/C++ toolchain (for example, Microsoft
+  C++ Build Tools on Windows).
+- This raises reverse-engineering difficulty but cannot provide absolute code
+  secrecy in Python packaging.
+
+## IDE / Pylance types (`.pyi`)
+
+Core modules may ship as compiled extensions (`.pyd`). Type checkers cannot
+read those, so the package includes **stub files** (`*.pyi`) and `py.typed`
+for autocomplete and static analysis (`EventApi`, `SubscriberApi`,
+`SubscriberDto`, `Sandesh`, etc.).

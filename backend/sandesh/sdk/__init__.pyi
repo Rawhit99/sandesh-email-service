@@ -1,5 +1,4 @@
 # License: MIT
-# See LICENSE.
 from sandesh.sdk.client import Sandesh
 from sandesh.sdk.exceptions import (
     SandeshAPIError,
@@ -7,9 +6,4 @@ from sandesh.sdk.exceptions import (
     SandeshNetworkError,
 )
 
-__all__ = [
-    "Sandesh",
-    "SandeshError",
-    "SandeshAPIError",
-    "SandeshNetworkError",
-]
+__all__: list[str]

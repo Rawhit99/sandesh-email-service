@@ -10,6 +10,7 @@ from requests.models import HTTPError
 
 from sandesh.dto import SubscriberDto
 from sandesh.sdk.client import Sandesh
+from sandesh.sdk.exceptions import SandeshAPIError
 
 
 @dataclass
@@ -86,9 +87,136 @@ class EventApi:
             body["overrides"] = overrides
         try:
             return self._sdk.events_trigger(body)
-        except httpx.HTTPStatusError as exc:
-            # Keep Novu-style callsites working, which catch requests.HTTPError.
-            raise HTTPError(str(exc), response=exc.response) from exc
+        except SandeshAPIError as exc:
+            if exc.status_code in {404, 422}:
+                return self._trigger_legacy_from_v1(
+                    name=name,
+                    subscriber_id=subscriber_id,
+                    payload=payload or {},
+                    overrides=overrides,
+                )
+            response = httpx.Response(
+                status_code=exc.status_code,
+                request=httpx.Request(exc.request_method, exc.request_url),
+            )
+            raise HTTPError(str(exc), response=response) from exc
+
+    def _trigger_legacy_from_v1(
+        self,
+        *,
+        name: str,
+        subscriber_id: str,
+        payload: Dict[str, Any],
+        overrides: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        inferred_email = self._infer_email_for_legacy(payload, overrides)
+        # Optimized fallback: if we can infer an email directly from v1-style
+        # payload/overrides, avoid subscriber lookup entirely.
+        email = inferred_email or ""
+        if not email:
+            try:
+                subscriber = self._sdk.get_subscriber(subscriber_id)
+            except SandeshAPIError as exc:
+                if exc.status_code == 404:
+                    raise HTTPError(
+                        (
+                            "Legacy trigger fallback requires an existing subscriber, "
+                            f"but `{subscriber_id}` was not found at "
+                            "`/api/v1/subscribers/{subscriber_id}`, and no recipient "
+                            "email could be inferred from payload/overrides. "
+                            "Provide one of: payload.email, payload.vendor_email, "
+                            "payload.recipient_email, payload.to_email, "
+                            "payload.user_email, overrides.email.to, "
+                            "or overrides.email.cc."
+                        ),
+                        response=httpx.Response(
+                            status_code=404,
+                            request=httpx.Request(
+                                "GET",
+                                f"{self._sdk._base}/api/v1/subscribers/{subscriber_id}",
+                            ),
+                        ),
+                    ) from exc
+                response = httpx.Response(
+                    status_code=exc.status_code,
+                    request=httpx.Request(exc.request_method, exc.request_url),
+                )
+                raise HTTPError(str(exc), response=response) from exc
+            email = str(subscriber.get("email") or "").strip()
+        if not email:
+            raise HTTPError(
+                (
+                    "Legacy trigger fallback requires subscriber email, "
+                    f"but subscriber `{subscriber_id}` has no email."
+                )
+            )
+
+        email_overrides: Dict[str, Any] = {}
+        if isinstance(overrides, dict):
+            maybe_email = overrides.get("email")
+            if isinstance(maybe_email, dict):
+                email_overrides = maybe_email
+
+        legacy_body: Dict[str, Any] = {
+            "template_id": name,
+            "email": email,
+            "payload": payload,
+        }
+        cc = email_overrides.get("cc")
+        if isinstance(cc, list) and cc:
+            legacy_body["cc_emails"] = cc
+        sender_name = email_overrides.get("senderName")
+        if isinstance(sender_name, str) and sender_name.strip():
+            legacy_body["sender_name"] = sender_name.strip()
+        subject = email_overrides.get("subject")
+        if isinstance(subject, str) and subject.strip():
+            legacy_body["subject"] = subject.strip()
+
+        try:
+            return self._sdk.events_trigger_legacy(legacy_body)
+        except SandeshAPIError as exc:
+            response = httpx.Response(
+                status_code=exc.status_code,
+                request=httpx.Request(exc.request_method, exc.request_url),
+            )
+            raise HTTPError(str(exc), response=response) from exc
+
+    @staticmethod
+    def _infer_email_for_legacy(
+        payload: Dict[str, Any],
+        overrides: Optional[Dict[str, Any]],
+    ) -> Optional[str]:
+        candidate_keys = (
+            "email",
+            "vendor_email",
+            "recipient_email",
+            "to_email",
+            "user_email",
+        )
+        for key in candidate_keys:
+            raw = payload.get(key)
+            if isinstance(raw, str) and "@" in raw and raw.strip():
+                return raw.strip()
+
+        if isinstance(overrides, dict):
+            email_overrides = overrides.get("email")
+            if isinstance(email_overrides, dict):
+                to_value = email_overrides.get("to")
+                if isinstance(to_value, str) and "@" in to_value and to_value.strip():
+                    return to_value.strip()
+                if isinstance(to_value, list):
+                    for item in to_value:
+                        if isinstance(item, str) and "@" in item and item.strip():
+                            return item.strip()
+                cc_value = email_overrides.get("cc")
+                if isinstance(cc_value, str):
+                    if "@" in cc_value and cc_value.strip():
+                        return cc_value.strip()
+                if isinstance(cc_value, list):
+                    for item in cc_value:
+                        if isinstance(item, str) and "@" in item and item.strip():
+                            return item.strip()
+        return None
 
 
 class SubscriberApi:

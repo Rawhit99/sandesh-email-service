@@ -1,6 +1,6 @@
 [project]
 name = "sandesh-sdk"
-version = "0.3.1"
+version = "0.4.1"
 description = "Official Python SDK for the Sandesh notification API."
 authors = [
     {name = "Rohit Thakur", email = "rohit@zeron.one"},
@@ -10,12 +10,11 @@ dependencies = [
 ]
 requires-python = ">=3.9"
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 keywords = ["sandesh", "notifications", "sdk", "api-client"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.9",
@@ -26,12 +25,22 @@ classifiers = [
 ]
 
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["setuptools>=69", "wheel", "Cython>=3.0"]
+build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+include-package-data = true
 
-[tool.pdm]
-distribution = true
+[tool.setuptools.package-data]
+sandesh = ["py.typed", "*.pyi"]
+"sandesh.sdk" = ["*.pyi"]
 
-[tool.pdm.build]
-includes = ["sandesh/"]
+[tool.setuptools.packages.find]
+include = ["sandesh", "sandesh.*"]
+
+[project.optional-dependencies]
+build = [
+    "build>=1.2.2",
+    "twine>=6.0.0",
+    "Cython>=3.0",
+]
