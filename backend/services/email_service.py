@@ -17,6 +17,7 @@ from models.models import (
     EmailTemplate,
     IntegrationCredential,
     Notification,
+    Subscriber,
     User,
 )
 from models.schema_domains.notifications import (
@@ -74,6 +75,12 @@ def _resolve_user_email_delivery(
             )
             .first()
         )
+        if requested_cred is None:
+            raise ValueError(
+                "integrationIdentifier "
+                f"`{requested_name}` was not found for this account "
+                "(aws_ses/smtp credential name mismatch)."
+            )
     default_creds = (
         db.query(IntegrationCredential)
         .filter(
@@ -486,14 +493,37 @@ class EmailService:
                 logger.info(
                     f"Full notification payload: {notification.payload}"
                 )
+                effective_user_id = uid
+                if (
+                    effective_user_id is None
+                    and notification.subscriber_external_id
+                ):
+                    owner = (
+                        db.query(Subscriber.user_id)
+                        .filter(
+                            Subscriber.subscriber_id
+                            == notification.subscriber_external_id
+                        )
+                        .first()
+                    )
+                    if owner and owner[0]:
+                        effective_user_id = int(owner[0])
                 integration_identifier = _optional_str(
                     notification.payload.get("_integration_identifier"),
                     notification.payload.get("integration_identifier"),
                     notification.payload.get("integrationIdentifier"),
                 )
                 mail_cfg = _resolve_user_email_delivery(
-                    db, uid, integration_identifier
+                    db, effective_user_id, integration_identifier
                 )
+                if integration_identifier:
+                    logger.info(
+                        "Email credential resolution integrationIdentifier=%s "
+                        "scope_user_id=%s provider=%s",
+                        integration_identifier,
+                        effective_user_id,
+                        mail_cfg.get("email_provider") if mail_cfg else None,
+                    )
                 provider = (
                     str(mail_cfg.get("email_provider") or "ses")
                     .lower()
