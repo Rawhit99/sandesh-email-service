@@ -12,13 +12,13 @@ from sandesh.sdk import (
 )
 
 __all__ = [
-    "__version__",
-    "Sandesh",
     "EventApi",
+    "Sandesh",
+    "SandeshAPIError",
+    "SandeshError",
+    "SandeshNetworkError",
     "SubscriberApi",
     "SubscriberDto",
-    "SandeshError",
-    "SandeshAPIError",
-    "SandeshNetworkError",
+    "__version__",
 ]
 __version__ = "0.4.1"

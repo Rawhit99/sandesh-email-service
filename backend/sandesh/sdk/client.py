@@ -48,6 +48,19 @@ class Sandesh:
                 break
         return normalized
 
+    @staticmethod
+    def _to_legacy_subscriber_body(body: JsonDict) -> JsonDict:
+        legacy_body: JsonDict = dict(body or {})
+        field_pairs = (
+            ("subscriberId", "subscriber_id"),
+            ("firstName", "first_name"),
+            ("lastName", "last_name"),
+        )
+        for source, target in field_pairs:
+            if source in legacy_body and target not in legacy_body:
+                legacy_body[target] = legacy_body.get(source)
+        return legacy_body
+
     def _client(self) -> httpx.Client:
         if self._client_instance is None:
             self._client_instance = httpx.Client(
@@ -159,13 +172,7 @@ class Sandesh:
                 raise
             # Backward-compatible fallback for deployments exposing only
             # `/api/v1/subscribers`.
-            legacy_body: JsonDict = dict(body or {})
-            if "subscriberId" in legacy_body and "subscriber_id" not in legacy_body:
-                legacy_body["subscriber_id"] = legacy_body.get("subscriberId")
-            if "firstName" in legacy_body and "first_name" not in legacy_body:
-                legacy_body["first_name"] = legacy_body.get("firstName")
-            if "lastName" in legacy_body and "last_name" not in legacy_body:
-                legacy_body["last_name"] = legacy_body.get("lastName")
+            legacy_body = self._to_legacy_subscriber_body(body)
             return self._request("POST", "/api/v1/subscribers", json=legacy_body)
 
     def update_subscriber(

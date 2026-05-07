@@ -44,6 +44,10 @@ def to_notification_create(
     ]
 
     email_override = body.overrides.email if body.overrides else None
+    if email_override and email_override.integrationIdentifier:
+        payload_dict["_integration_identifier"] = (
+            email_override.integrationIdentifier.strip()
+        )
     return NotificationCreate(
         template_id=body.name.strip(),
         email=_resolve_recipient_email(db, body.to.subscriberId, current_user),

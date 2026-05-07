@@ -40,7 +40,9 @@ logger = logging.getLogger(__name__)
 
 
 def _resolve_user_email_delivery(
-    db: Session, user_id: Optional[int]
+    db: Session,
+    user_id: Optional[int],
+    integration_identifier: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
     """Resolve per-user email config from settings + default credentials."""
     if user_id is None:
@@ -60,6 +62,18 @@ def _resolve_user_email_delivery(
         .lower()
         .strip()
     )
+    requested_name = (integration_identifier or "").strip()
+    requested_cred: Optional[IntegrationCredential] = None
+    if requested_name:
+        requested_cred = (
+            db.query(IntegrationCredential)
+            .filter(
+                IntegrationCredential.user_id == user_id,
+                IntegrationCredential.name == requested_name,
+                IntegrationCredential.channel.in_(["aws_ses", "smtp"]),
+            )
+            .first()
+        )
     default_creds = (
         db.query(IntegrationCredential)
         .filter(
@@ -79,7 +93,10 @@ def _resolve_user_email_delivery(
         by_channel[channel] = cfg
 
     chosen_channel: Optional[str] = None
-    if preferred_provider == "smtp" and "smtp" in by_channel:
+    if requested_cred is not None:
+        chosen_channel = str(requested_cred.channel or "").strip()
+        by_channel = {chosen_channel: dict(requested_cred.config or {})}
+    elif preferred_provider == "smtp" and "smtp" in by_channel:
         chosen_channel = "smtp"
     elif preferred_provider == "ses" and "aws_ses" in by_channel:
         chosen_channel = "aws_ses"
@@ -469,7 +486,14 @@ class EmailService:
                 logger.info(
                     f"Full notification payload: {notification.payload}"
                 )
-                mail_cfg = _resolve_user_email_delivery(db, uid)
+                integration_identifier = _optional_str(
+                    notification.payload.get("_integration_identifier"),
+                    notification.payload.get("integration_identifier"),
+                    notification.payload.get("integrationIdentifier"),
+                )
+                mail_cfg = _resolve_user_email_delivery(
+                    db, uid, integration_identifier
+                )
                 provider = (
                     str(mail_cfg.get("email_provider") or "ses")
                     .lower()

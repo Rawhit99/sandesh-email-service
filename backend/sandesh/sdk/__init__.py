@@ -8,8 +8,8 @@ from sandesh.sdk.exceptions import (
 )
 
 __all__ = [
+    "SandeshAPIError",
     "Sandesh",
     "SandeshError",
-    "SandeshAPIError",
     "SandeshNetworkError",
 ]

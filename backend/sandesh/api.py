@@ -12,6 +12,8 @@ from sandesh.dto import SubscriberDto
 from sandesh.sdk.client import Sandesh
 from sandesh.sdk.exceptions import SandeshAPIError
 
+JsonDict = Dict[str, Any]
+
 
 @dataclass
 class _ChannelCredentials:
@@ -26,24 +28,22 @@ class _SubscriberChannel:
 
 class _SubscriberResource:
 
-    def __init__(self, raw: Dict[str, Any]) -> None:
+    def __init__(self, raw: JsonDict) -> None:
         self.raw = raw
         data = raw.get("data") if isinstance(raw.get("data"), dict) else {}
-        tokens = data.get("fcm_device_tokens", [])
-        if not isinstance(tokens, list):
-            tokens = []
+        tokens = self._normalize_tokens(data.get("fcm_device_tokens"))
         self._channels = [
             _SubscriberChannel(
                 provider_id="fcm",
-                credentials=_ChannelCredentials(
-                    device_tokens=[
-                        str(token).strip()
-                        for token in tokens
-                        if str(token).strip()
-                    ]
-                ),
+                credentials=_ChannelCredentials(device_tokens=tokens),
             )
         ]
+
+    @staticmethod
+    def _normalize_tokens(raw: Any) -> List[str]:
+        if not isinstance(raw, list):
+            return []
+        return [str(token).strip() for token in raw if str(token).strip()]
 
 
 class EventApi:
@@ -66,19 +66,14 @@ class EventApi:
         *,
         name: str,
         recipients: Union[str, List[str]],
-        payload: Dict[str, Any],
-        overrides: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Any]:
-        if isinstance(recipients, list):
-            if not recipients:
-                raise ValueError("recipients cannot be empty")
-            subscriber_id = str(recipients[0]).strip()
-        else:
-            subscriber_id = str(recipients).strip()
+        payload: JsonDict,
+        overrides: Optional[JsonDict] = None,
+    ) -> JsonDict:
+        subscriber_id = self._resolve_subscriber_id(recipients)
         if not subscriber_id:
             raise ValueError("recipients must contain a subscriber id")
 
-        body: Dict[str, Any] = {
+        body: JsonDict = {
             "name": name,
             "to": {"subscriberId": subscriber_id},
             "payload": payload or {},
@@ -95,23 +90,17 @@ class EventApi:
                     payload=payload or {},
                     overrides=overrides,
                 )
-            response = httpx.Response(
-                status_code=exc.status_code,
-                request=httpx.Request(exc.request_method, exc.request_url),
-            )
-            raise HTTPError(str(exc), response=response) from exc
+            raise self._http_error_from_sdk(exc) from exc
 
     def _trigger_legacy_from_v1(
         self,
         *,
         name: str,
         subscriber_id: str,
-        payload: Dict[str, Any],
-        overrides: Optional[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        payload: JsonDict,
+        overrides: Optional[JsonDict],
+    ) -> JsonDict:
         inferred_email = self._infer_email_for_legacy(payload, overrides)
-        # Optimized fallback: if we can infer an email directly from v1-style
-        # payload/overrides, avoid subscriber lookup entirely.
         email = inferred_email or ""
         if not email:
             try:
@@ -137,11 +126,7 @@ class EventApi:
                             ),
                         ),
                     ) from exc
-                response = httpx.Response(
-                    status_code=exc.status_code,
-                    request=httpx.Request(exc.request_method, exc.request_url),
-                )
-                raise HTTPError(str(exc), response=response) from exc
+                raise self._http_error_from_sdk(exc) from exc
             email = str(subscriber.get("email") or "").strip()
         if not email:
             raise HTTPError(
@@ -151,40 +136,23 @@ class EventApi:
                 )
             )
 
-        email_overrides: Dict[str, Any] = {}
-        if isinstance(overrides, dict):
-            maybe_email = overrides.get("email")
-            if isinstance(maybe_email, dict):
-                email_overrides = maybe_email
-
-        legacy_body: Dict[str, Any] = {
+        email_overrides = self._email_overrides(overrides)
+        legacy_body: JsonDict = {
             "template_id": name,
             "email": email,
             "payload": payload,
         }
-        cc = email_overrides.get("cc")
-        if isinstance(cc, list) and cc:
-            legacy_body["cc_emails"] = cc
-        sender_name = email_overrides.get("senderName")
-        if isinstance(sender_name, str) and sender_name.strip():
-            legacy_body["sender_name"] = sender_name.strip()
-        subject = email_overrides.get("subject")
-        if isinstance(subject, str) and subject.strip():
-            legacy_body["subject"] = subject.strip()
+        self._apply_legacy_email_overrides(legacy_body, email_overrides)
 
         try:
             return self._sdk.events_trigger_legacy(legacy_body)
         except SandeshAPIError as exc:
-            response = httpx.Response(
-                status_code=exc.status_code,
-                request=httpx.Request(exc.request_method, exc.request_url),
-            )
-            raise HTTPError(str(exc), response=response) from exc
+            raise self._http_error_from_sdk(exc) from exc
 
     @staticmethod
     def _infer_email_for_legacy(
-        payload: Dict[str, Any],
-        overrides: Optional[Dict[str, Any]],
+        payload: JsonDict,
+        overrides: Optional[JsonDict],
     ) -> Optional[str]:
         candidate_keys = (
             "email",
@@ -198,25 +166,73 @@ class EventApi:
             if isinstance(raw, str) and "@" in raw and raw.strip():
                 return raw.strip()
 
-        if isinstance(overrides, dict):
-            email_overrides = overrides.get("email")
-            if isinstance(email_overrides, dict):
-                to_value = email_overrides.get("to")
-                if isinstance(to_value, str) and "@" in to_value and to_value.strip():
-                    return to_value.strip()
-                if isinstance(to_value, list):
-                    for item in to_value:
-                        if isinstance(item, str) and "@" in item and item.strip():
-                            return item.strip()
-                cc_value = email_overrides.get("cc")
-                if isinstance(cc_value, str):
-                    if "@" in cc_value and cc_value.strip():
-                        return cc_value.strip()
-                if isinstance(cc_value, list):
-                    for item in cc_value:
-                        if isinstance(item, str) and "@" in item and item.strip():
-                            return item.strip()
+        email_overrides = EventApi._email_overrides(overrides)
+        for key in ("to", "cc"):
+            inferred = EventApi._first_email(email_overrides.get(key))
+            if inferred:
+                return inferred
         return None
+
+    @staticmethod
+    def _resolve_subscriber_id(recipients: Union[str, List[str]]) -> str:
+        if isinstance(recipients, list):
+            if not recipients:
+                raise ValueError("recipients cannot be empty")
+            return str(recipients[0]).strip()
+        return str(recipients).strip()
+
+    @staticmethod
+    def _first_email(value: Any) -> Optional[str]:
+        if isinstance(value, str):
+            cleaned = value.strip()
+            return cleaned if "@" in cleaned else None
+        if isinstance(value, list):
+            for item in value:
+                if isinstance(item, str):
+                    cleaned = item.strip()
+                    if "@" in cleaned:
+                        return cleaned
+        return None
+
+    @staticmethod
+    def _email_overrides(
+        overrides: Optional[JsonDict],
+    ) -> JsonDict:
+        if not isinstance(overrides, dict):
+            return {}
+        email_overrides = overrides.get("email")
+        return email_overrides if isinstance(email_overrides, dict) else {}
+
+    @staticmethod
+    def _apply_legacy_email_overrides(
+        legacy_body: JsonDict, email_overrides: JsonDict
+    ) -> None:
+        cc = email_overrides.get("cc")
+        if isinstance(cc, list) and cc:
+            legacy_body["cc_emails"] = cc
+        sender_name = email_overrides.get("senderName")
+        if isinstance(sender_name, str) and sender_name.strip():
+            legacy_body["sender_name"] = sender_name.strip()
+        subject = email_overrides.get("subject")
+        if isinstance(subject, str) and subject.strip():
+            legacy_body["subject"] = subject.strip()
+        integration_identifier = email_overrides.get("integrationIdentifier")
+        if (
+            isinstance(integration_identifier, str)
+            and integration_identifier.strip()
+            and isinstance(legacy_body.get("payload"), dict)
+        ):
+            legacy_body["payload"]["_integration_identifier"] = (
+                integration_identifier.strip()
+            )
+
+    @staticmethod
+    def _http_error_from_sdk(exc: SandeshAPIError) -> HTTPError:
+        response = httpx.Response(
+            status_code=exc.status_code,
+            request=httpx.Request(exc.request_method, exc.request_url),
+        )
+        return HTTPError(str(exc), response=response)
 
 
 class SubscriberApi:
@@ -234,10 +250,10 @@ class SubscriberApi:
             timeout=timeout,
         )
 
-    def create(self, subscriber: SubscriberDto) -> Dict[str, Any]:
+    def create(self, subscriber: SubscriberDto) -> JsonDict:
         return self._sdk.create_subscriber(subscriber.to_payload())
 
-    def delete(self, subscriber_id: str) -> Dict[str, Any]:
+    def delete(self, subscriber_id: str) -> JsonDict:
         return self._sdk.deactivate_subscriber(subscriber_id)
 
     def get(self, subscriber_id: str) -> _SubscriberResource:
@@ -250,7 +266,7 @@ class SubscriberApi:
         subscriber_id: str,
         provider_id: str,
         device_tokens: List[str],
-    ) -> Dict[str, Any]:
+    ) -> JsonDict:
         if provider_id != "fcm":
             raise ValueError("Only provider_id='fcm' is supported")
         current = self._sdk.get_subscriber(subscriber_id)
@@ -260,11 +276,9 @@ class SubscriberApi:
             else {}
         )
         new_data = dict(current_data)
-        new_data["fcm_device_tokens"] = [
-            str(token).strip()
-            for token in device_tokens
-            if str(token).strip()
-        ]
+        new_data["fcm_device_tokens"] = _SubscriberResource._normalize_tokens(
+            device_tokens
+        )
         return self._sdk.update_subscriber(
             subscriber_id,
             {"data": new_data},
