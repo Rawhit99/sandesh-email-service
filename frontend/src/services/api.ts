@@ -296,10 +296,17 @@ class ApiService {
   private apiKey: string;
 
   constructor() {
+    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    this.apiKey = API_KEY;
+  }
+
+  private resolveBaseUrl(): string {
+    if (typeof window === 'undefined') {
+      return this.baseUrl;
+    }
     const runtimeApiUrl = (window as Window & { __ENV__?: { REACT_APP_API_URL?: string } })
       .__ENV__?.REACT_APP_API_URL;
-    this.baseUrl = runtimeApiUrl || process.env.REACT_APP_API_URL || 'http://localhost:8000';
-    this.apiKey = API_KEY;
+    return runtimeApiUrl || this.baseUrl;
   }
 
   // Create axios instance with default headers
@@ -309,7 +316,7 @@ class ApiService {
     const orgId =
       typeof localStorage !== 'undefined' ? localStorage.getItem('sandesh-org-id') : null;
     return axios.create({
-      baseURL: this.baseUrl,
+      baseURL: this.resolveBaseUrl(),
       headers: {
         'Content-Type': 'application/json',
         ...(bearer ? { Authorization: `Bearer ${bearer}` } : {}),
