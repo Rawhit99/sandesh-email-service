@@ -23,7 +23,10 @@ import {
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL =
+  (window as Window & { __ENV__?: { REACT_APP_API_URL?: string } }).__ENV__?.REACT_APP_API_URL ||
+  process.env.REACT_APP_API_URL ||
+  'http://localhost:8000';
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState('');
