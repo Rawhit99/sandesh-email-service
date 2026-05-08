@@ -84,6 +84,8 @@ services:
       target: frontend-runtime
       args:
         REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8000}
     depends_on:
       backend:
         condition: service_healthy
