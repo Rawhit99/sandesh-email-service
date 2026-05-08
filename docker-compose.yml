@@ -42,6 +42,10 @@ services:
       API_PORT: 8000
       PYTHONPATH: /app
       PYTHONUNBUFFERED: "1"
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      CORS_ALLOW_METHODS: ${CORS_ALLOW_METHODS:-GET,POST,PUT,PATCH,DELETE,OPTIONS}
+      CORS_ALLOW_HEADERS: ${CORS_ALLOW_HEADERS:-*}
+      TRUSTED_HOSTS: ${TRUSTED_HOSTS:-*}
     depends_on:
       postgres:
         condition: service_healthy
