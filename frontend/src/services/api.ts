@@ -296,7 +296,9 @@ class ApiService {
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    const runtimeApiUrl = (window as Window & { __ENV__?: { REACT_APP_API_URL?: string } })
+      .__ENV__?.REACT_APP_API_URL;
+    this.baseUrl = runtimeApiUrl || process.env.REACT_APP_API_URL || 'http://localhost:8000';
     this.apiKey = API_KEY;
   }
 
