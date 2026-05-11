@@ -373,11 +373,17 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
         onClose={() => setShowPreview(false)}
         maxWidth="lg"
         fullWidth
+        scroll="paper"
         PaperProps={{
-          sx: { height: '90vh' }
+          sx: {
+            height: '90vh',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+          },
         }}
       >
-        <DialogTitle sx={{ pb: 1 }}>
+        <DialogTitle sx={{ pb: 1, flexShrink: 0 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center">
             <Typography variant="h6">Email Preview</Typography>
             <Box display="flex" gap={1}>
@@ -401,30 +407,51 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
             </Box>
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
+        <DialogContent
+          dividers
+          sx={{
+            p: 0,
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
           <Box
             sx={{
-              height: '100%',
+              flex: '1 1 auto',
+              minHeight: 0,
               display: 'flex',
               flexDirection: 'column',
               bgcolor: 'grey.100',
             }}
           >
             {/* Preview Header */}
-            <Box sx={{ p: 2, bgcolor: 'white', borderBottom: 1, borderColor: 'grey.300' }}>
+            <Box
+              sx={{
+                flexShrink: 0,
+                p: 2,
+                bgcolor: 'white',
+                borderBottom: 1,
+                borderColor: 'grey.300',
+              }}
+            >
               <Typography variant="subtitle2" color="text.secondary">
                 Subject: {formData.subject}
               </Typography>
             </Box>
-            
-            {/* Preview Content */}
+
+            {/* Preview Content — scrollable (matches grid preview behavior) */}
             <Box
               sx={{
-                flex: 1,
+                flex: '1 1 auto',
+                minHeight: 0,
                 overflow: 'auto',
                 p: 2,
                 display: 'flex',
                 justifyContent: 'center',
+                alignItems: 'flex-start',
               }}
             >
               <Box
@@ -434,15 +461,14 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
                   bgcolor: 'white',
                   borderRadius: 1.5,
                   boxShadow: 3,
-                  overflow: 'hidden',
+                  overflow: 'auto',
+                  maxHeight: '100%',
                 }}
               >
-                <div
+                <Box
+                  component="div"
+                  sx={{ p: 2.5 }}
                   dangerouslySetInnerHTML={{ __html: previewContent }}
-                  style={{
-                    padding: '20px',
-                    minHeight: '400px',
-                  }}
                 />
               </Box>
             </Box>
