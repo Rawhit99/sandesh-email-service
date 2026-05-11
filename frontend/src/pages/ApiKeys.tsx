@@ -31,23 +31,10 @@ import {
   Refresh as RefreshIcon,
   VpnKey as KeyIcon,
 } from '@mui/icons-material';
-import axios from 'axios';
-
-const API_BASE_URL =
-  (window as Window & { __ENV__?: { REACT_APP_API_URL?: string } }).__ENV__?.REACT_APP_API_URL ||
-  process.env.REACT_APP_API_URL ||
-  'http://localhost:8000';
-
-interface APIKey {
-  id: number;
-  key_prefix: string;
-  is_active: boolean;
-  last_used_at: string | null;
-  created_at: string;
-}
+import apiService, { ApiKeyRecord } from '../services/api';
 
 const ApiKeys: React.FC = () => {
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKeyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,18 +42,13 @@ const ApiKeys: React.FC = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [newKey, setNewKey] = useState<string | null>(null);
 
-  const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return { headers: { Authorization: `Bearer ${token}` } };
-  };
-
   const fetchApiKeys = useCallback(async (background = false) => {
     try {
       background ? setRefreshing(true) : setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/api/v1/api-keys`, getAuthHeaders());
-      setApiKeys(response.data);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch API keys');
+      const response = await apiService.listApiKeys();
+      setApiKeys(response);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch API keys');
     } finally {
       background ? setRefreshing(false) : setLoading(false);
     }
@@ -77,12 +59,12 @@ const ApiKeys: React.FC = () => {
   const handleCreateKey = async () => {
     try {
       setRefreshing(true);
-      const response = await axios.post(`${API_BASE_URL}/api/v1/api-keys`, {}, getAuthHeaders());
-      setNewKey(response.data.key);
+      const response = await apiService.createApiKey();
+      setNewKey(response.key);
       setOpenDialog(true);
       void fetchApiKeys(true);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create API key');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to create API key');
     } finally {
       setRefreshing(false);
     }
@@ -92,11 +74,11 @@ const ApiKeys: React.FC = () => {
     if (!window.confirm('Delete this API key? This cannot be undone.')) return;
     try {
       setRefreshing(true);
-      await axios.delete(`${API_BASE_URL}/api/v1/api-keys/${keyId}`, getAuthHeaders());
+      await apiService.deleteApiKey(keyId);
       setSuccess('API key deleted');
       void fetchApiKeys(true);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to delete API key');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete API key');
     } finally {
       setRefreshing(false);
     }

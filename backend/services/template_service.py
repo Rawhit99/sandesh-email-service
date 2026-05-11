@@ -17,6 +17,7 @@ from models.schema_domains.templates import (
     TemplateResponse,
     TemplateUpdate,
 )
+from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -75,6 +76,53 @@ def _effective_enabled_map(
         .all()
     )
     return {row.template_id: bool(row.is_enabled) for row in rows}
+
+
+def seed_templates_for_owner(db: Session, owner_user_id: int) -> None:
+    """Copy existing logical templates into a new tenant owner scope."""
+    existing_rows = (
+        db.query(EmailTemplate.template_id)
+        .filter(EmailTemplate.user_id == owner_user_id)
+        .all()
+    )
+    existing_template_ids = {row[0] for row in existing_rows}
+
+    source_rows = (
+        db.query(EmailTemplate)
+        .filter(
+            or_(
+                EmailTemplate.user_id.is_(None),
+                EmailTemplate.user_id != owner_user_id,
+            )
+        )
+        .order_by(
+            EmailTemplate.template_id.asc(),
+            EmailTemplate.updated_at.desc(),
+            EmailTemplate.created_at.desc(),
+        )
+        .all()
+    )
+
+    seen_template_ids = set()
+    for source in source_rows:
+        if (
+            source.template_id in seen_template_ids
+            or source.template_id in existing_template_ids
+        ):
+            continue
+        seen_template_ids.add(source.template_id)
+        db.add(
+            EmailTemplate(
+                template_id=source.template_id,
+                user_id=owner_user_id,
+                name=source.name,
+                subject=source.subject,
+                content=source.content,
+                variables=source.variables or {},
+                default_attachments=source.default_attachments,
+                is_active=source.is_active,
+            )
+        )
 
 
 class TemplateService:

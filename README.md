@@ -159,6 +159,7 @@ npm start
 - `AWS_SECRET_ACCESS_KEY`: AWS secret key
 - `AWS_REGION`: AWS region
 - `SES_SENDER_EMAIL`: Verified sender email
+- `JWT_SECRET_KEY`: Secret used to sign console login JWTs
 
 ### Frontend
 

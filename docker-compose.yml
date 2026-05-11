@@ -42,6 +42,8 @@ services:
       API_PORT: 8000
       PYTHONPATH: /app
       PYTHONUNBUFFERED: "1"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-43200}
       CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       CORS_ALLOW_METHODS: ${CORS_ALLOW_METHODS:-GET,POST,PUT,PATCH,DELETE,OPTIONS}
       CORS_ALLOW_HEADERS: ${CORS_ALLOW_HEADERS:-*}
@@ -72,6 +74,8 @@ services:
       REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
       PYTHONPATH: /app
       PYTHONUNBUFFERED: "1"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-43200}
     depends_on:
       postgres:
         condition: service_healthy

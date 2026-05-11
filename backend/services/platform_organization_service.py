@@ -19,6 +19,7 @@ from models.schema_domains.organizations import (
     PlatformOrganizationOut,
     PlatformOrganizationUpdate,
 )
+from services.template_service import seed_templates_for_owner
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -92,6 +93,7 @@ def create_organization(
         )
     org.service_user_id = svc.id
     db.add(org)
+    seed_templates_for_owner(db, svc.id)
     db.commit()
     db.refresh(org)
     return _org_to_out(org, db)

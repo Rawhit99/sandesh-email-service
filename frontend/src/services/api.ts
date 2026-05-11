@@ -1,11 +1,15 @@
 // frontend/src/services/api.ts
 import axios, { AxiosError } from 'axios';
+import { ensureSessionActive, expireSession, markSessionActivity } from './session';
 
 // Add API key - you can set this in environment variables or use a default
 const API_KEY = process.env.REACT_APP_API_KEY || '';
 
 interface ErrorResponse {
-  detail: string;
+  detail?: string;
+  error?: {
+    message?: string;
+  };
 }
 
 // Interfaces
@@ -191,6 +195,21 @@ export interface AuthUser {
   created_at: string;
 }
 
+export interface ApiKeyRecord {
+  id: number;
+  key_prefix: string;
+  is_active: boolean;
+  last_used_at: string | null;
+  created_at: string;
+}
+
+export interface ApiKeyCreateResponse {
+  id: number;
+  key: string;
+  key_prefix: string;
+  created_at: string;
+}
+
 export interface IntegrationMeUpdateRequest {
   slack_webhook_url?: string;
   teams_webhook_url?: string;
@@ -311,11 +330,12 @@ class ApiService {
 
   // Create axios instance with default headers
   private createAxiosInstance() {
+    ensureSessionActive();
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
     const bearer = token || this.apiKey;
     const orgId =
       typeof localStorage !== 'undefined' ? localStorage.getItem('sandesh-org-id') : null;
-    return axios.create({
+    const instance = axios.create({
       baseURL: this.resolveBaseUrl(),
       headers: {
         'Content-Type': 'application/json',
@@ -323,13 +343,27 @@ class ApiService {
         ...(orgId && orgId.trim() ? { 'X-Sandesh-Organization-Id': orgId.trim() } : {}),
       },
     });
+    instance.interceptors.response.use(
+      (response) => {
+        markSessionActivity();
+        return response;
+      },
+      (error) => {
+        if (axios.isAxiosError(error) && error.response?.status === 401 && token) {
+          expireSession();
+        }
+        return Promise.reject(error);
+      },
+    );
+    return instance;
   }
 
   private handleError(error: unknown): never {
     if (axios.isAxiosError(error)) {
       const axiosError = error as AxiosError<ErrorResponse>;
-      if (axiosError.response?.data?.detail) {
-        throw new Error(axiosError.response.data.detail);
+      const message = axiosError.response?.data?.detail || axiosError.response?.data?.error?.message;
+      if (message) {
+        throw new Error(message);
       }
       if (axiosError.response?.status === 403) {
         throw new Error('Access denied. Please check your API key.');
@@ -630,7 +664,8 @@ class ApiService {
     try {
       const axiosInstance = this.createAxiosInstance();
       const response = await axiosInstance.patch<Subscriber>(
-        `/api/v1/subscribers/${encodeURIComponent(subscriberId)}/deactivate`
+        '/api/v1/subscribers/deactivate',
+        { subscriber_id: subscriberId }
       );
       return response.data;
     } catch (error) {
@@ -824,6 +859,35 @@ class ApiService {
     try {
       const axiosInstance = this.createAxiosInstance();
       await axiosInstance.patch(`/api/v1/notifications/${notificationId}/unseen`);
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async listApiKeys(): Promise<ApiKeyRecord[]> {
+    try {
+      const axiosInstance = this.createAxiosInstance();
+      const response = await axiosInstance.get<ApiKeyRecord[]>('/api/v1/api-keys');
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async createApiKey(): Promise<ApiKeyCreateResponse> {
+    try {
+      const axiosInstance = this.createAxiosInstance();
+      const response = await axiosInstance.post<ApiKeyCreateResponse>('/api/v1/api-keys', {});
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async deleteApiKey(keyId: number): Promise<void> {
+    try {
+      const axiosInstance = this.createAxiosInstance();
+      await axiosInstance.delete(`/api/v1/api-keys/${keyId}`);
     } catch (error) {
       this.handleError(error);
     }

@@ -16,6 +16,7 @@ import ApiKeys from './pages/ApiKeys';
 import Subscribers from './pages/Subscribers';
 import Integrations from './pages/Integrations';
 import Organizations from './pages/Organizations';
+import { clearSession, hasActiveSession, setupSessionIdleTimer } from './services/session';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,10 +24,17 @@ function App() {
   const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => readStoredColorMode());
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
+    setIsAuthenticated(hasActiveSession());
     setLoading(false);
   }, []);
+
+  useEffect(() => setupSessionIdleTimer(() => {
+    clearSession();
+    setIsAuthenticated(false);
+    if (window.location.pathname !== '/login') {
+      window.location.assign('/login');
+    }
+  }), []);
 
   useEffect(() => {
     const handler = (e: Event) => {
