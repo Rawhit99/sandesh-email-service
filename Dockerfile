@@ -1,7 +1,9 @@
+# syntax=docker/dockerfile:1.7
+
 ############################
 # Backend image build
 ############################
-FROM python:3.12-slim AS backend-builder
+FROM --platform=$TARGETPLATFORM python:3.12-slim AS backend-builder
 
 WORKDIR /build/backend
 
@@ -15,7 +17,7 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 
-FROM python:3.12-slim AS backend-runtime
+FROM --platform=$TARGETPLATFORM python:3.12-slim AS backend-runtime
 
 WORKDIR /app
 
@@ -27,6 +29,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=backend-builder /install /usr/local
 COPY backend/ /app/
+COPY tools/sandesh-cli/cli /app/cli
 
 RUN chown -R app:app /app
 
@@ -43,7 +46,7 @@ CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000
 ############################
 # Frontend image build
 ############################
-FROM node:20-alpine AS frontend-builder
+FROM --platform=$BUILDPLATFORM node:20-alpine AS frontend-builder
 
 WORKDIR /build/frontend
 
@@ -57,7 +60,7 @@ COPY frontend/ ./
 RUN npm run build
 
 
-FROM nginx:1.27-alpine AS frontend-runtime
+FROM --platform=$TARGETPLATFORM nginx:1.27-alpine AS frontend-runtime
 
 COPY --from=frontend-builder /build/frontend/build /usr/share/nginx/html
 COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf

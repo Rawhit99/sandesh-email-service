@@ -1,0 +1,26 @@
+# Publish from this directory: python -m build && twine check dist/*
+# Wheel/sdist are self-contained (cli/ lives next to this file).
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sandesh-cli"
+version = "0.1.0"
+description = "CLI for Sandesh (sync templates between API environments)"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+sandesh = "cli.sync_templates:main"
+
+[project.urls]
+Homepage = "https://github.com/rawhit99/sandesh-email-service"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cli*"]
