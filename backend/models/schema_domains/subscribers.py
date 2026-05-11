@@ -30,3 +30,7 @@ class SubscriberUpdate(BaseModel):
     data: Optional[Dict[str, Any]] = None
     channels: Optional[List[str]] = None
     is_active: Optional[bool] = None
+
+
+class SubscriberDeactivate(BaseModel):
+    subscriber_id: str = Field(..., min_length=1, max_length=255)

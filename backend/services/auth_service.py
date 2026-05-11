@@ -25,6 +25,7 @@ from models.schema_domains.auth import (
     UserCreate,
     UserResponse,
 )
+from services.template_service import seed_templates_for_owner
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -83,6 +84,7 @@ def _create_org_with_service_user(
     db.flush()
     org.service_user_id = service_user.id
     db.add(org)
+    seed_templates_for_owner(db, service_user.id)
     return org
 
 
@@ -163,7 +165,9 @@ def ensure_bootstrap_platform_admin(db: Session) -> None:
     org_id: Optional[int] = None
     if org_name:
         existing_org = (
-            db.query(Organization).filter(Organization.name == org_name).first()
+            db.query(Organization)
+            .filter(Organization.name == org_name)
+            .first()
         )
         if existing_org:
             org_id = existing_org.id

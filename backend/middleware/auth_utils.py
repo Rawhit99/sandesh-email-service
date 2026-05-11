@@ -8,7 +8,11 @@ from config import settings
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 # Prefer dedicated JWT secret key. Keep API_KEYS fallback for compatibility.
-SECRET_KEY = settings.jwt_secret_key or settings.api_keys
+SECRET_KEY = (
+    settings.jwt_secret_key
+    or settings.api_keys
+    or "change-me-in-development"
+)
 ALGORITHM = settings.jwt_algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_access_token_expire_minutes
 
@@ -28,13 +32,14 @@ def create_access_token(
 ) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
+    now = datetime.utcnow()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(
+        expire = now + timedelta(
             minutes=ACCESS_TOKEN_EXPIRE_MINUTES
         )
-    to_encode.update({"exp": expire})
+    to_encode.update({"exp": expire, "iat": now})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

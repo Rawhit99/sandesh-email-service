@@ -21,6 +21,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { startSession } from '../services/session';
 
 const API_BASE_URL =
   (window as Window & { __ENV__?: { REACT_APP_API_URL?: string } }).__ENV__?.REACT_APP_API_URL ||
@@ -41,8 +42,7 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, { username, password });
-      localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      startSession(response.data.access_token, response.data.user);
       window.location.href = '/';
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Login failed. Please try again.');

@@ -37,6 +37,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import apiService, { AuthUser, PlatformOrganization } from '../../services/api';
+import { clearSession } from '../../services/session';
 
 const drawerWidth = 272;
 
@@ -181,9 +182,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('sandesh-org-id');
+    clearSession();
     setUser(null);
     setSelectedOrgId('');
     setPlatformOrgs([]);

@@ -35,9 +35,40 @@ import {
 } from '@mui/icons-material';
 import apiService, { Subscriber } from '../services/api';
 
+const getDataString = (data: Subscriber['data'], key: string): string => {
+  const value = data?.[key];
+  return typeof value === 'string' ? value : '';
+};
+
+const formatSubscriberName = (subscriber: Subscriber): string => {
+  const firstName = getDataString(subscriber.data, 'firstName').trim();
+  const lastName = getDataString(subscriber.data, 'lastName').trim();
+  return [firstName, lastName].filter(Boolean).join(' ') || '-';
+};
+
+const formatProfileData = (data: Subscriber['data']): string => {
+  if (!data) {
+    return '-';
+  }
+  const entries = Object.entries(data).filter(([key, value]) => {
+    if (key === 'firstName' || key === 'lastName') {
+      return false;
+    }
+    return value !== null && value !== undefined && String(value).trim() !== '';
+  });
+  if (entries.length === 0) {
+    return '-';
+  }
+  return entries
+    .map(([key, value]) => `${key}: ${typeof value === 'object' ? JSON.stringify(value) : String(value)}`)
+    .join(', ');
+};
+
 const Subscribers: React.FC = () => {
   const [rows, setRows] = useState<Subscriber[]>([]);
   const [subscriberId, setSubscriberId] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -45,7 +76,10 @@ const Subscribers: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [editOpen, setEditOpen]   = useState(false);
   const [editSid, setEditSid]     = useState('');
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editData, setEditData] = useState<Record<string, any>>({});
   const [editActive, setEditActive] = useState(true);
   const [page, setPage]           = useState(1);
   const rowsPerPage               = 10;
@@ -69,8 +103,18 @@ const Subscribers: React.FC = () => {
     setError(null);
     try {
       setRefreshing(true);
-      await apiService.createSubscriber({ subscriber_id: subscriberId.trim(), email: email.trim() });
+      const data = {
+        ...(firstName.trim() ? { firstName: firstName.trim() } : {}),
+        ...(lastName.trim() ? { lastName: lastName.trim() } : {}),
+      };
+      await apiService.createSubscriber({
+        subscriber_id: subscriberId.trim(),
+        email: email.trim(),
+        data: Object.keys(data).length ? data : undefined,
+      });
       setSubscriberId('');
+      setFirstName('');
+      setLastName('');
       setEmail('');
       setSuccess('Subscriber created');
       await load(true);
@@ -83,7 +127,22 @@ const Subscribers: React.FC = () => {
 
   const handleSaveEdit = async () => {
     try {
-      await apiService.updateSubscriber(editSid, { email: editEmail.trim(), is_active: editActive });
+      const nextData = { ...editData };
+      if (editFirstName.trim()) {
+        nextData.firstName = editFirstName.trim();
+      } else {
+        delete nextData.firstName;
+      }
+      if (editLastName.trim()) {
+        nextData.lastName = editLastName.trim();
+      } else {
+        delete nextData.lastName;
+      }
+      await apiService.updateSubscriber(editSid, {
+        email: editEmail.trim(),
+        data: nextData,
+        is_active: editActive,
+      });
       setEditOpen(false);
       setSuccess('Subscriber updated');
       await load(true);
@@ -174,6 +233,20 @@ const Subscribers: React.FC = () => {
               size="small"
               sx={{ minWidth: 260 }}
             />
+            <TextField
+              label="First name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              size="small"
+              sx={{ minWidth: 180 }}
+            />
+            <TextField
+              label="Last name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              size="small"
+              sx={{ minWidth: 180 }}
+            />
             <Button
               variant="contained"
               startIcon={<PersonAddIcon sx={{ fontSize: 15 }} />}
@@ -202,7 +275,9 @@ const Subscribers: React.FC = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Subscriber ID</TableCell>
+                    <TableCell>Name</TableCell>
                     <TableCell>Email</TableCell>
+                    <TableCell>Profile Data</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell align="right">Actions</TableCell>
                   </TableRow>
@@ -215,7 +290,13 @@ const Subscribers: React.FC = () => {
                           {r.subscriber_id}
                         </Box>
                       </TableCell>
+                      <TableCell><Typography variant="body2">{formatSubscriberName(r)}</Typography></TableCell>
                       <TableCell><Typography variant="body2">{r.email}</Typography></TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary" noWrap sx={{ maxWidth: 260 }}>
+                          {formatProfileData(r.data)}
+                        </Typography>
+                      </TableCell>
                       <TableCell>
                         <Chip
                           size="small"
@@ -227,7 +308,7 @@ const Subscribers: React.FC = () => {
                       <TableCell align="right">
                         <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                           <Tooltip title="Edit">
-                            <IconButton size="small" onClick={() => { setEditSid(r.subscriber_id); setEditEmail(r.email); setEditActive(r.is_active); setEditOpen(true); }}>
+                            <IconButton size="small" onClick={() => { setEditSid(r.subscriber_id); setEditFirstName(getDataString(r.data, 'firstName')); setEditLastName(getDataString(r.data, 'lastName')); setEditEmail(r.email); setEditData(r.data ?? {}); setEditActive(r.is_active); setEditOpen(true); }}>
                               <EditIcon sx={{ fontSize: 16 }} />
                             </IconButton>
                           </Tooltip>
@@ -261,6 +342,8 @@ const Subscribers: React.FC = () => {
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1.5, fontFamily: 'monospace' }}>
             {editSid}
           </Typography>
+          <TextField fullWidth margin="dense" label="First name" value={editFirstName} onChange={e => setEditFirstName(e.target.value)} size="small" />
+          <TextField fullWidth margin="dense" label="Last name" value={editLastName} onChange={e => setEditLastName(e.target.value)} size="small" />
           <TextField fullWidth margin="dense" label="Email" type="email" value={editEmail} onChange={e => setEditEmail(e.target.value)} size="small" />
           <FormControlLabel
             control={<Switch checked={editActive} onChange={e => setEditActive(e.target.checked)} size="small" />}

@@ -6,6 +6,7 @@ from middleware.tenant_scope import get_scope_tenant_user
 from models.models import User, get_db
 from models.schema_domains.subscribers import (
     SubscriberCreate,
+    SubscriberDeactivate,
     SubscriberResponse,
     SubscriberUpdate,
 )
@@ -49,6 +50,18 @@ def get_subscriber_endpoint(
     user: User = Depends(get_scope_tenant_user),
 ):
     return get_subscriber(db, user, subscriber_id)
+
+
+@router.patch(
+    "/api/v1/subscribers/deactivate",
+    response_model=SubscriberResponse,
+)
+def deactivate_subscriber_from_body_endpoint(
+    body: SubscriberDeactivate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_scope_tenant_user),
+):
+    return deactivate_subscriber(db, user, body.subscriber_id)
 
 
 @router.patch(
