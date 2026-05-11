@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import {
   Block as BlockIcon,
+  CheckCircle as ActivateIcon,
   Edit as EditIcon,
   Group as GroupIcon,
   PersonAdd as PersonAddIcon,
@@ -157,6 +158,15 @@ const Subscribers: React.FC = () => {
       await load(true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Deactivate failed');
+    }
+  };
+
+  const handleActivate = async (id: string) => {
+    try {
+      await apiService.activateSubscriber(id);
+      await load(true);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Activate failed');
     }
   };
 
@@ -316,6 +326,13 @@ const Subscribers: React.FC = () => {
                             <Tooltip title="Deactivate">
                               <IconButton size="small" color="warning" onClick={() => void handleDeactivate(r.subscriber_id)}>
                                 <BlockIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {!r.is_active && (
+                            <Tooltip title="Activate">
+                              <IconButton size="small" color="success" onClick={() => void handleActivate(r.subscriber_id)}>
+                                <ActivateIcon sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
                           )}

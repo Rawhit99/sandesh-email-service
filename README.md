@@ -159,7 +159,10 @@ npm start
 - `AWS_SECRET_ACCESS_KEY`: AWS secret key
 - `AWS_REGION`: AWS region
 - `SES_SENDER_EMAIL`: Verified sender email
-- `JWT_SECRET_KEY`: Secret used to sign console login JWTs
+- `JWT_SECRET_KEY`: Secret used to sign console login JWTs. Set this in
+  `.env` and use the same value in jwt.io for HS256 signature verification.
+  If omitted in Docker Compose, the local fallback is
+  `change-me-in-production`; replace it before deploying.
 
 ### Frontend
 
