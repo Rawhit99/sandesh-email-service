@@ -15,6 +15,7 @@ import {
   Tabs,
   Tab,
   Tooltip,
+  TextField,
   Typography,
 } from '@mui/material';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
@@ -25,6 +26,7 @@ import {
   Edit as EditIcon,
   Preview as PreviewIcon,
   Refresh as RefreshIcon,
+  Search as SearchIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from '@mui/icons-material';
@@ -42,11 +44,22 @@ const Templates: React.FC = () => {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewContent, setPreviewContent] = useState('');
   const [activeTab, setActiveTab] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const totalVariables = templates.reduce((acc, t) => acc + Object.keys(t.variables || {}).length, 0);
   const activeTemplates   = templates.filter(t => t.is_active);
   const inactiveTemplates = templates.filter(t => !t.is_active);
   const currentTemplates  = activeTab === 0 ? activeTemplates : inactiveTemplates;
+  const filteredTemplates = currentTemplates.filter((t) => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      t.template_id.toLowerCase().includes(q) ||
+      t.name.toLowerCase().includes(q) ||
+      t.subject.toLowerCase().includes(q) ||
+      String(t.content || '').toLowerCase().includes(q)
+    );
+  });
 
   const fetchTemplates = async (background = false) => {
     try {
@@ -194,6 +207,18 @@ const Templates: React.FC = () => {
             </Button>
           </Stack>
         </Stack>
+        <Box sx={{ mt: 1.5 }}>
+          <TextField
+            size="small"
+            placeholder="Search by template id, name, subject, content..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{ width: { xs: '100%', md: 420 } }}
+            InputProps={{
+              startAdornment: <SearchIcon sx={{ mr: 0.75, fontSize: 16, color: 'text.secondary' }} />,
+            }}
+          />
+        </Box>
 
         {/* Summary strip */}
         <Stack direction="row" spacing={1} sx={{ mt: 1.75 }} flexWrap="wrap">
@@ -238,7 +263,7 @@ const Templates: React.FC = () => {
           </Tabs>
 
           {/* Table / empty */}
-          {currentTemplates.length === 0 ? (
+          {filteredTemplates.length === 0 ? (
             <Box sx={{ py: 8, textAlign: 'center' }}>
               <VisibilityOffIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1.5, opacity: 0.5 }} />
               <Typography variant="h6" color="text.secondary">
@@ -261,7 +286,7 @@ const Templates: React.FC = () => {
             </Box>
           ) : (
             <DataGrid
-              rows={currentTemplates}
+              rows={filteredTemplates}
               columns={columns}
               getRowId={(r) => r.template_id}
               pageSizeOptions={[10, 25, 50]}
