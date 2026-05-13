@@ -673,6 +673,19 @@ class ApiService {
     }
   }
 
+  async activateSubscriber(subscriberId: string): Promise<Subscriber> {
+    try {
+      const axiosInstance = this.createAxiosInstance();
+      const response = await axiosInstance.patch<Subscriber>(
+        '/api/v1/subscribers/activate',
+        { subscriber_id: subscriberId }
+      );
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
   async updateSubscriber(subscriberId: string, body: SubscriberUpdateRequest): Promise<Subscriber> {
     try {
       const axiosInstance = this.createAxiosInstance();

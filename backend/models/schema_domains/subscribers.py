@@ -34,3 +34,7 @@ class SubscriberUpdate(BaseModel):
 
 class SubscriberDeactivate(BaseModel):
     subscriber_id: str = Field(..., min_length=1, max_length=255)
+
+
+class SubscriberActivate(BaseModel):
+    subscriber_id: str = Field(..., min_length=1, max_length=255)

@@ -7,12 +7,11 @@ from config import settings
 # Password hashing - using argon2 which has no password length limits
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
-# Prefer dedicated JWT secret key. Keep API_KEYS fallback for compatibility.
-SECRET_KEY = (
-    settings.jwt_secret_key
-    or settings.api_keys
-    or "change-me-in-development"
-)
+# JWT signing must use only the dedicated JWT secret. Do not couple this to
+# API_KEYS, otherwise jwt.io verification depends on unrelated API key config.
+SECRET_KEY = (settings.jwt_secret_key or "").strip()
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET_KEY must be set to sign and verify JWTs")
 ALGORITHM = settings.jwt_algorithm
 ACCESS_TOKEN_EXPIRE_MINUTES = settings.jwt_access_token_expire_minutes
 

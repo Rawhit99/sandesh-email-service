@@ -5,12 +5,14 @@ from fastapi import APIRouter, Depends
 from middleware.tenant_scope import get_scope_tenant_user
 from models.models import User, get_db
 from models.schema_domains.subscribers import (
+    SubscriberActivate,
     SubscriberCreate,
     SubscriberDeactivate,
     SubscriberResponse,
     SubscriberUpdate,
 )
 from services.subscriber_service import (
+    activate_subscriber,
     create_subscriber,
     create_subscriber_v1,
     deactivate_subscriber,
@@ -62,6 +64,18 @@ def deactivate_subscriber_from_body_endpoint(
     user: User = Depends(get_scope_tenant_user),
 ):
     return deactivate_subscriber(db, user, body.subscriber_id)
+
+
+@router.patch(
+    "/api/v1/subscribers/activate",
+    response_model=SubscriberResponse,
+)
+def activate_subscriber_from_body_endpoint(
+    body: SubscriberActivate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_scope_tenant_user),
+):
+    return activate_subscriber(db, user, body.subscriber_id)
 
 
 @router.patch(

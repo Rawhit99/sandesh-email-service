@@ -142,6 +142,9 @@ class EventApi:
             "email": email,
             "payload": payload,
         }
+        attachments = self._legacy_attachments_from_payload(payload)
+        if attachments:
+            legacy_body["attachments"] = attachments
         self._apply_legacy_email_overrides(legacy_body, email_overrides)
 
         try:
@@ -225,6 +228,37 @@ class EventApi:
             legacy_body["payload"]["_integration_identifier"] = (
                 integration_identifier.strip()
             )
+
+    @staticmethod
+    def _legacy_attachments_from_payload(
+        payload: JsonDict,
+    ) -> List[JsonDict]:
+        raw_items = payload.get("attachments")
+        if not isinstance(raw_items, list):
+            return []
+        out: List[JsonDict] = []
+        for item in raw_items:
+            if not isinstance(item, dict):
+                continue
+            file_b64 = item.get("file")
+            filename = item.get("name")
+            if not isinstance(file_b64, str) or not file_b64.strip():
+                continue
+            if not isinstance(filename, str) or not filename.strip():
+                continue
+            mime = item.get("mime")
+            out.append(
+                {
+                    "filename": filename.strip(),
+                    "content_base64": file_b64.strip(),
+                    "mime_type": (
+                        str(mime).strip()
+                        if isinstance(mime, str) and mime.strip()
+                        else "application/octet-stream"
+                    ),
+                }
+            )
+        return out
 
     @staticmethod
     def _http_error_from_sdk(exc: SandeshAPIError) -> HTTPError:

@@ -168,12 +168,34 @@ class Sandesh:
         try:
             return self._request("POST", "/v1/subscribers", json=body)
         except SandeshAPIError as exc:
+            if exc.status_code == 409:
+                subscriber_id = str(
+                    body.get("subscriberId") or body.get("subscriber_id") or ""
+                ).strip()
+                if not subscriber_id:
+                    raise
+                data: JsonDict = {}
+                first_name = body.get("firstName") or body.get("first_name")
+                last_name = body.get("lastName") or body.get("last_name")
+                if first_name is not None:
+                    data["firstName"] = str(first_name).strip()
+                if last_name is not None:
+                    data["lastName"] = str(last_name).strip()
+                update_body: JsonDict = {}
+                email = body.get("email")
+                if isinstance(email, str) and email.strip():
+                    update_body["email"] = email.strip()
+                if data:
+                    update_body["data"] = data
+                return self.update_subscriber(subscriber_id, update_body)
             if exc.status_code != 404:
                 raise
             # Backward-compatible fallback for deployments exposing only
             # `/api/v1/subscribers`.
             legacy_body = self._to_legacy_subscriber_body(body)
-            return self._request("POST", "/api/v1/subscribers", json=legacy_body)
+            return self._request(
+                "POST", "/api/v1/subscribers", json=legacy_body
+            )
 
     def update_subscriber(
         self, subscriber_id: str, body: JsonDict

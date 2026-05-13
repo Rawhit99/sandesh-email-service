@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 import {
   Block as BlockIcon,
+  CheckCircle as ActivateIcon,
   Edit as EditIcon,
   Group as GroupIcon,
   PersonAdd as PersonAddIcon,
@@ -82,6 +83,7 @@ const Subscribers: React.FC = () => {
   const [editData, setEditData] = useState<Record<string, any>>({});
   const [editActive, setEditActive] = useState(true);
   const [page, setPage]           = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const rowsPerPage               = 10;
 
   const load = useCallback(async (background = false) => {
@@ -160,6 +162,15 @@ const Subscribers: React.FC = () => {
     }
   };
 
+  const handleActivate = async (id: string) => {
+    try {
+      await apiService.activateSubscriber(id);
+      await load(true);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Activate failed');
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ bgcolor: 'background.default', minHeight: '100%', display: 'grid', placeItems: 'center', pt: 8 }}>
@@ -168,9 +179,19 @@ const Subscribers: React.FC = () => {
     );
   }
 
+  const filteredRows = rows.filter((r) => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      r.subscriber_id.toLowerCase().includes(q) ||
+      r.email.toLowerCase().includes(q) ||
+      formatSubscriberName(r).toLowerCase().includes(q) ||
+      formatProfileData(r.data).toLowerCase().includes(q)
+    );
+  });
   const activeCount      = rows.filter(r => r.is_active).length;
-  const totalPages       = Math.max(1, Math.ceil(rows.length / rowsPerPage));
-  const paginatedRows    = rows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+  const totalPages       = Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+  const paginatedRows    = filteredRows.slice((page - 1) * rowsPerPage, page * rowsPerPage);
 
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100%' }}>
@@ -196,6 +217,15 @@ const Subscribers: React.FC = () => {
             Refresh
           </Button>
         </Stack>
+        <Box sx={{ mt: 1.5 }}>
+          <TextField
+            size="small"
+            placeholder="Search by subscriber id, name, email, profile data..."
+            value={searchTerm}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+            sx={{ width: { xs: '100%', md: 420 } }}
+          />
+        </Box>
 
         {/* Summary strip */}
         <Stack direction="row" spacing={1} sx={{ mt: 1.75 }} flexWrap="wrap">
@@ -261,7 +291,7 @@ const Subscribers: React.FC = () => {
 
         {/* Table panel */}
         <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
-          {rows.length === 0 ? (
+          {filteredRows.length === 0 ? (
             <Box sx={{ py: 8, textAlign: 'center' }}>
               <GroupIcon sx={{ fontSize: 48, color: 'text.secondary', opacity: 0.5, mb: 1.5 }} />
               <Typography variant="h6" color="text.secondary">No subscribers yet</Typography>
@@ -316,6 +346,13 @@ const Subscribers: React.FC = () => {
                             <Tooltip title="Deactivate">
                               <IconButton size="small" color="warning" onClick={() => void handleDeactivate(r.subscriber_id)}>
                                 <BlockIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {!r.is_active && (
+                            <Tooltip title="Activate">
+                              <IconButton size="small" color="success" onClick={() => void handleActivate(r.subscriber_id)}>
+                                <ActivateIcon sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
                           )}

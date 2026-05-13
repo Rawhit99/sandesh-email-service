@@ -68,15 +68,14 @@ const Notifications: React.FC = () => {
     try {
       background ? setRefreshing(true) : setLoading(true);
       setError(null);
-      const status = searchParams.get('status') || 'all';
-      const data = await apiService.getNotifications({ status });
+      const data = await apiService.getNotifications();
       setNotifications(data || []);
     } catch {
       setError('Failed to fetch notifications');
     } finally {
       background ? setRefreshing(false) : setLoading(false);
     }
-  }, [searchParams]);
+  }, []);
 
   useEffect(() => { void fetchNotifications(false); }, [fetchNotifications]);
   useEffect(() => {
@@ -143,16 +142,24 @@ const Notifications: React.FC = () => {
   // Reset to page 1 whenever search term changes
   useEffect(() => { setPage(1); }, [searchTerm]);
 
-  const filteredNotifications = notifications.filter(n =>
+  const currentStatusFilter = searchParams.get('status') || 'all';
+  const searchFilteredNotifications = notifications.filter(n =>
     n.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     n.template_id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  const computedTotalPages     = Math.max(1, Math.ceil(filteredNotifications.length / rowsPerPage));
+  const filteredNotifications = searchFilteredNotifications.filter((n) => {
+    if (currentStatusFilter === 'all') return true;
+    if (currentStatusFilter === 'pending') return ['pending', 'queued', 'running'].includes(n.status);
+    return n.status === currentStatusFilter;
+  });
+  const allCount = searchFilteredNotifications.length;
+  const successCount = searchFilteredNotifications.filter(n => n.status === 'success').length;
+  const failedCount = searchFilteredNotifications.filter(n => n.status === 'failed').length;
+  const pendingCount = searchFilteredNotifications.filter(n => ['pending','queued','running'].includes(n.status)).length;
+  const readCount = searchFilteredNotifications.filter(n => Boolean(n.seen_at)).length;
+  const failedNotifications = filteredNotifications.filter(n => n.status === 'failed');
+  const computedTotalPages = Math.max(1, Math.ceil(filteredNotifications.length / rowsPerPage));
   const paginatedNotifications = filteredNotifications.slice((page - 1) * rowsPerPage, page * rowsPerPage);
-  const failedNotifications   = filteredNotifications.filter(n => n.status === 'failed');
-  const successNotifications  = filteredNotifications.filter(n => n.status === 'success');
-  const pendingNotifications  = filteredNotifications.filter(n => ['pending','queued','running'].includes(n.status));
-  const readCount             = filteredNotifications.filter(n => Boolean(n.seen_at)).length;
 
   const handleTabChange = (_: React.SyntheticEvent, v: number) => {
     setActiveTab(v);
@@ -166,7 +173,6 @@ const Notifications: React.FC = () => {
     setSearchParams(params);
   };
 
-  const currentStatusFilter = searchParams.get('status') || 'all';
   const formatDate = (s: string) => new Date(s).toLocaleString();
 
   if (loading) {
@@ -217,10 +223,10 @@ const Notifications: React.FC = () => {
 
         {/* Summary strip */}
         <Stack direction="row" spacing={1} sx={{ mt: 1.75 }} flexWrap="wrap">
-          <Chip size="small" variant="outlined" label={`${filteredNotifications.length} total`} />
-          <Chip size="small" variant="outlined" label={`${successNotifications.length} success`} color="success" />
-          {failedNotifications.length > 0 && (
-            <Chip size="small" variant="outlined" label={`${failedNotifications.length} failed`} color="error" />
+          <Chip size="small" variant="outlined" label={`${allCount} total`} />
+          <Chip size="small" variant="outlined" label={`${successCount} success`} color="success" />
+          {failedCount > 0 && (
+            <Chip size="small" variant="outlined" label={`${failedCount} failed`} color="error" />
           )}
           <Chip size="small" variant="outlined" label={`${readCount} read`} />
         </Stack>
@@ -237,10 +243,10 @@ const Notifications: React.FC = () => {
         <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
           {/* Tab bar */}
           <Tabs value={activeTab} onChange={handleTabChange}>
-            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><span>All</span><Chip label={filteredNotifications.length} size="small" variant="outlined" /></Stack>} />
-            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><CheckCircleIcon sx={{ fontSize: 14 }} /><span>Success</span><Chip label={successNotifications.length} size="small" variant="outlined" /></Stack>} />
-            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><ErrorIcon sx={{ fontSize: 14 }} /><span>Failed</span><Chip label={failedNotifications.length} size="small" variant="outlined" /></Stack>} />
-            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><PendingIcon sx={{ fontSize: 14 }} /><span>Pending</span><Chip label={pendingNotifications.length} size="small" variant="outlined" /></Stack>} />
+            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><span>All</span><Chip label={allCount} size="small" variant="outlined" /></Stack>} />
+            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><CheckCircleIcon sx={{ fontSize: 14 }} /><span>Success</span><Chip label={successCount} size="small" variant="outlined" /></Stack>} />
+            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><ErrorIcon sx={{ fontSize: 14 }} /><span>Failed</span><Chip label={failedCount} size="small" variant="outlined" /></Stack>} />
+            <Tab label={<Stack direction="row" spacing={1} alignItems="center"><PendingIcon sx={{ fontSize: 14 }} /><span>Pending</span><Chip label={pendingCount} size="small" variant="outlined" /></Stack>} />
           </Tabs>
 
           {/* Filter bar */}

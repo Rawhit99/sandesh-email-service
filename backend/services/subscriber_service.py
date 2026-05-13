@@ -131,3 +131,15 @@ def deactivate_subscriber(
     db.commit()
     db.refresh(row)
     return SubscriberResponse.from_orm(row)
+
+
+def activate_subscriber(
+    db: Session,
+    user: User,
+    subscriber_id: str,
+) -> SubscriberResponse:
+    row = _get_owned_subscriber(db, user, subscriber_id)
+    row.is_active = True
+    db.commit()
+    db.refresh(row)
+    return SubscriberResponse.from_orm(row)
