@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 
 class EventOverrideEmail(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    to: Optional[EmailStr] = None
     cc: Optional[List[EmailStr]] = None
     subject: Optional[str] = None
     senderName: Optional[str] = None

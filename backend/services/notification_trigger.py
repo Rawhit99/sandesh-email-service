@@ -10,7 +10,6 @@ from config import settings
 from exceptions import (
     BadRequestError,
     ForbiddenError,
-    NotFoundError,
     UnauthorizedError,
 )
 from fastapi import Request
@@ -20,7 +19,6 @@ from models.models import (
     EmailTemplate,
     Notification,
     OrgTemplateSetting,
-    Subscriber,
     User,
 )
 from models.schema_domains.notifications import (
@@ -34,6 +32,7 @@ from sandesh.infrastructure.queue.publisher import (
 from sqlalchemy.orm import Session
 
 from services.email_service import EmailService
+from services.subscriber_service import ensure_subscriber_for_send
 from services.template_service import resolve_email_template_row
 
 logger = logging.getLogger(__name__)
@@ -54,21 +53,21 @@ async def trigger_email_notification(
         sid = notification.subscriber_external_id
         if not sid:
             raise BadRequestError("subscriber_external_id is required")
-        if uid is None:
+        if uid is None or scope_user is None:
             raise UnauthorizedError(
                 "Authentication required for subscriber-gated sends"
             )
-        exists = (
-            db.query(Subscriber)
-            .filter(
-                Subscriber.subscriber_id == sid,
-                Subscriber.user_id == uid,
-                Subscriber.is_active.is_(True),
+        email_raw = str(notification.email or "").strip()
+        if "@" not in email_raw:
+            raise BadRequestError(
+                "A valid recipient email is required when subscriber gating is enabled"
             )
-            .first()
+        ensure_subscriber_for_send(
+            db,
+            scope_user,
+            subscriber_id=sid,
+            email=email_raw,
         )
-        if not exists:
-            raise NotFoundError("Subscriber not found")
 
     template = resolve_email_template_row(db, notification.template_id, uid)
 

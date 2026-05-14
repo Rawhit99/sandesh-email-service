@@ -10,7 +10,7 @@ Please do **not** open a public GitHub issue for security vulnerabilities.
 
 Report privately to:
 
-- rohit@zeron.one
+- rohithakur0208@gmail.com
 
 Include:
 

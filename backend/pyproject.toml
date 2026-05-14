@@ -1,9 +1,9 @@
 [project]
 name = "sandesh-sdk"
-version = "0.4.2"
+version = "0.4.6"
 description = "Official Python SDK for the Sandesh notification API."
 authors = [
-    {name = "Rohit Thakur", email = "rohit@zeron.one"},
+    {name = "Rohit Thakur", email = "rohithakur0208@gmail.com"},
 ]
 dependencies = [
     "httpx>=0.25.0",
@@ -30,6 +30,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 include-package-data = true
+
+[tool.setuptools.exclude-package-data]
+sandesh = ["*.c"]
+"sandesh.sdk" = ["*.c"]
 
 [tool.setuptools.package-data]
 sandesh = ["py.typed", "*.pyi"]
