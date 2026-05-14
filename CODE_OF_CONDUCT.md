@@ -34,7 +34,7 @@ an individual is representing the project or its community.
 
 ## Reporting
 
-To report unacceptable behavior, contact: `rohit@zeron.one`
+To report unacceptable behavior, contact: `rohithakur0208@gmail.com`
 
 All reports will be reviewed and investigated promptly and fairly.
 

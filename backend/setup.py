@@ -16,12 +16,21 @@ COMPILED_MODULES = {
 
 
 def _is_compiled_build() -> bool:
-    return os.getenv("SANDESH_BUILD_COMPILED", "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    raw_compiled = os.getenv("SANDESH_BUILD_COMPILED", "").strip().lower()
+    raw_pure = os.getenv("SANDESH_BUILD_PURE", "").strip().lower()
+    truthy = {"1", "true", "yes", "on"}
+    falsy = {"0", "false", "no", "off"}
+
+    if raw_compiled in truthy:
+        return True
+    if raw_compiled in falsy:
+        return False
+    if raw_pure in truthy:
+        return False
+    if raw_pure in falsy:
+        return True
+    # Default to compiled wheels so runtime sources stay hidden.
+    return True
 
 
 class build_py(_build_py):

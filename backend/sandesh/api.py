@@ -137,10 +137,13 @@ class EventApi:
             )
 
         email_overrides = self._email_overrides(overrides)
+        sid = subscriber_id.strip() if isinstance(subscriber_id, str) else str(subscriber_id).strip()
         legacy_body: JsonDict = {
             "template_id": name,
             "email": email,
             "payload": payload,
+            # Required when Sandesh has SUBSCRIBER_REQUIRED=true; matches v1 to.subscriberId.
+            "subscriber_external_id": sid,
         }
         attachments = self._legacy_attachments_from_payload(payload)
         if attachments:

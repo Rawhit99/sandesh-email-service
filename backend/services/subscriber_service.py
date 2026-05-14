@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from api.contracts.subscribers import SubscriberCreateRequestV1
-from exceptions import ConflictError, NotFoundError
+from exceptions import BadRequestError, ConflictError, NotFoundError
 from models.models import Subscriber, User
 from models.schema_domains.subscribers import (
     SubscriberCreate,
@@ -50,6 +50,59 @@ def create_subscriber_v1(
     body: SubscriberCreateRequestV1,
 ) -> SubscriberResponse:
     return create_subscriber(db, user, _to_legacy_create(body))
+
+
+def ensure_subscriber_for_send(
+    db: Session,
+    user: User,
+    *,
+    subscriber_id: str,
+    email: str,
+) -> Subscriber:
+    """Create or refresh a subscriber row for tenant-gated sends (upsert semantics).
+
+    Aligns with Novu-style triggers: the same external id can be ensured from the
+    recipient email on each send without a separate identify call.
+    """
+    sid = str(subscriber_id or "").strip()
+    em = str(email or "").strip()
+    if not sid or "@" not in em:
+        raise BadRequestError(
+            "subscriber_external_id and a valid recipient email are required "
+            "to register a subscriber for this send"
+        )
+    row = (
+        db.query(Subscriber)
+        .filter(
+            Subscriber.user_id == user.id,
+            Subscriber.subscriber_id == sid,
+        )
+        .first()
+    )
+    if row:
+        changed = False
+        if not row.is_active:
+            row.is_active = True
+            changed = True
+        if row.email != em:
+            row.email = em
+            changed = True
+        if changed:
+            db.commit()
+            db.refresh(row)
+        return row
+    row = Subscriber(
+        user_id=user.id,
+        subscriber_id=sid,
+        email=em,
+        data=None,
+        channels=None,
+        is_active=True,
+    )
+    db.add(row)
+    db.commit()
+    db.refresh(row)
+    return row
 
 
 def create_subscriber(
