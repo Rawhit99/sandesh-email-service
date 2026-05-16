@@ -63,7 +63,7 @@ const Login: React.FC = () => {
               sx={{ width: 80, height: 80, objectFit: 'contain', display: 'block', mx: 'auto', mb: 2 }}
             />
             <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: 'center' }}>
-              Sign in
+              
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Access Sandesh console.
