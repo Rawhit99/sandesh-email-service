@@ -90,3 +90,11 @@ dist/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Cython / wheel build artifacts (regenerated on build)
+backend/sandesh/**/*.c
+backend/wheel.json
+e501.json
+
+# Local lint output
+*.ruff.json

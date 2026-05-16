@@ -1,2 +1,24 @@
-# Default code owner for all files
-* @RohitThakur
+# Sandesh requires maintainer review before merge.
+# GitHub: enable "Require review from Code Owners" in branch protection.
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default — all changes need @Rawhit99
+* @Rawhit99
+
+# SDK (PyPI: sandesh-sdk) — maintainer only
+/backend/sandesh/ @Rawhit99
+/backend/pyproject.toml @Rawhit99
+/backend/setup.py @Rawhit99
+
+# CLI
+/tools/sandesh-cli/ @Rawhit99
+
+# CI/CD and release automation
+/.github/ @Rawhit99
+
+# Governance and licensing
+/LICENSE @Rawhit99
+/CODE_OF_CONDUCT.md @Rawhit99
+/SECURITY.md @Rawhit99
+/GOVERNANCE.md @Rawhit99
+/RELEASE_POLICY.md @Rawhit99

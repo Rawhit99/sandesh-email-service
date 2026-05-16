@@ -71,7 +71,13 @@ const Register: React.FC = () => {
       <Container maxWidth="sm">
         <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
           <CardContent sx={{ p: { xs: 2.5, md: 3 } }}>
-            <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+            <Box
+              component="img"
+              src={`${process.env.PUBLIC_URL}/sandesh-icon.png`}
+              alt="Sandesh"
+              sx={{ width: 80, height: 80, objectFit: 'contain', display: 'block', mx: 'auto', mb: 2 }}
+            />
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, textAlign: 'center' }}>
               Create account
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

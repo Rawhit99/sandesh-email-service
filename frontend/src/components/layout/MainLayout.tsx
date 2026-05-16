@@ -40,6 +40,7 @@ import apiService, { AuthUser, PlatformOrganization } from '../../services/api';
 import { clearSession } from '../../services/session';
 
 const drawerWidth = 272;
+const brandIconUrl = `${process.env.PUBLIC_URL}/sandesh-icon.png`;
 
 interface User {
   id: number;
@@ -293,21 +294,11 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', backgroundColor: 'background.paper' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
           <Box
-            sx={{
-              width: 32,
-              height: 32,
-              borderRadius: 1.5,
-              backgroundColor: 'primary.dark',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              mr: 2,
-            }}
-          >
-            <Typography variant="body2" sx={{ color: 'common.white', fontWeight: 'bold' }}>
-              S
-            </Typography>
-          </Box>
+            component="img"
+            src={brandIconUrl}
+            alt="Sandesh"
+            sx={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0, mr: 1.5 }}
+          />
           <Box>
             <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary' }}>
               Sandesh

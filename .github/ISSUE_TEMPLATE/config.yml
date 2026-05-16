@@ -3,3 +3,6 @@ contact_links:
   - name: Security vulnerability report
     url: mailto:rohithakur0208@gmail.com
     about: Report vulnerabilities privately. Do not open public issues.
+  - name: Contributing guide
+    url: https://github.com/RohitThakur/sandesh-email-service/blob/main/CONTRIBUTING.md
+    about: Setup, PR process, and code conventions

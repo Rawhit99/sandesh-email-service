@@ -1,6 +1,6 @@
 [project]
 name = "sandesh-sdk"
-version = "0.4.6"
+version = "0.4.7"
 description = "Official Python SDK for the Sandesh notification API."
 authors = [
     {name = "Rohit Thakur", email = "rohithakur0208@gmail.com"},

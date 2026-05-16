@@ -1,244 +1,196 @@
-# Sandesh - Email Notification System
+<p align="center">
+  <img
+    src="./docs/assets/sandesh-logo-readme.png"
+    alt="Sandesh logo"
+    width="280"
+  />
+</p>
 
-A modern, production-ready email notification system with authentication, API key management, and comprehensive audit logging.
+# Sandesh
 
-## Features
+**Open-source, multi-channel notification infrastructure for product teams.**  
+*Sandesh* (संदेश) means *message* in Hindi — built for reliable delivery at scale.
 
-- 🔐 **User Authentication**: Secure login system with JWT tokens
-- 🔑 **API Key Management**: Generate and manage API keys for programmatic access
-- 📧 **Email Notifications**: Send templated emails via AWS SES
-- 📊 **Audit Logging**: Track all email activities with detailed logs
-- 🎨 **Modern UI**: Clean, minimal, and market-ready interface
-- 🐳 **Docker Support**: Easy deployment with Docker Compose
+---
 
-## Quick Start
+## What is Sandesh?
 
-### Prerequisites
+Sandesh is a self-hostable notification platform inspired by modern event-driven systems, focused on:
 
-- Docker and Docker Compose
-- AWS account with SES configured
-- Node.js 18+ (for local development)
+- **Multi-channel delivery** — email (AWS SES / SMTP), Slack, Microsoft Teams, FCM push, SNS, WhatsApp (Twilio)
+- **Template engine** — reusable templates with variables, previews, and validation
+- **Subscribers & events** — trigger workflows by event name with subscriber context
+- **Enterprise controls** — organizations, API keys, JWT auth, audit logs, rate limits
+- **Python SDK** — [`sandesh-sdk` on PyPI](https://pypi.org/project/sandesh-sdk/) for programmatic integration
+- **Operator UI** — React dashboard for templates, subscribers, integrations, and delivery logs
 
-### Using Docker Compose
+Define notifications as code or API calls, version templates, and observe delivery in production from a single control plane.
 
-1. **Clone the repository**
-```bash
-git clone <repository-url>
-cd sandesh-first
-```
+---
 
-2. **Configure environment variables**
+## Host Sandesh (run the platform)
 
-Create a `.env` file in the root directory:
-```env
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_REGION=ap-south-1
-SES_SENDER_EMAIL=no-reply@yourdomain.com
-```
+**You do not need this source repository to run Sandesh.**
 
-3. **Start the application**
-```bash
-docker-compose up -d
-```
+Use the deployment repository — it contains `docker-compose.yaml`, `.env.example`, and a full hosting guide:
 
-4. **Access the application**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
+### [**github.com/Rawhit99/test-sandesh**](https://github.com/Rawhit99/test-sandesh)
 
-### First Time Setup
+That repo is **deployment-only**: pull prebuilt images, configure `.env`, and start the stack.
 
-1. **Register a new user**
-   - Navigate to http://localhost:3000/login
-   - Click "Sign up" to create a new account
-   - Enter your username, password, and organization name
-
-2. **Generate an API Key**
-   - After logging in, go to "API Keys" in the sidebar
-   - Click "Create API Key"
-   - Copy and save the key immediately (you won't be able to see it again)
-
-3. **Start sending emails**
-   - Use your API key to send emails via the API
-   - All activities will be logged in the "Audit Log" section
-
-## API Usage
-
-### Authentication
-
-All API endpoints require authentication using either:
-- JWT token (for UI access)
-- API key (for programmatic access)
-
-### Send an Email
+### Quick start (from the deployment repo)
 
 ```bash
-curl -X POST http://localhost:8000/api/notifications \
+git clone https://github.com/Rawhit99/test-sandesh.git
+cd test-sandesh
+cp .env.example .env
+# Edit .env — JWT_SECRET_KEY, image names, DATABASE_URL, etc.
+docker compose up -d
+```
+
+| Service      | URL |
+| ------------ | --- |
+| Dashboard    | http://localhost:3000 |
+| API          | http://localhost:8000 |
+| OpenAPI docs | http://localhost:8000/docs |
+
+### After containers are up
+
+1. Open the UI and **register** the first user.
+2. Configure email integration in the UI (SES/SMTP) — credentials are set in the app, not only in `.env`.
+3. Create templates and subscribers.
+4. Trigger events via the API or Python SDK.
+
+Default images (override in `.env` if you publish your own):
+
+- `rohithakur0208/sandesh-email-backend:latest`
+- `rohithakur0208/sandesh-email-frontend:latest`
+
+Operations, troubleshooting, and security notes: see the [test-sandesh README](https://github.com/Rawhit99/test-sandesh/blob/main/README.md).
+
+---
+
+## Python SDK
+
+Install from PyPI:
+
+```bash
+pip install sandesh-sdk
+```
+
+```python
+from sandesh.sdk import Sandesh
+
+client = Sandesh(
+    base_url="http://localhost:8000",
+    bearer_token="your_api_key_or_jwt",
+)
+
+result = client.events_trigger(
+    {
+        "name": "welcome-email",
+        "to": {"subscriberId": "user-123"},
+        "payload": {"name": "Asha", "company": "Sandesh Labs"},
+    }
+)
+print(result)
+```
+
+See [backend/README.md](./backend/README.md) for the full SDK surface.
+
+---
+
+## API example (curl)
+
+```bash
+curl -X POST "http://localhost:8000/api/v1/events/trigger" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "template_id": "welcome_email",
-    "email": "user@example.com",
-    "payload": {
-      "name": "John Doe",
-      "company": "Acme Inc"
-    }
+    "name": "welcome-email",
+    "to": { "subscriberId": "user-123" },
+    "payload": { "name": "Asha" }
   }'
 ```
 
-### Create a Template
+---
+
+## Contribute to Sandesh (this repository)
+
+**Want to fix bugs, add features, or improve docs?** Work in **this** repo (`sandesh-email-service`), not the deployment repo.
+
+| Goal | Repository |
+| ---- | ---------- |
+| **Run / host** the platform | [Rawhit99/test-sandesh](https://github.com/Rawhit99/test-sandesh) |
+| **Develop / contribute** | [sandesh-email-service](https://github.com/Rawhit99/sandesh-email-service) (here) |
+
+### Source layout
+
+```text
+sandesh-email-service/
+├── backend/           # FastAPI API, services, Alembic migrations
+│   └── sandesh/       # Python SDK (published as sandesh-sdk)
+├── frontend/          # React operator dashboard
+├── tools/sandesh-cli/ # Template sync CLI utilities
+├── docs/              # Brand assets and documentation
+└── docker-compose.yml # Full-stack build from source (contributors)
+```
+
+Architecture and layering: [backend/ARCHITECTURE.md](./backend/ARCHITECTURE.md).
+
+### Requirements (development)
+
+| Component  | Version |
+| ---------- | ------- |
+| Python     | 3.12+   |
+| Node.js    | 18+     |
+| PostgreSQL | 15+     |
+| Redis      | 7+ (recommended for the worker) |
+| Docker     | 24+ (optional) |
+
+### Develop from source
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/templates \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "template_id": "welcome_email",
-    "name": "Welcome Email",
-    "subject": "Welcome {{name}}!",
-    "content": "<h1>Welcome {{name}}</h1><p>Thanks for joining {{company}}!</p>",
-    "variables": {
-      "name": "",
-      "company": ""
-    }
-  }'
+git clone https://github.com/Rawhit99/sandesh-email-service.git
+cd sandesh-email-service
+cp .env.example .env
+docker compose up -d --build
 ```
 
-## Project Structure
+Or run services individually — see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-```
-sandesh-first/
-├── backend/
-│   ├── main.py              # FastAPI application
-│   ├── models/
-│   │   ├── models.py        # Database models
-│   │   └── schemas.py       # Pydantic schemas
-│   ├── middleware/
-│   │   ├── auth.py          # Authentication middleware
-│   │   └── auth_utils.py    # Auth utilities
-│   ├── services/
-│   │   ├── email_service.py # Email sending service
-│   │   └── template_service.py # Template management
-│   └── Dockerfile
-├── frontend/
-│   ├── src/
-│   │   ├── pages/           # React pages
-│   │   ├── components/      # React components
-│   │   └── services/        # API service
-│   └── Dockerfile
-└── docker-compose.yml
-```
+### Governance
 
-## Development
+| Document | Description |
+| -------- | ----------- |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | How to contribute (read before opening a PR) |
+| [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Community standards |
+| [SECURITY.md](./SECURITY.md) | Responsible disclosure |
+| [SUPPORT.md](./SUPPORT.md) | Getting help |
+| [GOVERNANCE.md](./GOVERNANCE.md) | Project roles and decisions |
+| [RELEASE_POLICY.md](./RELEASE_POLICY.md) | Merge rules; SDK/CLI publish (maintainer-only) |
+| [BRANCH_PROTECTION.md](./BRANCH_PROTECTION.md) | GitHub settings so only you approve merges |
+| [OPEN_SOURCE.md](./OPEN_SOURCE.md) | Maintainer release checklist |
 
-### Backend
+Before opening a PR, read [CONTRIBUTING.md](./CONTRIBUTING.md) and use the pull request template.
 
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
+---
 
-### Frontend
+## Prebuilt images (maintainers)
 
-```bash
-cd frontend
-npm install
-npm start
-```
+This repo publishes images via [.github/workflows/publish-images.yml](./.github/workflows/publish-images.yml):
 
-## Environment Variables
+- `ghcr.io/<owner>/<repo>-backend:<tag>`
+- `ghcr.io/<owner>/<repo>-frontend:<tag>`
 
-### Backend
+Tags: `latest`, short commit SHA, and git tags (`v*.*.*`).
 
-- `DATABASE_URL`: PostgreSQL connection string
-- `AWS_ACCESS_KEY_ID`: AWS access key
-- `AWS_SECRET_ACCESS_KEY`: AWS secret key
-- `AWS_REGION`: AWS region
-- `SES_SENDER_EMAIL`: Verified sender email
-- `JWT_SECRET_KEY`: Secret used to sign console login JWTs. Set this in
-  `.env` and use the same value in jwt.io for HS256 signature verification.
-  If omitted in Docker Compose, the local fallback is
-  `change-me-in-production`; replace it before deploying.
+Point the [deployment repo](https://github.com/Rawhit99/test-sandesh) `.env` at these images when you release new versions.
 
-### Frontend
-
-- `REACT_APP_API_URL`: Backend API URL
-
-## Database Schema
-
-### Users
-- Stores user accounts and authentication data
-
-### API Keys
-- Stores API keys for programmatic access
-- Keys are hashed before storage
-
-### Audit Logs
-- Tracks all email activities
-- Includes payload, status, and metadata
-
-### Notifications
-- Email sending records
-- Tracks status and errors
-
-### Email Templates
-- Reusable email templates
-- Supports variables
-
-## Security Features
-
-- Password hashing with bcrypt
-- JWT token authentication
-- API key hashing
-- Audit logging for compliance
-- IP address tracking
-- User agent logging
+---
 
 ## License
 
-Licensed under the **MIT License**.
+Licensed under the [MIT License](./LICENSE).
 
-See **[LICENSE](./LICENSE)**.
-
-## Repository Governance
-
-- Contribution guidelines: **[CONTRIBUTING.md](./CONTRIBUTING.md)**
-- Security reporting: **[SECURITY.md](./SECURITY.md)**
-- Branch protection baseline:
-  **[BRANCH_PROTECTION.md](./BRANCH_PROTECTION.md)**
-- Code of conduct: **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)**
-- Support guide: **[SUPPORT.md](./SUPPORT.md)**
-
-## Open source and PyPI publishing
-
-Maintainers: see **[OPEN_SOURCE.md](./OPEN_SOURCE.md)** for a step-by-step plan to open source the project and publish the Python client/SDK to PyPI.
-
-## Prebuilt Docker images (GHCR)
-
-This repository publishes prebuilt images to GitHub Container Registry
-using `.github/workflows/publish-images.yml`.
-
-- Backend image:
-  `ghcr.io/<owner>/<repo>-backend:<tag>`
-- Frontend image:
-  `ghcr.io/<owner>/<repo>-frontend:<tag>`
-
-Published tags include:
-
-- `latest` (latest main branch build)
-- short commit SHA
-- git tag (for example `v0.3.1`)
-
-For your external compose repo, set:
-
-- `SANDESH_BACKEND_IMAGE=ghcr.io/<owner>/<repo>-backend:latest`
-- `SANDESH_FRONTEND_IMAGE=ghcr.io/<owner>/<repo>-frontend:latest`
-
-## Support
-
-For issues and questions, please open an issue on GitHub.
-
+Copyright (c) 2026 Rohit Thakur and contributors.

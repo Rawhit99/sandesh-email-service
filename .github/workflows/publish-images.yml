@@ -1,3 +1,7 @@
+# Publishes GHCR images after merges/tags on protected branches.
+# Only the maintainer should merge to main (see BRANCH_PROTECTION.md).
+# There is NO workflow that publishes sandesh-sdk to PyPI (RELEASE_POLICY.md).
+
 name: Publish Docker Images
 
 on:
