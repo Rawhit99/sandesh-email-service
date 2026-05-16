@@ -1,22 +1,43 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-Security fixes are prioritized for the latest default branch.
+Security fixes are provided for the latest release on the default branch (`main`).
+Older tagged releases receive fixes on a best-effort basis.
 
-## Reporting a Vulnerability
+| Version | Supported |
+|---------|-----------|
+| latest `main` | yes |
+| latest tagged release | yes |
+| older tags | best effort |
 
-Please do **not** open a public GitHub issue for security vulnerabilities.
+## Reporting a vulnerability
 
-Report privately to:
+**Please do not open a public GitHub issue for security vulnerabilities.**
 
-- rohithakur0208@gmail.com
+Report privately to: **rohithakur0208@gmail.com**
 
-Include:
+Include as much detail as possible:
 
-- affected component/path
-- impact and attack scenario
-- reproduction steps
-- suggested mitigation (optional)
+- Affected component (API, SDK, dashboard, Docker image, channel provider)
+- Impact and realistic attack scenario
+- Steps to reproduce
+- Suggested mitigation (optional)
+- Your contact for follow-up
 
-We will acknowledge receipt and coordinate remediation and disclosure timing.
+## What to expect
+
+1. Acknowledgment within a few business days
+2. Assessment and severity classification
+3. Coordinated fix and release when appropriate
+4. Credit in release notes if you wish (with your permission)
+
+## Safe harbor
+
+We support good-faith security research. Do not access data that is not yours,
+disrupt production systems, or perform social engineering.
+
+## Dependency security
+
+Report issues in Sandesh's own code. For vulnerabilities in third-party
+dependencies, also consider responsible disclosure to the upstream project.
