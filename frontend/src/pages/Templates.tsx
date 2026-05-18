@@ -35,6 +35,12 @@ import TemplateEditor from '../components/TemplateEditor';
 
 const Templates: React.FC = () => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+
+  const getContentPreview = (content: string): string => {
+    const doc = new DOMParser().parseFromString(content, 'text/html');
+    const textOnly = doc.body.textContent ?? '';
+    return textOnly.substring(0, 120);
+  };
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -121,7 +127,7 @@ const Templates: React.FC = () => {
       field: 'content', headerName: 'Content preview', flex: 1, minWidth: 200,
       renderCell: (p) => (
         <Typography variant="body2" color="text.secondary" noWrap>
-          {(p.value as string).replace(/<[^>]*>/g, '').substring(0, 120)}
+          {getContentPreview(String(p.value ?? ''))}
         </Typography>
       ),
     },
