@@ -7,10 +7,10 @@ from exceptions import BadRequestError, NotFoundError
 from jinja2 import (
     Environment,
     FileSystemLoader,
-    Template,
     TemplateSyntaxError,
     select_autoescape,
 )
+from jinja2.sandbox import SandboxedEnvironment
 from models.models import EmailTemplate, Organization, OrgTemplateSetting
 from models.schema_domains.templates import (
     TemplateCreate,
@@ -384,9 +384,12 @@ class TemplateService:
     def render_template(
         self, template_content: str, context: Dict[str, Any]
     ) -> str:
-        """Render template with provided context using Jinja2"""
+        """Render template with provided context using sandboxed Jinja2"""
         try:
-            template = Template(template_content)
+            env = SandboxedEnvironment(
+                autoescape=select_autoescape(["html", "xml"])
+            )
+            template = env.from_string(template_content)
             return template.render(**context)
         except TemplateSyntaxError as e:
             raise ValueError(f"Template syntax error: {str(e)}")
