@@ -483,11 +483,11 @@ class TemplateService:
                 "variables": list(found_variables),
                 "error": None,
             }
-        except (TypeError, ValueError, AttributeError, re.error) as e:
+        except (TypeError, ValueError, AttributeError, re.error):
             return {
                 "valid": False,
                 "variables": [],
-                "error": f"Template validation error: {str(e)}",
+                "error": "Template validation failed due to invalid template content.",
             }
 
     def preview_template(
