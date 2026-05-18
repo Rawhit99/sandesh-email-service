@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import {
   Box,
   TextField,
@@ -135,7 +136,8 @@ const TemplateEditor: React.FC<TemplateEditorProps> = ({
       const regex = new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g');
       preview = preview.replace(regex, value || `{{${key}}}`);
     });
-    setPreviewContent(preview);
+    const sanitizedPreview = DOMPurify.sanitize(preview);
+    setPreviewContent(sanitizedPreview);
     setShowPreview(true);
   };
 
